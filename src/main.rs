@@ -21,4 +21,14 @@ fn main() {
     };
 
     println!("{:?}", String::from_utf8(plaintext));
+
+    let data: Vec<u8> = vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    let mut cr_data = fcrypt::CryptedData::new(data);
+    match cr_data.encrypt("test456") {
+        Some(e) => {
+            println!("{:?}", e);
+            return;
+        }
+        None => ()
+    }
 }

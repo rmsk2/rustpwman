@@ -1,6 +1,7 @@
 use std::fs::File;
 use std::io::BufReader;
 use std::io::{Error, ErrorKind};
+use rand::Rng;
 
 use serde::{Serialize, Deserialize};
 use crypto::sha2::Sha256;
@@ -9,16 +10,18 @@ use cipher::generic_array::typenum;
 use aes;
 use base64;
 use aes_gcm::{Key, Nonce, AesGcm, Tag};
-use aes_gcm::aead::{AeadInPlace, NewAead};
+use aes_gcm::aead::{Aead, AeadInPlace, NewAead};
 
 const DEFAULT_TAG_SIZE: usize = 16;
 const DEFAULT_NONCE_SIZE: usize = 12;
+const DEFAULT_SALT_SIZE: usize = 10;
 
 #[derive(Debug)]
 pub enum FcryptError {
     UnsupportedNonceSize,
     CiphertextTooShort,
-    DecryptionError
+    DecryptionError,
+    EncryptionError
 } 
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -70,7 +73,33 @@ impl CryptedData {
         return Ok(crypted);
     }
 
-    pub fn regenerate_key(&self, password: &str) -> Vec<u8> {
+    pub fn fill_rand(&mut self) {
+        let mut rng = rand::thread_rng();
+        self.nonce.clear();
+        self.salt.clear();
+
+        for _ in 0..DEFAULT_SALT_SIZE {
+            self.salt.push(rng.gen_range(0..256) as u8);
+        }
+
+        for _ in 0..DEFAULT_NONCE_SIZE {
+            self.nonce.push(rng.gen_range(0..256) as u8);
+        }  
+    }
+
+    pub fn new(data: Vec<u8>) -> CryptedData {
+        let mut res = CryptedData {
+            data: data,
+            salt: vec![0; DEFAULT_SALT_SIZE],
+            nonce: vec![0; DEFAULT_NONCE_SIZE]
+        };
+
+        res.fill_rand();
+
+        return res;
+    }
+
+    fn regenerate_key(&self, password: &str) -> Vec<u8> {
         let mut res_buffer: [u8; 32] = [0; 32];
         let mut sha_256 = Sha256::new();
 
@@ -114,5 +143,22 @@ impl CryptedData {
         };
 
         return Ok(dec_buffer);
+    }
+
+    pub fn encrypt(&mut self, password: &str) -> Option<FcryptError> {
+        self.fill_rand();
+
+        let aes_256_key = self.regenerate_key(password);
+        let key = Key::from_slice(aes_256_key.as_slice());
+
+        let nonce = Nonce::from_slice(&self.nonce[0..DEFAULT_NONCE_SIZE]);
+
+        let cipher: AesGcm<aes::Aes256, typenum::U12> = AesGcm::new(key);
+        self.data = match cipher.encrypt(&nonce, &self.data[0..]) {
+            Err(_) => return Some(FcryptError::EncryptionError),
+            Ok(d) => d
+        };
+
+        return None;
     }
 }
