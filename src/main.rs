@@ -1,3 +1,6 @@
+mod tests;
+mod fcrypt;
+
 fn main() {
-    println!("Hello, world!");
+    println!("Hello password manager");
 }
