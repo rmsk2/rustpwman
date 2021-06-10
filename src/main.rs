@@ -2,7 +2,9 @@ mod tests;
 mod fcrypt;
 
 fn main() {
-    let res = match fcrypt::CryptedData::from_file("safe_test.enc") {
+    let mut ctx = fcrypt::GcmContext::new();
+
+    let data = match ctx.from_file("safe_test.enc") {
         Err(e) => {
             println!("{}", e);
             return;
@@ -12,7 +14,7 @@ fn main() {
         }
     };
 
-    let plaintext = match res.decrypt("test456") {
+    let plaintext = match ctx.decrypt("test456", &data) {
         Ok(p) => p,
         Err(e) => {
             println!("{:?}", e);
@@ -23,12 +25,22 @@ fn main() {
     println!("{:?}", String::from_utf8(plaintext));
 
     let data: Vec<u8> = vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-    let mut cr_data = fcrypt::CryptedData::new(data);
-    match cr_data.encrypt("test456") {
-        Some(e) => {
+    let cipher_text = match ctx.encrypt("test456", &data) {
+        Ok(cipher_text) => {
+            cipher_text
+        }
+        Err(e) => {
             println!("{:?}", e);
             return;
         }
-        None => ()
+    };
+
+    match ctx.to_file(&cipher_text, "dummy.enc") {
+        Ok(_) => {
+        }
+        Err(e) => {
+            println!("{:?}", e);
+            return;
+        }        
     }
 }

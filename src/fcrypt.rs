@@ -18,7 +18,7 @@ const DEFAULT_SALT_SIZE: usize = 10;
 
 #[derive(Debug)]
 pub enum FcryptError {
-    UnsupportedNonceSize,
+    //UnsupportedNonceSize,
     CiphertextTooShort,
     DecryptionError,
     EncryptionError
@@ -37,43 +37,81 @@ struct CryptedJson {
     data: String
 }
 
-pub struct CryptedData {
+pub struct GcmContext {
     pub salt: Vec<u8>,
     pub nonce: Vec<u8>,
-    pub data: Vec<u8>
 } 
 
-impl CryptedData {
-    pub fn from_file(file_name: &str) -> std::io::Result<CryptedData> {
+impl GcmContext {
+    pub fn new() -> GcmContext {
+        let mut res = GcmContext {
+            salt: vec![0; DEFAULT_SALT_SIZE],
+            nonce: vec![0; DEFAULT_NONCE_SIZE]
+        };
+
+        res.fill_random();
+
+        return res;
+    }
+
+    pub fn from_file(&mut self, file_name: &str) -> std::io::Result<Vec<u8>> {
         let file = File::open(file_name)?;
         let reader = BufReader::new(file);
         let json_struct: CryptedJson = serde_json::from_reader(reader)?;
 
-        let crypted = CryptedData {
-            salt: match base64::decode(&json_struct.salt) {
-                Ok(s) => s,
-                Err(_) => {
-                    return Err(Error::new(ErrorKind::Other, "Base64 decode error"));
-                }
-            },
-            nonce: match base64::decode(&json_struct.nonce) {
-                Ok(s) => s,
-                Err(_) => {
-                    return Err(Error::new(ErrorKind::Other, "Base64 decode error"));
-                }
-            },
-            data: match base64::decode(&json_struct.data) {
-                Ok(s) => s,
-                Err(_) => {
-                    return Err(Error::new(ErrorKind::Other, "Base64 decode error"));
-                }
-            },            
+        let salt = match base64::decode(&json_struct.salt) {
+            Ok(s) => s,
+            Err(_) => {
+                return Err(Error::new(ErrorKind::Other, "Base64 decode error"));
+            }
         };
 
-        return Ok(crypted);
+        let nonce = match base64::decode(&json_struct.nonce) {
+            Ok(s) => s,
+            Err(_) => {
+                return Err(Error::new(ErrorKind::Other, "Base64 decode error"));
+            }
+        };
+
+        if nonce.len() != DEFAULT_NONCE_SIZE {
+            return Err(Error::new(ErrorKind::Other, "Unsupported nonce size"));
+        }
+
+        if salt.len() != DEFAULT_SALT_SIZE {
+            return Err(Error::new(ErrorKind::Other, "Unsupported salt size"));
+        }        
+
+        self.salt = salt;
+        self.nonce = nonce;
+
+        let data = match base64::decode(&json_struct.data) {
+            Ok(s) => s,
+            Err(_) => {
+                return Err(Error::new(ErrorKind::Other, "Base64 decode error"));
+            }
+        };
+
+        if data.len() < DEFAULT_TAG_SIZE {
+            return Err(Error::new(ErrorKind::Other, "Ciphertext too short"));
+        }
+    
+        return Ok(data);
     }
 
-    pub fn fill_rand(&mut self) {
+    pub fn to_file(&self, data: &Vec<u8>, file_name: &str) -> std::io::Result<()> {
+        let j = CryptedJson {
+            salt: base64::encode(&self.salt),
+            nonce: base64::encode(&self.nonce),
+            data: base64::encode(data)
+        };
+
+        let file = File::create(file_name)?;
+        serde_json::to_writer_pretty(file, &j)?;
+
+        return Ok(());
+    }
+
+    fn fill_random(&mut self) {
         let mut rng = rand::thread_rng();
         self.nonce.clear();
         self.salt.clear();
@@ -84,19 +122,7 @@ impl CryptedData {
 
         for _ in 0..DEFAULT_NONCE_SIZE {
             self.nonce.push(rng.gen_range(0..256) as u8);
-        }  
-    }
-
-    pub fn new(data: Vec<u8>) -> CryptedData {
-        let mut res = CryptedData {
-            data: data,
-            salt: vec![0; DEFAULT_SALT_SIZE],
-            nonce: vec![0; DEFAULT_NONCE_SIZE]
-        };
-
-        res.fill_rand();
-
-        return res;
+        } 
     }
 
     fn regenerate_key(&self, password: &str) -> Vec<u8> {
@@ -112,12 +138,8 @@ impl CryptedData {
         return res_buffer.to_vec();
     }
 
-    pub fn decrypt(&self, password: &str) -> Result<Vec<u8>, FcryptError> {
-        if self.nonce.len() != DEFAULT_NONCE_SIZE {
-            return Err(FcryptError::UnsupportedNonceSize);
-        }
-
-        if self.data.len() <= DEFAULT_TAG_SIZE {
+    pub fn decrypt(&self, password: &str, data: &Vec<u8>) -> Result<Vec<u8>, FcryptError> {
+        if data.len() <= DEFAULT_TAG_SIZE {
             return Err(FcryptError::CiphertextTooShort);
         }
 
@@ -125,14 +147,14 @@ impl CryptedData {
         let key = Key::from_slice(aes_256_key.as_slice());
         let associated_data: [u8; 0] = [];
 
-        let data_len = self.data.len() - DEFAULT_TAG_SIZE;
+        let data_len = data.len() - DEFAULT_TAG_SIZE;
         let mut dec_buffer = Vec::new();
         for i in 0..data_len {
-            dec_buffer.push(self.data[i]);
+            dec_buffer.push(data[i]);
         }
         
         let nonce = Nonce::from_slice(&self.nonce[0..DEFAULT_NONCE_SIZE]);
-        let tag = Tag::from_slice(&self.data[data_len..self.data.len()]);
+        let tag = Tag::from_slice(&data[data_len..data.len()]);
 
         let cipher: AesGcm<aes::Aes256, typenum::U12> = AesGcm::new(key);
         let _ = match cipher.decrypt_in_place_detached(&nonce, &associated_data, &mut dec_buffer[0..], &tag) {
@@ -145,8 +167,8 @@ impl CryptedData {
         return Ok(dec_buffer);
     }
 
-    pub fn encrypt(&mut self, password: &str) -> Option<FcryptError> {
-        self.fill_rand();
+    pub fn encrypt(&mut self, password: &str, data: &Vec<u8>) -> Result<Vec<u8>, FcryptError> {
+        self.fill_random();
 
         let aes_256_key = self.regenerate_key(password);
         let key = Key::from_slice(aes_256_key.as_slice());
@@ -154,11 +176,10 @@ impl CryptedData {
         let nonce = Nonce::from_slice(&self.nonce[0..DEFAULT_NONCE_SIZE]);
 
         let cipher: AesGcm<aes::Aes256, typenum::U12> = AesGcm::new(key);
-        self.data = match cipher.encrypt(&nonce, &self.data[0..]) {
-            Err(_) => return Some(FcryptError::EncryptionError),
-            Ok(d) => d
-        };
 
-        return None;
+        return match cipher.encrypt(&nonce, &data[0..]) {
+            Err(_) => return Err(FcryptError::EncryptionError),
+            Ok(d) => Ok(d)
+        };
     }
 }
