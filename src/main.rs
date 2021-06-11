@@ -1,5 +1,6 @@
 mod tests;
 mod fcrypt;
+mod jots;
 
 fn main() {
     let mut ctx = fcrypt::GcmContext::new();
