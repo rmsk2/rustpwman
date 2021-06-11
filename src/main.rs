@@ -23,7 +23,27 @@ fn main() {
         }
     };
 
-    println!("{:?}", String::from_utf8(plaintext));
+    let mut j = jots::Jots::new();
+    match j.from_reader(plaintext.as_slice()) {
+        Ok(_) => {
+            j.print();
+        }
+        Err(e) => {
+            println!("{:?}", e);
+            return;
+        }        
+    };
+
+    let mut v: Vec<u8> = Vec::new();
+    match j.to_writer(&mut v) {
+        Ok(_) => {
+            println!("{:?}", String::from_utf8(v).unwrap());
+        }
+        Err(e) => {
+            println!("{:?}", e);
+            return;
+        }         
+    };
 
     let data: Vec<u8> = vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
     let cipher_text = match ctx.encrypt("test456", &data) {
