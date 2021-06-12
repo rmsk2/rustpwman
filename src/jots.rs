@@ -71,6 +71,8 @@ impl Jots {
         let reader = BufReader::new(r);
         let raw_struct: Vec<KvEntry> = serde_json::from_reader(reader)?;
 
+        self.contents.clear();
+
         for i in raw_struct {
             self.contents.insert(i.key, i.value);
         }

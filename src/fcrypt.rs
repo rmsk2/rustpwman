@@ -168,7 +168,7 @@ impl GcmContext {
             dec_buffer.push(data[i]);
         }
         
-        let nonce = Nonce::from_slice(&self.nonce[0..DEFAULT_NONCE_SIZE]);
+        let nonce = Nonce::from_slice(self.nonce.as_slice());
         let tag = Tag::from_slice(&data[data_len..data.len()]);
 
         let cipher: AesGcm<aes::Aes256, typenum::U12> = AesGcm::new(key);
@@ -188,11 +188,11 @@ impl GcmContext {
         let aes_256_key = self.regenerate_key(password);
         let key = Key::from_slice(aes_256_key.as_slice());
 
-        let nonce = Nonce::from_slice(&self.nonce[0..DEFAULT_NONCE_SIZE]);
+        let nonce = Nonce::from_slice(self.nonce.as_slice());
 
         let cipher: AesGcm<aes::Aes256, typenum::U12> = AesGcm::new(key);
 
-        return match cipher.encrypt(&nonce, &data[0..]) {
+        return match cipher.encrypt(&nonce, data.as_slice()) {
             Err(_) => return Err(FcryptError::EncryptionError),
             Ok(d) => Ok(d)
         };
