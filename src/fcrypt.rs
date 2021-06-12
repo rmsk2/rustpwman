@@ -127,6 +127,9 @@ impl GcmContext {
     }
 
     fn fill_random(&mut self) {
+        // ThreadRng, provided by the thread_rng function, is a handle to a thread-local CSPRNG with periodic 
+        // seeding from OsRng. Because this is local, it is typically much faster than OsRng. It should be secure, 
+        // though the paranoid may prefer OsRng.        
         let mut rng = rand::thread_rng();
         self.nonce.clear();
         self.salt.clear();
