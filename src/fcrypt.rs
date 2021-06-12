@@ -155,7 +155,7 @@ impl GcmContext {
     }
 
     pub fn decrypt(&self, password: &str, data: &Vec<u8>) -> Result<Vec<u8>, FcryptError> {
-        if data.len() <= DEFAULT_TAG_SIZE {
+        if data.len() < DEFAULT_TAG_SIZE {
             return Err(FcryptError::CiphertextTooShort);
         }
 
