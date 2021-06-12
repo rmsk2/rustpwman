@@ -72,7 +72,7 @@ impl Jots {
         let raw_struct: Vec<KvEntry> = serde_json::from_reader(reader)?;
 
         self.contents.clear();
-
+    
         for i in raw_struct {
             self.contents.insert(i.key, i.value);
         }
@@ -94,8 +94,6 @@ impl Jots {
     }
 
     pub fn print(&self) {
-        for i in &self.contents {
-            println!("{}: {}", i.0, i.1);
-        }
+        (&self.contents).iter().for_each(|i| {println!("{}: {}", i.0, i.1);} );
     }
 }
