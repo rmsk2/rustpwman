@@ -16,8 +16,26 @@ fn main() {
         }
     };
 
+    let k3 = String::from("test3");
+    let v3 = String::from("Doller test3");
+    let k4 = String::from("test4");
+    let v4 = String::from("Doller test4");
+
+
     j.print();
-    j.contents.insert(String::from("test3"), String::from("Doller test3"));
+    j.insert(&k3, &v3);
+    j.insert(&k4, &v4);
+    j.remove(&k4);
+
+    let _ = match j.get(&k3) {
+        None => {
+            println!("Error did not find expected key");
+            return;
+        },
+        Some(s) => {
+            println!("{}: {}", k3, s);
+        }
+    };
 
     match j.to_enc_file("safe_test2.enc", "test457") {
         Ok(_) => (),

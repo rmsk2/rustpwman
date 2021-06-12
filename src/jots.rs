@@ -17,6 +17,13 @@ pub struct KvEntry {
     pub value: String 
 }
 
+pub trait JotsStore {
+    fn from_enc_file(&mut self, file_name: &str, password: &str) -> std::io::Result<()>;
+    fn to_enc_file(&self, file_name: &str, password: &str) -> std::io::Result<()>;
+    fn insert(&mut self, k: &String, v: &String);
+    fn remove(&mut self, k: &String);
+    fn get(&self, k: &String) -> Option<String>;
+}
 
 impl KvEntry {
     pub fn new(k: &String, v: &String) -> KvEntry {
@@ -36,6 +43,23 @@ impl Jots {
         return Jots {
             contents: HashMap::new()
         };
+    }
+
+    pub fn insert(&mut self, k: &String, v: &String) {
+        self.contents.insert(k.clone(), v.clone());
+    }
+    
+    pub fn remove(&mut self, k: &String) {
+        let _ = self.contents.remove(k);
+    }
+
+    pub fn get(&self, k: &String) -> Option<String> {
+        let res = match self.contents.get(k) {
+            None => {return None },
+            Some(s) => s
+        };
+
+        return Some(res.clone());
     }
 
     pub fn from_enc_file(&mut self, file_name: &str, password: &str) -> std::io::Result<()> {
