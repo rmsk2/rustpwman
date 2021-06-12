@@ -135,7 +135,6 @@ pub fn test_jots_serialize_deserialize() {
         if s != "data1" {
             panic!("Wrong data for test1");            
         }
-
     } else {
         panic!("Unable to read data for key test1");
     }
@@ -144,7 +143,6 @@ pub fn test_jots_serialize_deserialize() {
         if s != "data2" {
             panic!("Wrong data for test2");            
         }
-
     } else {
         panic!("Unable to read data for key test2");
     }    
