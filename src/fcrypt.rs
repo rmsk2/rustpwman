@@ -1,5 +1,8 @@
 use std::fs::File;
 use std::io::BufReader;
+use std::io::Read;
+use std::io::Write;
+use std::io::BufWriter;
 use std::io::{Error, ErrorKind};
 use rand::Rng;
 
@@ -54,9 +57,7 @@ impl GcmContext {
         return res;
     }
 
-    pub fn from_file(&mut self, file_name: &str) -> std::io::Result<Vec<u8>> {
-        let file = File::open(file_name)?;
-        let reader = BufReader::new(file);
+    pub fn from_reader<T: Read>(&mut self, reader: T) -> std::io::Result<Vec<u8>> {
         let json_struct: CryptedJson = serde_json::from_reader(reader)?;
 
         let salt = match base64::decode(&json_struct.salt) {
@@ -98,17 +99,31 @@ impl GcmContext {
         return Ok(data);
     }
 
-    pub fn to_file(&self, data: &Vec<u8>, file_name: &str) -> std::io::Result<()> {
+    pub fn from_file(&mut self, file_name: &str) -> std::io::Result<Vec<u8>> {
+        let file = File::open(file_name)?;
+        let reader = BufReader::new(file);
+
+        return self.from_reader(reader);
+
+    }
+
+    pub fn to_writer<T: Write>(&self, writer: T, data: &Vec<u8>) -> std::io::Result<()> {
         let j = CryptedJson {
             salt: base64::encode(&self.salt),
             nonce: base64::encode(&self.nonce),
             data: base64::encode(data)
         };
 
-        let file = File::create(file_name)?;
-        serde_json::to_writer_pretty(file, &j)?;
+        serde_json::to_writer_pretty(writer, &j)?;
 
         return Ok(());
+    }
+
+    pub fn to_file(&self, data: &Vec<u8>, file_name: &str) -> std::io::Result<()> {
+        let file = File::create(file_name)?;
+        let w = BufWriter::new(file);
+
+        return self.to_writer(w, data);
     }
 
     fn fill_random(&mut self) {
