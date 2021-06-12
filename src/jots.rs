@@ -5,6 +5,8 @@ use std::io::Write;
 //use std::fs::File;
 use std::io::BufReader;
 use std::io::BufWriter;
+use std::io::{Error, ErrorKind};
+use crate::fcrypt;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct KvEntry {
@@ -35,6 +37,35 @@ impl Jots {
         return Jots {
             contents: HashMap::new()
         };
+    }
+
+    pub fn from_enc_file(&mut self, file_name: &str, password: &str) -> std::io::Result<()> {
+        let mut ctx = fcrypt::GcmContext::new();
+
+        let data = ctx.from_file(file_name)?;
+        let plain_data = match ctx.decrypt(password, &data) {
+            Err(e) => { return Err(Error::new(ErrorKind::Other, format!("{:?}", e))); },
+            Ok(d) => d
+        };
+
+        self.from_reader(plain_data.as_slice())?;
+
+        return Ok(());
+    }
+
+    pub fn to_enc_file(&self, file_name: &str, password: &str) -> std::io::Result<()> {
+        let mut ctx = fcrypt::GcmContext::new();
+        let mut serialized: Vec<u8> = Vec::new();
+
+        self.to_writer(&mut serialized)?;
+        let enc_data = match ctx.encrypt(password, &serialized) {
+            Err(e) => { return Err(Error::new(ErrorKind::Other, format!("{:?}", e))); },
+            Ok(d) => d
+        };
+
+        ctx.to_file(&enc_data, file_name)?;
+
+        return Ok(());
     }
 
     pub fn from_reader<T: Read>(&mut self, r: T) -> std::io::Result<()> {
