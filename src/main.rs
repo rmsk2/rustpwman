@@ -19,7 +19,7 @@ fn main() {
     j.print();
     j.contents.insert(String::from("test3"), String::from("Doller test3"));
 
-    match j.to_enc_file("safe_test2.enc", "test456") {
+    match j.to_enc_file("safe_test2.enc", "test457") {
         Ok(_) => (),
         Err(e) => {
             println!("{:?}", e);
