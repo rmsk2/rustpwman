@@ -1,6 +1,8 @@
 #[cfg(test)]
 use crate::fcrypt;
 
+#[cfg(test)]
+use crate::jots;
 
 #[test]
 pub fn test_fcrypt_enc_dec() {
@@ -103,4 +105,47 @@ pub fn test_fcrypt_enc_dec_with_json() {
     if !plain_again.eq(&data_raw) {
         panic!("Decryption result differs from original plaintext");
     }
+}
+
+#[test]
+pub fn test_jots_serialize_deserialize() {
+    let mut serialized: Vec<u8> = Vec::new();
+    
+    {
+        let mut j = jots::Jots::new();
+        j.contents.insert(String::from("test1"), String::from("data1"));
+        j.contents.insert(String::from("test2"), String::from("data2"));
+        match j.to_writer(&mut serialized) {
+            Ok(_) => (),
+            Err(e) => { panic!("Serialization failed {:?}", e); }  
+        };
+    }
+
+    let mut j2 = jots::Jots::new();
+    match j2.from_reader(serialized.as_slice()) {
+        Ok(_) => (),
+        Err(e) => { panic!("Deserialization failed {:?}", e); }          
+    }
+
+    if j2.contents.len() != 2 {
+        panic!("Unexpected number of elements {}", j2.contents.len());        
+    }
+
+    if let Some(s) = j2.contents.get("test1")  {
+        if s != "data1" {
+            panic!("Wrong data for test1");            
+        }
+
+    } else {
+        panic!("Unable to read data for key test1");
+    }
+
+    if let Some(s) = j2.contents.get("test2")  {
+        if s != "data2" {
+            panic!("Wrong data for test2");            
+        }
+
+    } else {
+        panic!("Unable to read data for key test2");
+    }    
 }
