@@ -137,11 +137,8 @@ impl GcmContext {
         let mut temp_salt: [u8; DEFAULT_SALT_SIZE] = [0; DEFAULT_SALT_SIZE];
         rng.fill_bytes(&mut temp_salt);
 
-        self.nonce.clear();
-        self.salt.clear();
-
-        temp_nonce.iter().for_each(|i| self.nonce.push(*i));
-        temp_salt.iter().for_each(|i| self.salt.push(*i));
+        self.nonce = temp_nonce.to_vec();
+        self.salt = temp_salt.to_vec();
     }
 
     fn regenerate_key(&self, password: &str) -> Vec<u8> {
