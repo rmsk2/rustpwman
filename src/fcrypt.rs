@@ -4,7 +4,7 @@ use std::io::Read;
 use std::io::Write;
 use std::io::BufWriter;
 use std::io::{Error, ErrorKind};
-use rand::Rng;
+use rand::RngCore;
 
 use serde::{Serialize, Deserialize};
 use crypto::sha2::Sha256;
@@ -131,16 +131,17 @@ impl GcmContext {
         // seeding from OsRng. Because this is local, it is typically much faster than OsRng. It should be secure, 
         // though the paranoid may prefer OsRng.        
         let mut rng = rand::thread_rng();
+        
+        let mut temp_nonce: [u8; DEFAULT_NONCE_SIZE] = [0; DEFAULT_NONCE_SIZE];
+        rng.fill_bytes(&mut temp_nonce);
+        let mut temp_salt: [u8; DEFAULT_SALT_SIZE] = [0; DEFAULT_SALT_SIZE];
+        rng.fill_bytes(&mut temp_salt);
+
         self.nonce.clear();
         self.salt.clear();
 
-        for _ in 0..DEFAULT_SALT_SIZE {
-            self.salt.push(rng.gen_range(0..256) as u8);
-        }
-
-        for _ in 0..DEFAULT_NONCE_SIZE {
-            self.nonce.push(rng.gen_range(0..256) as u8);
-        } 
+        temp_nonce.iter().for_each(|i| self.nonce.push(*i));
+        temp_salt.iter().for_each(|i| self.salt.push(*i));
     }
 
     fn regenerate_key(&self, password: &str) -> Vec<u8> {
