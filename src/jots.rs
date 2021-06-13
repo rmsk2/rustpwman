@@ -22,7 +22,7 @@ pub trait JotsStore {
     fn to_enc_file(&self, file_name: &str, password: &str) -> std::io::Result<()>;
     fn insert(&mut self, k: &String, v: &String);
     fn remove(&mut self, k: &String);
-    fn get(&self, k: &String) -> Option<String>;
+    fn get(&self, k: &String) -> Option<String>;   
 }
 
 impl KvEntry {
@@ -41,7 +41,7 @@ pub struct Jots {
 impl Jots {
     pub fn new() -> Jots {
         return Jots {
-            contents: HashMap::new()
+            contents: HashMap::new(),
         };
     }
 
@@ -80,19 +80,19 @@ impl JotsStore for Jots {
     fn insert(&mut self, k: &String, v: &String) {
         self.contents.insert(k.clone(), v.clone());
     }
-    
+
     fn remove(&mut self, k: &String) {
         let _ = self.contents.remove(k);
     }
 
     fn get(&self, k: &String) -> Option<String> {
-        let res = match self.contents.get(k) {
-            None => {return None },
-            Some(s) => s
+        let v = match self.contents.get(k) {
+            None => { return None},
+            Some(val) => val
         };
 
-        return Some(res.clone());
-    }
+        return Some(v.clone());
+    }  
 
     fn from_enc_file(&mut self, file_name: &str, password: &str) -> std::io::Result<()> {
         let mut ctx = fcrypt::GcmContext::new();
