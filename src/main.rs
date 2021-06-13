@@ -4,6 +4,8 @@ mod tests;
 mod fcrypt;
 mod jots;
 
+use jots::JotsStore;
+
 fn main() {
     let args: Vec<String> = env::args().skip(1).collect();
 
@@ -18,14 +20,9 @@ fn main() {
 
     let k3 = String::from("test3");
     let v3 = String::from("Doller test3");
-    let k4 = String::from("test4");
-    let v4 = String::from("Doller test4");
-
 
     j.print();
     j.insert(&k3, &v3);
-    j.insert(&k4, &v4);
-    j.remove(&k4);
 
     let _ = match j.get(&k3) {
         None => {

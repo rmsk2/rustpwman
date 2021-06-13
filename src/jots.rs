@@ -45,52 +45,6 @@ impl Jots {
         };
     }
 
-    pub fn insert(&mut self, k: &String, v: &String) {
-        self.contents.insert(k.clone(), v.clone());
-    }
-    
-    pub fn remove(&mut self, k: &String) {
-        let _ = self.contents.remove(k);
-    }
-
-    pub fn get(&self, k: &String) -> Option<String> {
-        let res = match self.contents.get(k) {
-            None => {return None },
-            Some(s) => s
-        };
-
-        return Some(res.clone());
-    }
-
-    pub fn from_enc_file(&mut self, file_name: &str, password: &str) -> std::io::Result<()> {
-        let mut ctx = fcrypt::GcmContext::new();
-
-        let data = ctx.from_file(file_name)?;
-        let plain_data = match ctx.decrypt(password, &data) {
-            Err(e) => { return Err(Error::new(ErrorKind::Other, format!("{:?}", e))); },
-            Ok(d) => d
-        };
-
-        self.from_reader(plain_data.as_slice())?;
-
-        return Ok(());
-    }
-
-    pub fn to_enc_file(&self, file_name: &str, password: &str) -> std::io::Result<()> {
-        let mut ctx = fcrypt::GcmContext::new();
-        let mut serialized: Vec<u8> = Vec::new();
-
-        self.to_writer(&mut serialized)?;
-        let enc_data = match ctx.encrypt(password, &serialized) {
-            Err(e) => { return Err(Error::new(ErrorKind::Other, format!("{:?}", e))); },
-            Ok(d) => d
-        };
-
-        ctx.to_file(&enc_data, file_name)?;
-
-        return Ok(());
-    }
-
     pub fn from_reader<T: Read>(&mut self, r: T) -> std::io::Result<()> {
         let reader = BufReader::new(r);
         let raw_struct: Vec<KvEntry> = serde_json::from_reader(reader)?;
@@ -119,5 +73,53 @@ impl Jots {
 
     pub fn print(&self) {
         (&self.contents).iter().for_each(|i| {println!("{}: {}", i.0, i.1);} );
+    }    
+}
+
+impl JotsStore for Jots {
+    fn insert(&mut self, k: &String, v: &String) {
+        self.contents.insert(k.clone(), v.clone());
+    }
+    
+    fn remove(&mut self, k: &String) {
+        let _ = self.contents.remove(k);
+    }
+
+    fn get(&self, k: &String) -> Option<String> {
+        let res = match self.contents.get(k) {
+            None => {return None },
+            Some(s) => s
+        };
+
+        return Some(res.clone());
+    }
+
+    fn from_enc_file(&mut self, file_name: &str, password: &str) -> std::io::Result<()> {
+        let mut ctx = fcrypt::GcmContext::new();
+
+        let data = ctx.from_file(file_name)?;
+        let plain_data = match ctx.decrypt(password, &data) {
+            Err(e) => { return Err(Error::new(ErrorKind::Other, format!("{:?}", e))); },
+            Ok(d) => d
+        };
+
+        self.from_reader(plain_data.as_slice())?;
+
+        return Ok(());
+    }
+
+    fn to_enc_file(&self, file_name: &str, password: &str) -> std::io::Result<()> {
+        let mut ctx = fcrypt::GcmContext::new();
+        let mut serialized: Vec<u8> = Vec::new();
+
+        self.to_writer(&mut serialized)?;
+        let enc_data = match ctx.encrypt(password, &serialized) {
+            Err(e) => { return Err(Error::new(ErrorKind::Other, format!("{:?}", e))); },
+            Ok(d) => d
+        };
+
+        ctx.to_file(&enc_data, file_name)?;
+
+        return Ok(());
     }
 }

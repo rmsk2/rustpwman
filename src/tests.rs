@@ -1,8 +1,9 @@
 #[cfg(test)]
 use crate::fcrypt;
-
 #[cfg(test)]
 use crate::jots;
+#[cfg(test)]
+use crate::jots::JotsStore;
 
 #[test]
 pub fn test_fcrypt_enc_dec() {
@@ -112,13 +113,21 @@ pub fn test_jots_serialize_deserialize() {
     let mut serialized: Vec<u8> = Vec::new();
     let t1 = String::from("test1");
     let t2 = String::from("test2");
+    let t3 = String::from("test3");    
     let d1 = String::from("data1");
-    let d2 = String::from("data2");    
+    let d2 = String::from("data2");   
+    let d3 = String::from("data3"); 
     
     {
         let mut j = jots::Jots::new();
         j.insert(&t1, &d1);
         j.insert(&t2, &d2);
+        j.insert(&t3, &d3);
+
+        if j.contents.len() != 3 {
+            panic!("Unexpected number of elements {}", j.contents.len());        
+        }        
+
         match j.to_writer(&mut serialized) {
             Ok(_) => (),
             Err(e) => { panic!("Serialization failed {:?}", e); }  
@@ -131,11 +140,17 @@ pub fn test_jots_serialize_deserialize() {
         Err(e) => { panic!("Deserialization failed {:?}", e); }          
     }
 
+    if j2.contents.len() != 3 {
+        panic!("Unexpected number of elements {}", j2.contents.len());        
+    }
+
+    j2.remove(&t3);
+
     if j2.contents.len() != 2 {
         panic!("Unexpected number of elements {}", j2.contents.len());        
     }
 
-    if let Some(s) = j2.contents.get("test1")  {
+    if let Some(s) = j2.get(&t1)  {
         if s != "data1" {
             panic!("Wrong data for test1");            
         }
@@ -143,7 +158,7 @@ pub fn test_jots_serialize_deserialize() {
         panic!("Unable to read data for key test1");
     }
 
-    if let Some(s) = j2.contents.get("test2")  {
+    if let Some(s) = j2.get(&t2)  {
         if s != "data2" {
             panic!("Wrong data for test2");            
         }
