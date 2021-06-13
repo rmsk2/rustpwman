@@ -110,11 +110,15 @@ pub fn test_fcrypt_enc_dec_with_json() {
 #[test]
 pub fn test_jots_serialize_deserialize() {
     let mut serialized: Vec<u8> = Vec::new();
+    let t1 = String::from("test1");
+    let t2 = String::from("test2");
+    let d1 = String::from("data1");
+    let d2 = String::from("data2");    
     
     {
         let mut j = jots::Jots::new();
-        j.contents.insert(String::from("test1"), String::from("data1"));
-        j.contents.insert(String::from("test2"), String::from("data2"));
+        j.insert(&t1, &d1);
+        j.insert(&t2, &d2);
         match j.to_writer(&mut serialized) {
             Ok(_) => (),
             Err(e) => { panic!("Serialization failed {:?}", e); }  
