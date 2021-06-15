@@ -34,8 +34,38 @@ impl KvEntry {
     }
 }
 
+pub struct JotsIter<'a> {
+    all_keys: Vec<&'a String>,
+    current_pos: usize,
+}
+
+impl<'a> JotsIter<'a> {
+    fn new(j: &'a Jots) -> JotsIter {
+         let temp: Vec<&String> = (&j.contents).into_iter().map(|i| i.0).collect();
+        
+        return JotsIter {
+            all_keys: temp,
+            current_pos: 0,
+        };
+    }
+}
+
+impl<'a> Iterator for JotsIter<'a> {
+    type Item=&'a String;
+
+    fn next(&mut self) -> Option<&'a String> {
+        if self.current_pos < self.all_keys.len() {
+            let temp = Some(self.all_keys[self.current_pos]);
+            self.current_pos += 1;
+            return temp;
+        } else {
+            return None;
+        }
+    }
+}
+
 pub struct Jots {
-    pub contents: HashMap<String, String>
+    pub contents: HashMap<String, String>,
 }
 
 impl Jots {
@@ -87,7 +117,7 @@ impl JotsStore for Jots {
 
     fn get(&self, k: &String) -> Option<String> {
         let v = match self.contents.get(k) {
-            None => { return None},
+            None => { return None },
             Some(val) => val
         };
 
@@ -121,5 +151,14 @@ impl JotsStore for Jots {
         ctx.to_file(&enc_data, file_name)?;
 
         return Ok(());
+    }
+}
+
+impl<'a> IntoIterator for &'a Jots {
+    type Item = &'a String;
+    type IntoIter = JotsIter<'a>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        return JotsIter::new(&self);
     }
 }

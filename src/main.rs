@@ -34,6 +34,10 @@ fn main() {
         }
     };
 
+    for i in &j {
+        println!("{}: {:?}", i, j.get(i));
+    }
+
     match j.to_enc_file("safe_test2.enc", "test457") {
         Ok(_) => (),
         Err(e) => {

@@ -24,7 +24,7 @@ pub fn test_fcrypt_enc_dec() {
         Err(_) => { panic!("Decryption failed"); }        
     };
 
-    if !plain_again.eq(&data_raw) {
+    if plain_again != data_raw {
         panic!("Decryption result differs from original plaintext");
     }
 }
@@ -48,7 +48,7 @@ pub fn test_fcrypt_enc_dec_empty() {
         Err(e) => { panic!("Decryption failed {:?}", e); }        
     };
 
-    if !plain_again.eq(&data_raw) {
+    if plain_again != data_raw {
         panic!("Decryption result differs from original plaintext");
     }
 }
@@ -103,7 +103,7 @@ pub fn test_fcrypt_enc_dec_with_json() {
         Err(_) => { panic!("Decryption failed"); }        
     };
 
-    if !plain_again.eq(&data_raw) {
+    if plain_again != data_raw {
         panic!("Decryption result differs from original plaintext");
     }
 }
@@ -165,4 +165,33 @@ pub fn test_jots_serialize_deserialize() {
     } else {
         panic!("Unable to read data for key test2");
     }    
+}
+
+#[test]
+pub fn test_jots_iter() {
+    let t1 = String::from("test1");
+    let t2 = String::from("test2");
+    let t3 = String::from("test3");    
+    let d1 = String::from("data1");
+    let d2 = String::from("data2");   
+    let d3 = String::from("data3"); 
+    
+    let mut j = jots::Jots::new();
+    j.insert(&t1, &d1);
+    j.insert(&t2, &d2);
+    j.insert(&t3, &d3);
+
+    let mut count = 0;
+
+    for i in &j {
+        println!("{}", i);
+        count += 1;
+    }
+
+    for i in &j {
+        println!("{}", i);
+        count += 1;
+    }
+
+    assert_eq!(count, 6);
 }
