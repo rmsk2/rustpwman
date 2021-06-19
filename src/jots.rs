@@ -41,7 +41,7 @@ pub struct JotsIter<'a> {
 
 impl<'a> JotsIter<'a> {
     fn new(j: &'a Jots) -> JotsIter {
-         let temp: Vec<&String> = (&j.contents).into_iter().map(|i| i.0).collect();
+        let temp: Vec<&String> = (&j.contents).into_iter().map(|i| i.0).collect();
         
         return JotsIter {
             all_keys: temp,
@@ -53,7 +53,7 @@ impl<'a> JotsIter<'a> {
 impl<'a> Iterator for JotsIter<'a> {
     type Item=&'a String;
 
-    fn next(&mut self) -> Option<&'a String> {
+    fn next(&mut self) -> Option<Self::Item> {
         if self.current_pos < self.all_keys.len() {
             let temp = Some(self.all_keys[self.current_pos]);
             self.current_pos += 1;
