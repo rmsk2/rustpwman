@@ -2,8 +2,6 @@
 use crate::fcrypt;
 #[cfg(test)]
 use crate::jots;
-#[cfg(test)]
-use crate::jots::JotsStore;
 
 #[test]
 pub fn test_fcrypt_enc_dec() {

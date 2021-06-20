@@ -4,8 +4,6 @@ mod tests;
 mod fcrypt;
 mod jots;
 
-use jots::JotsStore;
-
 use cursive::traits::*;
 use cursive::views::{Dialog, LinearLayout, TextView, EditView, SelectView, TextArea, Panel};
 use cursive::Cursive;

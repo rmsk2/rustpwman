@@ -17,14 +17,6 @@ pub struct KvEntry {
     pub value: String 
 }
 
-pub trait JotsStore {
-    fn from_enc_file(&mut self, file_name: &str, password: &str) -> std::io::Result<()>;
-    fn to_enc_file(&self, file_name: &str, password: &str) -> std::io::Result<()>;
-    fn insert(&mut self, k: &String, v: &String);
-    fn remove(&mut self, k: &String);
-    fn get(&self, k: &String) -> Option<String>;   
-}
-
 impl KvEntry {
     pub fn new(k: &String, v: &String) -> KvEntry {
         return KvEntry {
@@ -104,18 +96,16 @@ impl Jots {
     pub fn print(&self) {
         (&self.contents).iter().for_each(|i| {println!("{}: {}", i.0, i.1);} );
     }    
-}
 
-impl JotsStore for Jots {
-    fn insert(&mut self, k: &String, v: &String) {
+    pub fn insert(&mut self, k: &String, v: &String) {
         self.contents.insert(k.clone(), v.clone());
     }
 
-    fn remove(&mut self, k: &String) {
+    pub fn remove(&mut self, k: &String) {
         let _ = self.contents.remove(k);
     }
 
-    fn get(&self, k: &String) -> Option<String> {
+    pub fn get(&self, k: &String) -> Option<String> {
         let v = match self.contents.get(k) {
             None => { return None },
             Some(val) => val
@@ -124,7 +114,7 @@ impl JotsStore for Jots {
         return Some(v.clone());
     }  
 
-    fn from_enc_file(&mut self, file_name: &str, password: &str) -> std::io::Result<()> {
+    pub fn from_enc_file(&mut self, file_name: &str, password: &str) -> std::io::Result<()> {
         let mut ctx = fcrypt::GcmContext::new();
 
         let data = ctx.from_file(file_name)?;
@@ -138,7 +128,7 @@ impl JotsStore for Jots {
         return Ok(());
     }
 
-    fn to_enc_file(&self, file_name: &str, password: &str) -> std::io::Result<()> {
+    pub fn to_enc_file(&self, file_name: &str, password: &str) -> std::io::Result<()> {
         let mut ctx = fcrypt::GcmContext::new();
         let mut serialized: Vec<u8> = Vec::new();
 
