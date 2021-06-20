@@ -67,13 +67,20 @@ fn main() {
 fn show_message(siv: &mut Cursive, msg: &str) {
     siv.add_layer(
         Dialog::text(msg)
+            .title("Rustpwman")
             .button("Ok", |s| {
                 s.pop_layer();
             }),
     );
 }
 
-fn process_password(s: &mut Cursive, password: &String, state: &Rc<RefCell<AppState>>) {
+fn main_window(s: &mut Cursive, state: &Rc<RefCell<AppState>>) {
+    let my_state = state.clone();
+
+    show_message(s, &format!("{:?}", my_state.borrow().password));
+}
+
+fn open_file(s: &mut Cursive, password: &String, state: &Rc<RefCell<AppState>>) -> bool {
     let pw_state_cloned = state.clone();
 
     let mut pw_state = pw_state_cloned.borrow_mut();
@@ -84,7 +91,7 @@ fn process_password(s: &mut Cursive, password: &String, state: &Rc<RefCell<AppSt
             Ok(_) => (),
             Err(_) => {
                 show_message(s, &format!("Unable to initialize file\n\n{}", &pw_state.file_name));
-                return;
+                return false;
             }
         }
     }
@@ -93,13 +100,20 @@ fn process_password(s: &mut Cursive, password: &String, state: &Rc<RefCell<AppSt
         Ok(_) => { },
         Err(_) => {
             show_message(s, &format!("Unable to read file\n\n{}\n\nWrong password?", file_name));
-            return;                
+            return false;                
         }
     }
-    
-    s.pop_layer(); 
 
+    s.pop_layer();
     pw_state.password = Some(password.clone());
+
+    return true;
+}
+
+fn process_password(s: &mut Cursive, password: &String, state: &Rc<RefCell<AppState>>) {
+    if open_file(s, password, state) {
+        main_window(s, state);
+    }
 }
 
 fn password_entry_dialog(ok_cb_with_state: Box<dyn Fn(&mut Cursive, &String)>) -> Dialog {
