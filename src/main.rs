@@ -4,6 +4,8 @@ mod tests;
 mod fcrypt;
 mod jots;
 
+const PW_WIDTH: usize = 35;
+
 use cursive::traits::*;
 use cursive::views::{Dialog, LinearLayout, TextView, EditView, SelectView, TextArea, Panel};
 use cursive::Cursive;
@@ -191,7 +193,7 @@ fn password_entry_dialog(ok_cb_with_state: Box<dyn Fn(&mut Cursive, &String)>) -
                     .child(EditView::new()
                         .secret()
                         .with_name("pwedit")
-                        .fixed_width(20))
+                        .fixed_width(PW_WIDTH))
             )
         )
         .button("OK", ok_cb)
@@ -236,7 +238,7 @@ fn file_init_dialog(ok_cb: Box<dyn Fn(&mut Cursive, &String)>) -> Dialog {
                     .child(EditView::new()
                         .secret()
                         .with_name("pwedit1")
-                        .fixed_width(20))
+                        .fixed_width(PW_WIDTH))
             )
             .child(TextView::new("\n"))
             .child(
@@ -245,7 +247,7 @@ fn file_init_dialog(ok_cb: Box<dyn Fn(&mut Cursive, &String)>) -> Dialog {
                     .child(EditView::new()
                         .secret()
                         .with_name("pwedit2")
-                        .fixed_width(20))
+                        .fixed_width(PW_WIDTH))
             )
         )
         .button("OK", verify)
