@@ -50,7 +50,9 @@ fn main() {
     let mut siv = cursive::default();
 
     let pw_callback = Box::new(move |s: &mut Cursive, password: &String| {
-        process_password(s, password, &pw_state);
+        if open_file(s, password, &pw_state) {
+            main_window(s, &pw_state);
+        }
     });
 
     if path_exists(data_file_name) {
@@ -108,12 +110,6 @@ fn open_file(s: &mut Cursive, password: &String, state: &Rc<RefCell<AppState>>) 
     pw_state.password = Some(password.clone());
 
     return true;
-}
-
-fn process_password(s: &mut Cursive, password: &String, state: &Rc<RefCell<AppState>>) {
-    if open_file(s, password, state) {
-        main_window(s, state);
-    }
 }
 
 fn password_entry_dialog(ok_cb_with_state: Box<dyn Fn(&mut Cursive, &String)>) -> Dialog {
