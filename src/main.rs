@@ -7,15 +7,12 @@ mod jots;
 use jots::JotsStore;
 
 use cursive::traits::*;
-//use cursive::views::{Button, Dialog, LinearLayout, TextView, EditView};
 use cursive::views::{Dialog, LinearLayout, TextView, EditView, SelectView, TextArea, Panel};
 use cursive::Cursive;
 use cursive::menu::MenuTree;
 use cursive::align::HAlign;
 
 use std::fs;
-use std::rc::Rc;
-use std::cell::RefCell;
 
 pub fn path_exists(path: &str) -> bool {
     fs::metadata(path).is_ok()
@@ -45,21 +42,22 @@ fn main() {
         return;
     }
 
-    let data_file_name = &args[0];
-    let jots_store = jots::Jots::new();
-    let state = Rc::new(RefCell::new(AppState::new(jots_store, data_file_name)));
-    let pw_state = state.clone();
-
+    let data_file_name = &args[0].clone();
+    let capture_file_name = data_file_name.clone();
     let mut siv = cursive::default();
 
     let pw_callback = Box::new(move |s: &mut Cursive, password: &String| {
-        if open_file(s, password, &pw_state) {
+        let jots_store = jots::Jots::new();
+        let f_name = capture_file_name.clone();
+        let state = AppState::new(jots_store, &f_name);
+
+        if let Some(state_after_open) = open_file(s, password, state) {
             add_menu(s);
-            main_window(s, &pw_state);
+            main_window(s, state_after_open);
         }
     });
 
-    if path_exists(data_file_name) {
+    if path_exists(&data_file_name) {
         let d = password_entry_dialog(pw_callback);
         siv.add_layer(d);
     } else {
@@ -96,18 +94,19 @@ fn add_menu(s: &mut Cursive) {
     s.set_autohide_menu(false);
 }
 
-fn main_window(s: &mut Cursive, state: &Rc<RefCell<AppState>>) {
-    let pw_state = state.borrow().store.contents.clone();
-
+fn main_window(s: &mut Cursive, state: AppState) {
     let mut select_view = SelectView::new();
     let mut count = 0;
     let mut initial_text = String::from("");
 
-    for i in &pw_state {
+    for i in &state.store {
         if count == 0 {
-            initial_text = i.1.clone();
+            initial_text = match state.store.get(i) {
+                Some(s) => s,
+                None => { panic!("This should not have happened"); }
+            }
         }
-        select_view.add_item(i.0.clone(), i.0.clone());
+        select_view.add_item(i.clone(), i.clone());
 
         count += 1;
     }
@@ -115,7 +114,7 @@ fn main_window(s: &mut Cursive, state: &Rc<RefCell<AppState>>) {
     let select_view_attributed = select_view
         .h_align(HAlign::Center)
         .on_select(move |s, item| {
-            let entry_text = match pw_state.get(item) {
+            let entry_text = match state.store.get(item) {
                 Some(s) => s,
                 None => {
                     show_message(s, "Unable to read password"); return;
@@ -147,34 +146,32 @@ fn main_window(s: &mut Cursive, state: &Rc<RefCell<AppState>>) {
     s.add_layer(tui);
 }
 
-fn open_file(s: &mut Cursive, password: &String, state: &Rc<RefCell<AppState>>) -> bool {
-    let pw_state_cloned = state.clone();
-
-    let mut pw_state = pw_state_cloned.borrow_mut();
-    let file_name = pw_state.file_name.clone();
+fn open_file(s: &mut Cursive, password: &String, state: AppState) -> Option<AppState> {
+    let file_name = state.file_name.clone();
+    let mut state = state;
     
     if !path_exists(&file_name) {
-        match pw_state.store.to_enc_file(&file_name, password) {
+        match state.store.to_enc_file(&file_name, password) {
             Ok(_) => (),
             Err(_) => {
-                show_message(s, &format!("Unable to initialize file\n\n{}", &pw_state.file_name));
-                return false;
+                show_message(s, &format!("Unable to initialize file\n\n{}", &file_name));
+                return None;
             }
         }
     }
 
-    match pw_state.store.from_enc_file(&file_name, password) {
+    match state.store.from_enc_file(&file_name, password) {
         Ok(_) => { },
         Err(_) => {
             show_message(s, &format!("Unable to read file\n\n{}\n\nWrong password?", file_name));
-            return false;                
+            return None;                
         }
     }
 
     s.pop_layer();
-    pw_state.password = Some(password.clone());
+    state.password = Some(password.clone());
 
-    return true;
+    return Some(state);
 }
 
 fn password_entry_dialog(ok_cb_with_state: Box<dyn Fn(&mut Cursive, &String)>) -> Dialog {
