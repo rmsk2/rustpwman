@@ -7,8 +7,11 @@ mod jots;
 use jots::JotsStore;
 
 use cursive::traits::*;
-use cursive::views::{Button, Dialog, LinearLayout, TextView, EditView};
+//use cursive::views::{Button, Dialog, LinearLayout, TextView, EditView};
+use cursive::views::{Dialog, LinearLayout, TextView, EditView, SelectView, TextArea, Panel};
 use cursive::Cursive;
+use cursive::menu::MenuTree;
+use cursive::align::HAlign;
 
 use std::fs;
 use std::rc::Rc;
@@ -19,13 +22,13 @@ pub fn path_exists(path: &str) -> bool {
 }
 
 pub struct AppState {
-    store: Box<dyn JotsStore>,
+    store: jots::Jots,
     password: Option<String>,
     file_name: String
 }
 
 impl AppState {
-    fn new(s: Box<dyn JotsStore>, f_name: &String) -> Self {
+    fn new(s: jots::Jots, f_name: &String) -> Self {
         return AppState {
             store: s,
             password: None,
@@ -43,7 +46,7 @@ fn main() {
     }
 
     let data_file_name = &args[0];
-    let jots_store: Box<dyn JotsStore> = Box::new(jots::Jots::new());
+    let jots_store = jots::Jots::new();
     let state = Rc::new(RefCell::new(AppState::new(jots_store, data_file_name)));
     let pw_state = state.clone();
 
@@ -51,6 +54,7 @@ fn main() {
 
     let pw_callback = Box::new(move |s: &mut Cursive, password: &String| {
         if open_file(s, password, &pw_state) {
+            add_menu(s);
             main_window(s, &pw_state);
         }
     });
@@ -76,10 +80,71 @@ fn show_message(siv: &mut Cursive, msg: &str) {
     );
 }
 
-fn main_window(s: &mut Cursive, state: &Rc<RefCell<AppState>>) {
-    let my_state = state.clone();
+fn add_menu(s: &mut Cursive) {
+    s.menubar()
+    // We add a new "File" tree
+    .add_subtree(
+        "File", MenuTree::new()
+            .leaf("Add Entry", |_s| {})
+            .leaf("Delete Entry", |_s| {})
+            .delimiter()
+            .leaf("Save File", |_s| {})
+            .leaf("Change password", |_s| {})
+            .delimiter()
+            .leaf("Quit", |s| s.quit()));
 
-    show_message(s, &format!("{:?}", my_state.borrow().password));
+    s.set_autohide_menu(false);
+}
+
+fn main_window(s: &mut Cursive, state: &Rc<RefCell<AppState>>) {
+    let pw_state = state.borrow().store.contents.clone();
+
+    let mut select_view = SelectView::new();
+    let mut count = 0;
+    let mut initial_text = String::from("");
+
+    for i in &pw_state {
+        if count == 0 {
+            initial_text = i.1.clone();
+        }
+        select_view.add_item(i.0.clone(), i.0.clone());
+
+        count += 1;
+    }
+    
+    let select_view_attributed = select_view
+        .h_align(HAlign::Center)
+        .on_select(move |s, item| {
+            let entry_text = match pw_state.get(item) {
+                Some(s) => s,
+                None => {
+                    show_message(s, "Unable to read password"); return;
+                }
+            };
+            s.call_on_name("entrytext", |view: &mut TextArea| { view.set_content(entry_text); });
+        })   
+        .with_name("entrylist")
+        .fixed_width(40)
+        .scrollable(); 
+
+    let tui = LinearLayout::horizontal()
+    .child(
+        Panel::new(
+            select_view_attributed)
+        .title("Entries")
+    )
+    .child(
+        Panel::new(
+            TextArea::new()
+                .content(initial_text)
+                .with_name("entrytext")
+                .fixed_width(100)
+                .min_height(40)
+        )
+        .title("Contents of entry")
+    );
+    
+    s.add_layer(tui);
 }
 
 fn open_file(s: &mut Cursive, password: &String, state: &Rc<RefCell<AppState>>) -> bool {
