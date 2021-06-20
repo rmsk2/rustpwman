@@ -52,7 +52,6 @@ fn main() {
         let state = AppState::new(jots_store, &f_name);
 
         if let Some(state_after_open) = open_file(s, password, state) {
-            add_menu(s);
             main_window(s, state_after_open);
         }
     });
@@ -78,9 +77,13 @@ fn show_message(siv: &mut Cursive, msg: &str) {
     );
 }
 
-fn add_menu(s: &mut Cursive) {
+fn main_window(s: &mut Cursive, state: AppState) {
+    let mut select_view = SelectView::new();
+    let mut count = 0;
+    let mut initial_text = String::from("");
+
     s.menubar()
-    // We add a new "File" tree
+    
     .add_subtree(
         "File", MenuTree::new()
             .leaf("Add Entry", |_s| {})
@@ -92,12 +95,6 @@ fn add_menu(s: &mut Cursive) {
             .leaf("Quit", |s| s.quit()));
 
     s.set_autohide_menu(false);
-}
-
-fn main_window(s: &mut Cursive, state: AppState) {
-    let mut select_view = SelectView::new();
-    let mut count = 0;
-    let mut initial_text = String::from("");
 
     for i in &state.store {
         if count == 0 {
