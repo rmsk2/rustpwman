@@ -156,6 +156,7 @@ fn process_save_command(s: &mut Cursive, state_temp_save: Rc<RefCell<AppState>>)
 fn main_window(s: &mut Cursive, state: AppState) {
     let select_view = SelectView::new();
     let shared_state: Rc<RefCell<AppState>> = Rc::new(RefCell::new(state));
+    const EDIT_NAME: &str = "nameedit";
 
     let state_temp_add = shared_state.clone();
     let state_temp_save = shared_state.clone();
@@ -164,8 +165,47 @@ fn main_window(s: &mut Cursive, state: AppState) {
     s.menubar()    
     .add_subtree(
         "File", MenuTree::new()
-            .leaf("Add Entry", move |s| { 
-                fill_tui(s, state_temp_add.clone(), "entrylist", "entrytext");
+            .leaf("Add Entry", move |s| {
+                let state_for_add_entry = state_temp_add.clone();
+                let res = Dialog::new()
+                .title("Rustpwman enter new entry name")
+                .padding_lrtb(2, 2, 1, 1)
+                .content(
+                    LinearLayout::vertical()
+                    .child(TextView::new("Please enter a new name for an entry.\n\n"))
+                    .child(
+                        LinearLayout::horizontal()
+                            .child(TextView::new("New name: "))
+                            .child(EditView::new()
+                                .with_name(EDIT_NAME)
+                                .fixed_width(40))
+                    )
+                )
+                .button("OK", move |s| {
+                    let entry_name = match s.call_on_name(EDIT_NAME, |view: &mut EditView| {view.get_content()}) {
+                        Some(s) => s.clone(),
+                        None => { show_message(s, "Unable to read new entry"); return }
+                    }; 
+
+                    let old_entry: Option<String>;
+
+                    {
+                        old_entry = state_for_add_entry.borrow().store.get(&entry_name);
+                    }
+
+                    match old_entry {
+                        Some(_) => { show_message(s, "Entry already exists"); return },
+                        None => {
+                            let new_text = String::from("New entry");
+                            state_for_add_entry.borrow_mut().store.insert(&entry_name, &new_text);
+                            s.pop_layer();
+                            fill_tui(s, state_for_add_entry.clone(), "entrylist", "entrytext");                            
+                        }
+                    }
+                })
+                .button("Cancel", |s| { s.pop_layer(); });                
+                
+                s.add_layer(res);
             })
             .leaf("Delete Entry", move |s| { 
                 match get_selected_entry_name(s) {
