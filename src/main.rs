@@ -12,6 +12,9 @@ use cursive::Cursive;
 use cursive::menu::MenuTree;
 use cursive::align::HAlign;
 
+use std::rc::Rc;
+use std::cell::RefCell;
+
 use std::fs;
 
 pub fn path_exists(path: &str) -> bool {
@@ -77,44 +80,122 @@ fn show_message(siv: &mut Cursive, msg: &str) {
     );
 }
 
-fn main_window(s: &mut Cursive, state: AppState) {
-    let mut select_view = SelectView::new();
+fn fill_tui(siv: &mut Cursive, state: Rc<RefCell<AppState>>, name_select: &str, name_area: &str) {
     let mut count = 0;
     let mut initial_text = String::from("");
 
-    s.menubar()
-    
+    siv.call_on_name(name_select, |view: &mut SelectView| { view.clear(); } );
+
+    let store = &state.borrow().store;
+
+    for i in store {
+        if count == 0 {
+            initial_text = match store.get(i) {
+                Some(s) => s,
+                None => { panic!("This should not have happened"); }
+            }
+        }
+
+        siv.call_on_name(name_select, |view: &mut SelectView| { view.add_item(i.clone(), i.clone()); } );
+
+        count += 1;
+    }
+
+    siv.call_on_name(name_area, |view: &mut TextArea| { view.set_content(initial_text); });
+}
+
+fn get_selected_entry_name(s: &mut Cursive) -> Option<String> {
+    let id_opt = match s.call_on_name("entrylist", |view: &mut SelectView| { view.selected_id() }) {
+        Some(i) => i,
+        None => None
+    };
+
+    if let Some(id) = id_opt {
+        let help = s.call_on_name("entrylist", |view: &mut SelectView| -> Option<String> { 
+            match view.get_item(id) {
+                Some(t) => Some(String::from(t.0)),
+                _ => None
+            }
+        });
+
+        return match help {
+            Some(Some(egal)) => Some(egal),
+            _ => None
+        }
+    } else {
+        return None;
+    }
+}
+
+fn process_save_command(s: &mut Cursive, state_temp_save: Rc<RefCell<AppState>>) {
+    let password = match state_temp_save.borrow().password.clone() {
+        Some(p) => p,
+        None => { show_message(s, "Unable to read password"); return; }
+    };
+
+    let item = match get_selected_entry_name(s) {
+        Some(k) => k,
+        _ => { show_message(s, "Unable to read entry"); return; }
+    };
+
+    let text_val_opt = s.call_on_name("entrytext", |view: &mut TextArea| -> String { String::from(view.get_content()) });  
+    let text_val = match text_val_opt {
+        Some(st) => st,
+        None => { show_message(s, "Unable to read entry"); return; }
+    };
+
+    state_temp_save.borrow_mut().store.insert(&item, &text_val);
+    let file_name = state_temp_save.borrow().file_name.clone();
+
+    match state_temp_save.borrow().store.to_enc_file(&file_name, &password) {
+        Err(e) => { show_message(s, &format!("Unable to save: {:?}", e)); return; }
+        _ => ()
+    };
+}
+
+fn main_window(s: &mut Cursive, state: AppState) {
+    let select_view = SelectView::new();
+    let shared_state: Rc<RefCell<AppState>> = Rc::new(RefCell::new(state));
+
+    let state_temp_add = shared_state.clone();
+    let state_temp_save = shared_state.clone();
+    let state_temp_del = shared_state.clone();
+
+    s.menubar()    
     .add_subtree(
         "File", MenuTree::new()
-            .leaf("Add Entry", |_s| {})
-            .leaf("Delete Entry", |_s| {})
+            .leaf("Add Entry", move |s| { 
+                fill_tui(s, state_temp_add.clone(), "entrylist", "entrytext");
+            })
+            .leaf("Delete Entry", move |s| { 
+                match get_selected_entry_name(s) {
+                    Some(name) => {
+                        state_temp_del.borrow_mut().store.remove(&name);
+                        fill_tui(s, state_temp_del.clone(), "entrylist", "entrytext");
+                    },
+                    None => {
+                        show_message(s, "Unable to determine selected entry"); 
+                        return; 
+                    }
+                } 
+            })
             .delimiter()
-            .leaf("Save File", |_s| {})
+            .leaf("Save File", move |s| { process_save_command(s, state_temp_save.clone()); })
             .leaf("Change password", |_s| {})
             .delimiter()
             .leaf("Quit", |s| s.quit()));
 
     s.set_autohide_menu(false);
 
-    for i in &state.store {
-        if count == 0 {
-            initial_text = match state.store.get(i) {
-                Some(s) => s,
-                None => { panic!("This should not have happened"); }
-            }
-        }
-        select_view.add_item(i.clone(), i.clone());
-
-        count += 1;
-    }
+    let state_for_callback = shared_state.clone();
     
     let select_view_attributed = select_view
         .h_align(HAlign::Center)
         .on_select(move |s, item| {
-            let entry_text = match state.store.get(item) {
+            let entry_text = match state_for_callback.borrow().store.get(item) {
                 Some(s) => s,
                 None => {
-                    show_message(s, "Unable to read password"); return;
+                    show_message(s, "Unable to read password entry"); return;
                 }
             };
             s.call_on_name("entrytext", |view: &mut TextArea| { view.set_content(entry_text); });
@@ -132,7 +213,7 @@ fn main_window(s: &mut Cursive, state: AppState) {
     .child(
         Panel::new(
             TextArea::new()
-                .content(initial_text)
+                .content("")
                 .with_name("entrytext")
                 .fixed_width(100)
                 .min_height(40)
@@ -141,6 +222,7 @@ fn main_window(s: &mut Cursive, state: AppState) {
     );
     
     s.add_layer(tui);
+    fill_tui(s, shared_state.clone(), "entrylist", "entrytext");
 }
 
 fn open_file(s: &mut Cursive, password: &String, state: AppState) -> Option<AppState> {
