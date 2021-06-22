@@ -5,6 +5,7 @@ mod fcrypt;
 mod jots;
 
 const PW_WIDTH: usize = 35;
+const EDIT_NAME: &str = "nameedit";
 
 use cursive::traits::*;
 use cursive::views::{Dialog, LinearLayout, TextView, EditView, SelectView, TextArea, Panel};
@@ -14,6 +15,9 @@ use cursive::align::HAlign;
 
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::sync::mpsc::{Sender, Receiver};
+use std::sync::mpsc;
+//use std::thread;
 
 use std::fs;
 
@@ -24,7 +28,7 @@ pub fn path_exists(path: &str) -> bool {
 pub struct AppState {
     store: jots::Jots,
     password: Option<String>,
-    file_name: String
+    file_name: String,
 }
 
 impl AppState {
@@ -32,8 +36,7 @@ impl AppState {
         return AppState {
             store: s,
             password: None,
-            file_name: f_name.clone()
-        }
+            file_name: f_name.clone()        }
     }
 }
 
@@ -45,9 +48,13 @@ fn main() {
         return;
     }
 
+    let (tx, rx): (Sender<String>, Receiver<String>) = mpsc::channel();
+
     let data_file_name = &args[0].clone();
     let capture_file_name = data_file_name.clone();
     let mut siv = cursive::default();
+    let sender = Rc::new(tx);
+    let sender_main = sender.clone();
 
     let pw_callback = Box::new(move |s: &mut Cursive, password: &String| {
         let jots_store = jots::Jots::new();
@@ -55,19 +62,35 @@ fn main() {
         let state = AppState::new(jots_store, &f_name);
 
         if let Some(state_after_open) = open_file(s, password, state) {
-            main_window(s, state_after_open);
+            main_window(s, state_after_open, sender_main.clone());
         }
     });
 
     if path_exists(&data_file_name) {
-        let d = password_entry_dialog(pw_callback);
+        let d = password_entry_dialog(sender.clone(), pw_callback);
         siv.add_layer(d);
     } else {
-        let d = file_init_dialog(pw_callback);
+        let d = file_init_dialog(sender.clone(), pw_callback);
         siv.add_layer(d);
     }
 
     siv.run();
+
+    let message = match rx.recv() {
+        Ok(s) => s,
+        Err(_) => String::from("Unable to receive message")
+    };
+
+    println!("{}", message);
+}
+
+fn pwman_quit<T: Sync>(s: &mut Cursive, sender: Rc<Sender<T>>, message: T)
+{
+    match sender.send(message) {
+        Ok(_) => (),
+        Err(_) => ()
+    };
+    s.quit();
 }
 
 fn show_message(siv: &mut Cursive, msg: &str) {
@@ -153,77 +176,99 @@ fn process_save_command(s: &mut Cursive, state_temp_save: Rc<RefCell<AppState>>)
     };
 }
 
-fn main_window(s: &mut Cursive, state: AppState) {
+fn delete_entry(s: &mut Cursive, state_temp_del: Rc<RefCell<AppState>>) {
+    match get_selected_entry_name(s) {
+        Some(name) => {
+            state_temp_del.borrow_mut().store.remove(&name);
+            fill_tui(s, state_temp_del.clone(), "entrylist", "entrytext");
+        },
+        None => {
+            show_message(s, "Unable to determine selected entry"); 
+            return; 
+        }
+    } 
+}
+
+fn add_entry(s: &mut Cursive, state_for_add_entry: Rc<RefCell<AppState>>) {
+    let res = Dialog::new()
+    .title("Rustpwman enter new entry name")
+    .padding_lrtb(2, 2, 1, 1)
+    .content(
+        LinearLayout::vertical()
+        .child(TextView::new("Please enter a new name for an entry.\n\n"))
+        .child(
+            LinearLayout::horizontal()
+                .child(TextView::new("New name: "))
+                .child(EditView::new()
+                    .with_name(EDIT_NAME)
+                    .fixed_width(40))
+        )
+    )
+    .button("OK", move |s| {
+        let entry_name = match s.call_on_name(EDIT_NAME, |view: &mut EditView| {view.get_content()}) {
+            Some(s) => s.clone(),
+            None => { show_message(s, "Unable to read new entry"); return }
+        }; 
+
+        let old_entry: Option<String>;
+
+        {
+            old_entry = state_for_add_entry.borrow().store.get(&entry_name);
+        }
+
+        match old_entry {
+            Some(_) => { show_message(s, "Entry already exists"); return },
+            None => {
+                let new_text = String::from("New entry");
+                state_for_add_entry.borrow_mut().store.insert(&entry_name, &new_text);
+                s.pop_layer();
+                fill_tui(s, state_for_add_entry.clone(), "entrylist", "entrytext");                            
+            }
+        }
+    })
+    .button("Cancel", |s| { s.pop_layer(); });                
+    
+    s.add_layer(res);
+}
+
+fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
     let select_view = SelectView::new();
     let shared_state: Rc<RefCell<AppState>> = Rc::new(RefCell::new(state));
-    const EDIT_NAME: &str = "nameedit";
 
     let state_temp_add = shared_state.clone();
     let state_temp_save = shared_state.clone();
+    let state_temp_print = shared_state.clone();
     let state_temp_del = shared_state.clone();
+    let sender = sndr.clone();
+    let sender2 = sndr.clone();
 
     s.menubar()    
     .add_subtree(
         "File", MenuTree::new()
             .leaf("Add Entry", move |s| {
-                let state_for_add_entry = state_temp_add.clone();
-                let res = Dialog::new()
-                .title("Rustpwman enter new entry name")
-                .padding_lrtb(2, 2, 1, 1)
-                .content(
-                    LinearLayout::vertical()
-                    .child(TextView::new("Please enter a new name for an entry.\n\n"))
-                    .child(
-                        LinearLayout::horizontal()
-                            .child(TextView::new("New name: "))
-                            .child(EditView::new()
-                                .with_name(EDIT_NAME)
-                                .fixed_width(40))
-                    )
-                )
-                .button("OK", move |s| {
-                    let entry_name = match s.call_on_name(EDIT_NAME, |view: &mut EditView| {view.get_content()}) {
-                        Some(s) => s.clone(),
-                        None => { show_message(s, "Unable to read new entry"); return }
-                    }; 
-
-                    let old_entry: Option<String>;
-
-                    {
-                        old_entry = state_for_add_entry.borrow().store.get(&entry_name);
-                    }
-
-                    match old_entry {
-                        Some(_) => { show_message(s, "Entry already exists"); return },
-                        None => {
-                            let new_text = String::from("New entry");
-                            state_for_add_entry.borrow_mut().store.insert(&entry_name, &new_text);
-                            s.pop_layer();
-                            fill_tui(s, state_for_add_entry.clone(), "entrylist", "entrytext");                            
-                        }
-                    }
-                })
-                .button("Cancel", |s| { s.pop_layer(); });                
-                
-                s.add_layer(res);
+                add_entry(s, state_temp_add.clone());
             })
-            .leaf("Delete Entry", move |s| { 
-                match get_selected_entry_name(s) {
-                    Some(name) => {
-                        state_temp_del.borrow_mut().store.remove(&name);
-                        fill_tui(s, state_temp_del.clone(), "entrylist", "entrytext");
-                    },
-                    None => {
-                        show_message(s, "Unable to determine selected entry"); 
-                        return; 
-                    }
-                } 
+            .leaf("Delete Entry", move |s| {
+                delete_entry(s, state_temp_del.clone()); 
             })
             .delimiter()
             .leaf("Save File", move |s| { process_save_command(s, state_temp_save.clone()); })
             .leaf("Change password", |_s| {})
             .delimiter()
-            .leaf("Quit", |s| s.quit()));
+            .leaf("Quit and print", move |s| {
+                let key = match get_selected_entry_name(s) {
+                    Some(k) => k,
+                    None => { show_message(s, "Unable to read entry name"); return }
+                };
+
+                let value = match state_temp_print.borrow().store.get(&key) {
+                    Some(v) => v,
+                    None => { show_message(s, "Unable to read entry value"); return } 
+                };
+
+                pwman_quit(s, sender2.clone(), value) 
+            })            
+            .leaf("Quit", move |s| pwman_quit(s, sender.clone(), String::from("")) ));
 
     s.set_autohide_menu(false);
 
@@ -293,7 +338,9 @@ fn open_file(s: &mut Cursive, password: &String, state: AppState) -> Option<AppS
     return Some(state);
 }
 
-fn password_entry_dialog(ok_cb_with_state: Box<dyn Fn(&mut Cursive, &String)>) -> Dialog {
+fn password_entry_dialog(sndr: Rc<Sender<String>>, ok_cb_with_state: Box<dyn Fn(&mut Cursive, &String)>) -> Dialog {
+    let sender = sndr.clone();
+
     let ok_cb = move |s: &mut Cursive| {
         let pw_text = match s.call_on_name("pwedit", |view: &mut EditView| {view.get_content()}) {
             Some(s) => s,
@@ -319,7 +366,7 @@ fn password_entry_dialog(ok_cb_with_state: Box<dyn Fn(&mut Cursive, &String)>) -
             )
         )
         .button("OK", ok_cb)
-        .button("Cancel", |s| s.quit());
+        .button("Cancel", move |s| pwman_quit(s, sender.clone(), String::from("")));
 
     return res;
 }
@@ -343,7 +390,9 @@ fn verify_passwords(s: &mut Cursive, ok_cb: &Box<dyn Fn(&mut Cursive, &String)>)
     ok_cb(s, &pw2_text);
 }
 
-fn file_init_dialog(ok_cb: Box<dyn Fn(&mut Cursive, &String)>) -> Dialog {
+fn file_init_dialog(sndr: Rc<Sender<String>>, ok_cb: Box<dyn Fn(&mut Cursive, &String)>) -> Dialog {
+    let sender = sndr.clone();
+    
     let verify = move |s: &mut Cursive| {
         verify_passwords(s, &ok_cb);
     };
@@ -373,7 +422,7 @@ fn file_init_dialog(ok_cb: Box<dyn Fn(&mut Cursive, &String)>) -> Dialog {
             )
         )
         .button("OK", verify)
-        .button("Cancel", |s| s.quit());
+        .button("Cancel", move |s| pwman_quit(s, sender.clone(), String::from("")));
 
     return res;
 }
