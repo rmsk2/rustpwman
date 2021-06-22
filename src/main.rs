@@ -12,6 +12,7 @@ use cursive::views::{Dialog, LinearLayout, TextView, EditView, SelectView, TextA
 use cursive::Cursive;
 use cursive::menu::MenuTree;
 use cursive::align::HAlign;
+use cursive::event::Key;
 
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -206,7 +207,13 @@ fn add_entry(s: &mut Cursive, state_for_add_entry: Rc<RefCell<AppState>>) {
     )
     .button("OK", move |s| {
         let entry_name = match s.call_on_name(EDIT_NAME, |view: &mut EditView| {view.get_content()}) {
-            Some(s) => s.clone(),
+            Some(entry) => {
+                if entry.len() == 0 {
+                    show_message(s, "Entry is empty"); 
+                    return;
+                }
+                entry.clone()
+            },
             None => { show_message(s, "Unable to read new entry"); return }
         }; 
 
@@ -231,6 +238,59 @@ fn add_entry(s: &mut Cursive, state_for_add_entry: Rc<RefCell<AppState>>) {
     s.add_layer(res);
 }
 
+fn change_password(s: &mut Cursive, state_for_pw_change: Rc<RefCell<AppState>>) {
+    let res = Dialog::new()
+        .title("Rustpwman change password")
+        .padding_lrtb(2, 2, 1, 1)
+        .content(
+            LinearLayout::vertical()
+            .child(TextView::new("Enter a new password.\n\n"))
+            .child(
+                LinearLayout::horizontal()
+                    .child(TextView::new("New Password   : "))
+                    .child(EditView::new()
+                        .secret()
+                        .with_name("pwchedit1")
+                        .fixed_width(PW_WIDTH))
+            )
+            .child(TextView::new("\n"))
+            .child(
+                LinearLayout::horizontal()
+                    .child(TextView::new("Verify Password: "))
+                    .child(EditView::new()
+                        .secret()
+                        .with_name("pwchedit2")
+                        .fixed_width(PW_WIDTH))
+            )
+        )
+        .button("OK", move |s| {
+            let pw1_text = match s.call_on_name("pwchedit1", |view: &mut EditView| {view.get_content()}) {
+                Some(s) => s,
+                None => { show_message(s, "Unable to read password"); return }
+            };
+
+            let pw2_text = match s.call_on_name("pwchedit2", |view: &mut EditView| {view.get_content()}) {
+                Some(s) => s,
+                None => { show_message(s, "Unable to read password"); return }
+            };
+            
+            if pw1_text != pw2_text {
+                show_message(s, "Passwords not equal!");
+                return;
+            }
+
+            let new_pw: String = (&pw1_text).to_string();
+
+            state_for_pw_change.borrow_mut().password = Some(new_pw);
+            process_save_command(s, state_for_pw_change.clone());
+            s.pop_layer();
+        })
+        .button("Cancel", |s| { s.pop_layer(); });
+
+        s.add_layer(res);
+    
+}
+
 fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
     let select_view = SelectView::new();
     let shared_state: Rc<RefCell<AppState>> = Rc::new(RefCell::new(state));
@@ -239,6 +299,7 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
     let state_temp_save = shared_state.clone();
     let state_temp_print = shared_state.clone();
     let state_temp_del = shared_state.clone();
+    let state_temp_pw = shared_state.clone();
     let sender = sndr.clone();
     let sender2 = sndr.clone();
 
@@ -252,8 +313,12 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
                 delete_entry(s, state_temp_del.clone()); 
             })
             .delimiter()
-            .leaf("Save File", move |s| { process_save_command(s, state_temp_save.clone()); })
-            .leaf("Change password", |_s| {})
+            .leaf("Save File", move |s| { 
+                process_save_command(s, state_temp_save.clone()); 
+            })
+            .leaf("Change password", move |s| {
+                change_password(s, state_temp_pw.clone())
+            })
             .delimiter()
             .leaf("Quit and print", move |s| {
                 let key = match get_selected_entry_name(s) {
@@ -271,6 +336,7 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
             .leaf("Quit", move |s| pwman_quit(s, sender.clone(), String::from("")) ));
 
     s.set_autohide_menu(false);
+    s.add_global_callback(Key::Esc, |s| s.select_menubar());
 
     let state_for_callback = shared_state.clone();
     
@@ -372,12 +438,16 @@ fn password_entry_dialog(sndr: Rc<Sender<String>>, ok_cb_with_state: Box<dyn Fn(
 }
 
 fn verify_passwords(s: &mut Cursive, ok_cb: &Box<dyn Fn(&mut Cursive, &String)>) {
-    let pw1_text = match s.call_on_name("pwedit1", |view: &mut EditView| {view.get_content()}) {
+    verify_passwords_with_names(s, ok_cb, "pwedit1", "pwedit2");
+}
+
+fn verify_passwords_with_names(s: &mut Cursive, ok_cb: &Box<dyn Fn(&mut Cursive, &String)>, edit1: &str, edit2: &str) {
+    let pw1_text = match s.call_on_name(edit1, |view: &mut EditView| {view.get_content()}) {
         Some(s) => s,
         None => { show_message(s, "Unable to read password"); return }
     };
 
-    let pw2_text = match s.call_on_name("pwedit2", |view: &mut EditView| {view.get_content()}) {
+    let pw2_text = match s.call_on_name(edit2, |view: &mut EditView| {view.get_content()}) {
         Some(s) => s,
         None => { show_message(s, "Unable to read password"); return }
     };
