@@ -287,8 +287,7 @@ fn change_password(s: &mut Cursive, state_for_pw_change: Rc<RefCell<AppState>>) 
         })
         .button("Cancel", |s| { s.pop_layer(); });
 
-        s.add_layer(res);
-    
+    s.add_layer(res);
 }
 
 fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
@@ -331,7 +330,9 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
                     None => { show_message(s, "Unable to read entry value"); return } 
                 };
 
-                pwman_quit(s, sender2.clone(), value) 
+                let out_str = format!("-------- {} --------\n{}", key, value);
+
+                pwman_quit(s, sender2.clone(), out_str) 
             })            
             .leaf("Quit", move |s| pwman_quit(s, sender.clone(), String::from("")) ));
 
