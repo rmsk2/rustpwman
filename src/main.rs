@@ -305,6 +305,9 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
     s.menubar()    
     .add_subtree(
         "File", MenuTree::new()
+            .leaf("Edit Entry", move |_s| {
+                
+            })        
             .leaf("Add Entry", move |s| {
                 add_entry(s, state_temp_add.clone());
             })
@@ -351,7 +354,8 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
                 }
             };
             s.call_on_name("entrytext", |view: &mut TextArea| { view.set_content(entry_text); });
-        })   
+        })
+        .autojump()   
         .with_name("entrylist")
         .fixed_width(40)
         .scrollable(); 
@@ -365,6 +369,7 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
     .child(
         Panel::new(
             TextArea::new()
+                .disabled()
                 .content("")
                 .with_name("entrytext")
                 .fixed_width(100)
