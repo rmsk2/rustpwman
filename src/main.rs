@@ -6,6 +6,8 @@ mod jots;
 
 const PW_WIDTH: usize = 35;
 const EDIT_NAME: &str = "nameedit";
+const TEXT_AREA_MAIN: &str = "entrytext";
+const TEXT_AREA_NAME: &str = "textareaedit";
 
 use cursive::traits::*;
 use cursive::views::{Dialog, LinearLayout, TextView, EditView, SelectView, TextArea, Panel};
@@ -30,6 +32,7 @@ pub struct AppState {
     store: jots::Jots,
     password: Option<String>,
     file_name: String,
+    dirty: bool
 }
 
 impl AppState {
@@ -37,7 +40,9 @@ impl AppState {
         return AppState {
             store: s,
             password: None,
-            file_name: f_name.clone()        }
+            file_name: f_name.clone(),
+            dirty: false  
+        }
     }
 }
 
@@ -85,13 +90,35 @@ fn main() {
     println!("{}", message);
 }
 
-fn pwman_quit<T: Sync>(s: &mut Cursive, sender: Rc<Sender<T>>, message: T)
-{
+fn do_quit(s: &mut Cursive, sender: Rc<Sender<String>>, message: String) {
     match sender.send(message) {
         Ok(_) => (),
         Err(_) => ()
     };
+
     s.quit();
+}
+
+fn pwman_quit(s: &mut Cursive, sender: Rc<Sender<String>>, message: String, dirty_bit: bool)
+{
+    let msg = message.clone();
+    let sndr = sender.clone();
+
+    if dirty_bit {
+        s.add_layer(
+            Dialog::text("There are unsaved changes. Continue anyway?")
+                .title("Rustpwman")
+                .button("Yes", move |s: &mut Cursive| {
+                    s.pop_layer();
+                    do_quit(s, sndr.clone(), msg.clone());
+                })
+                .button("No", |s| {
+                    s.pop_layer();
+                })           
+        );
+    } else {
+        do_quit(s, sender, message);
+    }
 }
 
 fn show_message(siv: &mut Cursive, msg: &str) {
@@ -168,12 +195,16 @@ fn process_save_command(s: &mut Cursive, state_temp_save: Rc<RefCell<AppState>>)
         None => { show_message(s, "Unable to read entry"); return; }
     };
 
-    state_temp_save.borrow_mut().store.insert(&item, &text_val);
-    let file_name = state_temp_save.borrow().file_name.clone();
+    let mut mut_state = state_temp_save.borrow_mut();
 
-    match state_temp_save.borrow().store.to_enc_file(&file_name, &password) {
+    mut_state.store.insert(&item, &text_val);
+    let file_name = mut_state.file_name.clone();
+
+    match mut_state.store.to_enc_file(&file_name, &password) {
         Err(e) => { show_message(s, &format!("Unable to save: {:?}", e)); return; }
-        _ => ()
+        _ => {
+            mut_state.dirty = false
+        }
     };
 }
 
@@ -181,6 +212,7 @@ fn delete_entry(s: &mut Cursive, state_temp_del: Rc<RefCell<AppState>>) {
     match get_selected_entry_name(s) {
         Some(name) => {
             state_temp_del.borrow_mut().store.remove(&name);
+            state_temp_del.borrow_mut().dirty = true;
             fill_tui(s, state_temp_del.clone(), "entrylist", "entrytext");
         },
         None => {
@@ -228,10 +260,66 @@ fn add_entry(s: &mut Cursive, state_for_add_entry: Rc<RefCell<AppState>>) {
             None => {
                 let new_text = String::from("New entry");
                 state_for_add_entry.borrow_mut().store.insert(&entry_name, &new_text);
+                state_for_add_entry.borrow_mut().dirty = true;
                 s.pop_layer();
-                fill_tui(s, state_for_add_entry.clone(), "entrylist", "entrytext");                            
+                fill_tui(s, state_for_add_entry.clone(), "entrylist", "entrytext");
             }
         }
+    })
+    .button("Cancel", |s| { s.pop_layer(); });                
+    
+    s.add_layer(res);
+}
+
+fn edit_entry(s: &mut Cursive, state_for_edit_entry: Rc<RefCell<AppState>>) {
+    let entry_name = match get_selected_entry_name(s) {
+        Some(name) => name,
+        None => {
+            show_message(s, "Unable to determine selected entry"); 
+            return; 
+        }
+    }; 
+
+    let content = match state_for_edit_entry.borrow().store.get(&entry_name) {
+        Some(c) => c,
+        None => { show_message(s, "Unable to read password"); return }
+    };
+
+    let res = Dialog::new()
+    .title("Rustpwman enter new text")
+    .padding_lrtb(2, 2, 1, 1)
+    .content(
+        LinearLayout::vertical()
+        .child(TextView::new("Please enter new text for entry.\n\n"))
+        .child(
+            LinearLayout::horizontal()
+                .child(
+                Panel::new(
+                    TextArea::new()
+                    .content(content)
+                    .with_name(TEXT_AREA_NAME)
+                    .fixed_width(80)
+                    .min_height(25))
+                .title("Text of entry"))
+        )
+    )
+    .button("OK", move |s| {
+        let entry_text = match s.call_on_name(TEXT_AREA_NAME, |view: &mut TextArea| { String::from(view.get_content()) }) {
+            Some(text_val) => {
+                if text_val.len() == 0 {
+                    show_message(s, "Entry text is empty"); 
+                    return;
+                }
+                text_val
+            },
+            None => { show_message(s, "Unable to read entry text"); return }
+        }; 
+
+        state_for_edit_entry.borrow_mut().store.insert(&entry_name, &entry_text);
+        s.call_on_name(TEXT_AREA_MAIN, |view: &mut TextArea| { view.set_content(entry_text); });
+        state_for_edit_entry.borrow_mut().dirty = true;
+
+        s.pop_layer();
     })
     .button("Cancel", |s| { s.pop_layer(); });                
     
@@ -299,14 +387,18 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
     let state_temp_print = shared_state.clone();
     let state_temp_del = shared_state.clone();
     let state_temp_pw = shared_state.clone();
+    let state_temp_edit = shared_state.clone();
     let sender = sndr.clone();
     let sender2 = sndr.clone();
+
+    let state_for_callback = shared_state.clone();
+    let state_for_fill_tui = shared_state.clone();
 
     s.menubar()    
     .add_subtree(
         "File", MenuTree::new()
-            .leaf("Edit Entry", move |_s| {
-                
+            .leaf("Edit Entry", move |s| {
+                edit_entry(s, state_temp_edit.clone())
             })        
             .leaf("Add Entry", move |s| {
                 add_entry(s, state_temp_add.clone());
@@ -335,14 +427,12 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
 
                 let out_str = format!("-------- {} --------\n{}", key, value);
 
-                pwman_quit(s, sender2.clone(), out_str) 
+                pwman_quit(s, sender2.clone(), out_str, state_temp_print.borrow().dirty) 
             })            
-            .leaf("Quit", move |s| pwman_quit(s, sender.clone(), String::from("")) ));
+            .leaf("Quit", move |s| pwman_quit(s, sender.clone(), String::from(""), shared_state.borrow().dirty )));
 
     s.set_autohide_menu(false);
     s.add_global_callback(Key::Esc, |s| s.select_menubar());
-
-    let state_for_callback = shared_state.clone();
     
     let select_view_attributed = select_view
         .h_align(HAlign::Center)
@@ -353,7 +443,7 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
                     show_message(s, "Unable to read password entry"); return;
                 }
             };
-            s.call_on_name("entrytext", |view: &mut TextArea| { view.set_content(entry_text); });
+            s.call_on_name(TEXT_AREA_MAIN, |view: &mut TextArea| { view.set_content(entry_text); });
         })
         .autojump()   
         .with_name("entrylist")
@@ -379,7 +469,7 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
     );
     
     s.add_layer(tui);
-    fill_tui(s, shared_state.clone(), "entrylist", "entrytext");
+    fill_tui(s, state_for_fill_tui.clone(), "entrylist", "entrytext");
 }
 
 fn open_file(s: &mut Cursive, password: &String, state: AppState) -> Option<AppState> {
@@ -438,7 +528,7 @@ fn password_entry_dialog(sndr: Rc<Sender<String>>, ok_cb_with_state: Box<dyn Fn(
             )
         )
         .button("OK", ok_cb)
-        .button("Cancel", move |s| pwman_quit(s, sender.clone(), String::from("")));
+        .button("Cancel", move |s| pwman_quit(s, sender.clone(), String::from(""), false));
 
     return res;
 }
@@ -498,7 +588,7 @@ fn file_init_dialog(sndr: Rc<Sender<String>>, ok_cb: Box<dyn Fn(&mut Cursive, &S
             )
         )
         .button("OK", verify)
-        .button("Cancel", move |s| pwman_quit(s, sender.clone(), String::from("")));
+        .button("Cancel", move |s| pwman_quit(s, sender.clone(), String::from(""), false));
 
     return res;
 }
