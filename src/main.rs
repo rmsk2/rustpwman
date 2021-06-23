@@ -8,6 +8,8 @@ const PW_WIDTH: usize = 35;
 const EDIT_NAME: &str = "nameedit";
 const TEXT_AREA_MAIN: &str = "entrytext";
 const TEXT_AREA_NAME: &str = "textareaedit";
+const SCROLL_VIEW: &str = "scrollview";
+const SELECT_VIEW: &str = "entrylist";
 
 use cursive::traits::*;
 use cursive::views::{Dialog, LinearLayout, TextView, EditView, SelectView, TextArea, Panel};
@@ -151,18 +153,18 @@ fn fill_tui(siv: &mut Cursive, state: Rc<RefCell<AppState>>, name_select: &str, 
 
         count += 1;
     }
-
+    
     siv.call_on_name(name_area, |view: &mut TextArea| { view.set_content(initial_text); });
 }
 
 fn get_selected_entry_name(s: &mut Cursive) -> Option<String> {
-    let id_opt = match s.call_on_name("entrylist", |view: &mut SelectView| { view.selected_id() }) {
+    let id_opt = match s.call_on_name(SELECT_VIEW, |view: &mut SelectView| { view.selected_id() }) {
         Some(i) => i,
         None => None
     };
 
     if let Some(id) = id_opt {
-        let help = s.call_on_name("entrylist", |view: &mut SelectView| -> Option<String> { 
+        let help = s.call_on_name(SELECT_VIEW, |view: &mut SelectView| -> Option<String> { 
             match view.get_item(id) {
                 Some(t) => Some(String::from(t.0)),
                 _ => None
@@ -189,7 +191,7 @@ fn process_save_command(s: &mut Cursive, state_temp_save: Rc<RefCell<AppState>>)
         _ => { show_message(s, "Unable to read entry"); return; }
     };
 
-    let text_val_opt = s.call_on_name("entrytext", |view: &mut TextArea| -> String { String::from(view.get_content()) });  
+    let text_val_opt = s.call_on_name(TEXT_AREA_MAIN, |view: &mut TextArea| -> String { String::from(view.get_content()) });  
     let text_val = match text_val_opt {
         Some(st) => st,
         None => { show_message(s, "Unable to read entry"); return; }
@@ -213,7 +215,7 @@ fn delete_entry(s: &mut Cursive, state_temp_del: Rc<RefCell<AppState>>) {
         Some(name) => {
             state_temp_del.borrow_mut().store.remove(&name);
             state_temp_del.borrow_mut().dirty = true;
-            fill_tui(s, state_temp_del.clone(), "entrylist", "entrytext");
+            fill_tui(s, state_temp_del.clone(), SELECT_VIEW, TEXT_AREA_MAIN);
         },
         None => {
             show_message(s, "Unable to determine selected entry"); 
@@ -261,8 +263,9 @@ fn add_entry(s: &mut Cursive, state_for_add_entry: Rc<RefCell<AppState>>) {
                 let new_text = String::from("New entry");
                 state_for_add_entry.borrow_mut().store.insert(&entry_name, &new_text);
                 state_for_add_entry.borrow_mut().dirty = true;
+                fill_tui(s, state_for_add_entry.clone(), SELECT_VIEW, TEXT_AREA_MAIN);
                 s.pop_layer();
-                fill_tui(s, state_for_add_entry.clone(), "entrylist", "entrytext");
+                show_message(s, "Entry created successfully. You may need to scroll to it manually.");
             }
         }
     })
@@ -446,9 +449,10 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
             s.call_on_name(TEXT_AREA_MAIN, |view: &mut TextArea| { view.set_content(entry_text); });
         })
         .autojump()   
-        .with_name("entrylist")
+        .with_name(SELECT_VIEW)
         .fixed_width(40)
-        .scrollable(); 
+        .scrollable()
+        .with_name(SCROLL_VIEW);
 
     let tui = LinearLayout::horizontal()
     .child(
@@ -461,7 +465,7 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
             TextArea::new()
                 .disabled()
                 .content("")
-                .with_name("entrytext")
+                .with_name(TEXT_AREA_MAIN)
                 .fixed_width(100)
                 .min_height(40)
         )
@@ -469,7 +473,7 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
     );
     
     s.add_layer(tui);
-    fill_tui(s, state_for_fill_tui.clone(), "entrylist", "entrytext");
+    fill_tui(s, state_for_fill_tui.clone(), SELECT_VIEW, TEXT_AREA_MAIN);
 }
 
 fn open_file(s: &mut Cursive, password: &String, state: AppState) -> Option<AppState> {
