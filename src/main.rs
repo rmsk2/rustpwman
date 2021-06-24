@@ -133,28 +133,65 @@ fn show_message(siv: &mut Cursive, msg: &str) {
     );
 }
 
-fn fill_tui(siv: &mut Cursive, state: Rc<RefCell<AppState>>, name_select: &str, name_area: &str) {
-    let mut count = 0;
-    let mut initial_text = String::from("");
+fn display_entry(siv: &mut Cursive, state: Rc<RefCell<AppState>>, entry_name: &String, do_select: bool) {
+    if entry_name == "" {
+        return;
+    }
 
-    siv.call_on_name(name_select, |view: &mut SelectView| { view.clear(); } );
+    let mut entry_text = String::from("");
+    let mut pos: usize = 0;
 
-    let store = &state.borrow().store;
+    {
+        let store = &state.borrow().store;
 
-    for i in store {
-        if count == 0 {
-            initial_text = match store.get(i) {
-                Some(s) => s,
-                None => { panic!("This should not have happened"); }
+        for i in store {
+            if i == entry_name {
+                entry_text = match store.get(i) {
+                    Some(s) => s,
+                    None => { panic!("This should not have happened"); }
+                };
+    
+                break;
             }
-        }
+    
+            pos += 1;
+        }    
+    }
 
-        siv.call_on_name(name_select, |view: &mut SelectView| { view.add_item(i.clone(), i.clone()); } );
+    if do_select {
+        match siv.call_on_name(SELECT_VIEW, |view: &mut SelectView| { view.set_selection(pos) }) {
+            Some(cb) => cb(siv),
+            None => {
+                show_message(siv, "Unable to set selection"); 
+                return;
+            }
+        }     
+    } else {
+        siv.call_on_name(TEXT_AREA_MAIN, |view: &mut TextArea| { view.set_content(entry_text.clone()); });
+    }
+}
 
-        count += 1;
+fn fill_tui(siv: &mut Cursive, state: Rc<RefCell<AppState>>) {
+    let mut count = 0;
+    let mut initial_entry = String::from("");
+
+    siv.call_on_name(SELECT_VIEW, |view: &mut SelectView| { view.clear(); } );
+
+    {
+        let store = &state.borrow().store;
+
+        for i in store {
+            if count == 0 {
+                 initial_entry = i.clone();
+            }
+    
+            siv.call_on_name(SELECT_VIEW, |view: &mut SelectView| { view.add_item(i.clone(), i.clone()); } );
+    
+            count += 1;
+        }    
     }
     
-    siv.call_on_name(name_area, |view: &mut TextArea| { view.set_content(initial_text); });
+    display_entry(siv, state.clone(), &initial_entry, true);
 }
 
 fn get_selected_entry_name(s: &mut Cursive) -> Option<String> {
@@ -215,7 +252,8 @@ fn delete_entry(s: &mut Cursive, state_temp_del: Rc<RefCell<AppState>>) {
         Some(name) => {
             state_temp_del.borrow_mut().store.remove(&name);
             state_temp_del.borrow_mut().dirty = true;
-            fill_tui(s, state_temp_del.clone(), SELECT_VIEW, TEXT_AREA_MAIN);
+            fill_tui(s, state_temp_del.clone());
+            show_message(s, "Entry deleted successfully. The first remaning element has been selected\nYou may need to scroll to it manually."); 
         },
         None => {
             show_message(s, "Unable to determine selected entry"); 
@@ -263,9 +301,10 @@ fn add_entry(s: &mut Cursive, state_for_add_entry: Rc<RefCell<AppState>>) {
                 let new_text = String::from("New entry");
                 state_for_add_entry.borrow_mut().store.insert(&entry_name, &new_text);
                 state_for_add_entry.borrow_mut().dirty = true;
-                fill_tui(s, state_for_add_entry.clone(), SELECT_VIEW, TEXT_AREA_MAIN);
+                fill_tui(s, state_for_add_entry.clone());
                 s.pop_layer();
-                show_message(s, "Entry created successfully. You may need to scroll to it manually.");
+                display_entry(s, state_for_add_entry.clone(), &entry_name, true);
+                show_message(s, "Entry created successfully. It has been selected\n but you may need to scroll to it manually.");
             }
         }
     })
@@ -440,13 +479,7 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
     let select_view_attributed = select_view
         .h_align(HAlign::Center)
         .on_select(move |s, item| {
-            let entry_text = match state_for_callback.borrow().store.get(item) {
-                Some(s) => s,
-                None => {
-                    show_message(s, "Unable to read password entry"); return;
-                }
-            };
-            s.call_on_name(TEXT_AREA_MAIN, |view: &mut TextArea| { view.set_content(entry_text); });
+            display_entry(s, state_for_callback.clone(), item, false)
         })
         .autojump()   
         .with_name(SELECT_VIEW)
@@ -473,7 +506,7 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
     );
     
     s.add_layer(tui);
-    fill_tui(s, state_for_fill_tui.clone(), SELECT_VIEW, TEXT_AREA_MAIN);
+    fill_tui(s, state_for_fill_tui.clone());
 }
 
 fn open_file(s: &mut Cursive, password: &String, state: AppState) -> Option<AppState> {
