@@ -10,6 +10,7 @@ const TEXT_AREA_MAIN: &str = "entrytext";
 const TEXT_AREA_NAME: &str = "textareaedit";
 const SCROLL_VIEW: &str = "scrollview";
 const SELECT_VIEW: &str = "entrylist";
+const PANEL_AREA_MAIN: &str = "entrytitle";
 
 use cursive::traits::*;
 use cursive::views::{Dialog, LinearLayout, TextView, EditView, SelectView, TextArea, Panel};
@@ -138,24 +139,25 @@ fn display_entry(siv: &mut Cursive, state: Rc<RefCell<AppState>>, entry_name: &S
         return;
     }
 
-    let mut entry_text = String::from("");
-    let mut pos: usize = 0;
+    let entry_text: String;
+    let pos: usize;
 
     {
         let store = &state.borrow().store;
 
-        for i in store {
-            if i == entry_name {
-                entry_text = match store.get(i) {
-                    Some(s) => s,
-                    None => { panic!("This should not have happened"); }
-                };
-    
-                break;
-            }
-    
-            pos += 1;
-        }    
+        let positions = 0..store.into_iter().count();
+        let find_res = store.into_iter().zip(positions).find(|i| entry_name == (*i).0 );
+
+        let res = match find_res {
+            Some(r) => r,
+            None => { panic!("This should not have happened"); }
+        };
+
+        pos = res.1;
+        entry_text = match store.get(entry_name) {
+            Some(s) => s,
+            None => { panic!("This should not have happened"); }
+        };    
     }
 
     if do_select {
@@ -168,6 +170,7 @@ fn display_entry(siv: &mut Cursive, state: Rc<RefCell<AppState>>, entry_name: &S
         }     
     } else {
         siv.call_on_name(TEXT_AREA_MAIN, |view: &mut TextArea| { view.set_content(entry_text.clone()); });
+        siv.call_on_name(PANEL_AREA_MAIN, |view: &mut Panel<TextArea>| { view.set_title(entry_name.clone()); });
     }
 }
 
@@ -503,6 +506,7 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
                 .min_height(40)
         )
         .title("Contents of entry")
+        .with_name(PANEL_AREA_MAIN)      
     );
     
     s.add_layer(tui);
