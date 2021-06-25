@@ -148,16 +148,8 @@ fn display_entry(siv: &mut Cursive, state: Rc<RefCell<AppState>>, entry_name: &S
         let positions = 0..store.into_iter().count();
         let find_res = store.into_iter().zip(positions).find(|i| entry_name == (*i).0 );
 
-        let res = match find_res {
-            Some(r) => r,
-            None => { panic!("This should not have happened"); }
-        };
-
-        pos = res.1;
-        entry_text = match store.get(entry_name) {
-            Some(s) => s,
-            None => { panic!("This should not have happened"); }
-        };    
+        pos = find_res.unwrap().1;
+        entry_text = store.get(entry_name).unwrap();
     }
 
     if do_select {
