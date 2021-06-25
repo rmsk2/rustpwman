@@ -11,6 +11,7 @@ const TEXT_AREA_NAME: &str = "textareaedit";
 const SCROLL_VIEW: &str = "scrollview";
 const SELECT_VIEW: &str = "entrylist";
 const PANEL_AREA_MAIN: &str = "entrytitle";
+const TEXT_AREA_TITLE: &str = "texttitle";
 
 use cursive::traits::*;
 use cursive::views::{Dialog, LinearLayout, TextView, EditView, SelectView, TextArea, Panel};
@@ -162,7 +163,7 @@ fn display_entry(siv: &mut Cursive, state: Rc<RefCell<AppState>>, entry_name: &S
         }     
     } else {
         siv.call_on_name(TEXT_AREA_MAIN, |view: &mut TextArea| { view.set_content(entry_text.clone()); });
-        siv.call_on_name(PANEL_AREA_MAIN, |view: &mut Panel<TextArea>| { view.set_title(entry_name.clone()); });
+        siv.call_on_name(TEXT_AREA_TITLE, |view: &mut TextArea| { view.set_content(entry_name.clone()); });
     }
 }
 
@@ -502,7 +503,17 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
         .title("Entries")
     )
     .child(
-        Panel::new(
+        LinearLayout::vertical()
+        .child(Panel::new(          
+            TextArea::new()
+                .disabled()
+                .content("")
+                .with_name(TEXT_AREA_TITLE)
+                .fixed_width(80)
+                .fixed_height(1))
+            .title("Name of selected entry")
+        )
+        .child(Panel::new(
             TextArea::new()
                 .disabled()
                 .content("")
@@ -511,7 +522,7 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
                 .min_height(40)
         )
         .title("Contents of entry")
-        .with_name(PANEL_AREA_MAIN)      
+        .with_name(PANEL_AREA_MAIN))      
     );
     
     s.add_layer(tui);
