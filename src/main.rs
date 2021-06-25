@@ -242,13 +242,26 @@ fn process_save_command(s: &mut Cursive, state_temp_save: Rc<RefCell<AppState>>)
     };
 }
 
-fn delete_entry(s: &mut Cursive, state_temp_del: Rc<RefCell<AppState>>) {
+fn delete_entry(s: &mut Cursive, state_temp_del: Rc<RefCell<AppState>>) { 
     match get_selected_entry_name(s) {
         Some(name) => {
-            state_temp_del.borrow_mut().store.remove(&name);
-            state_temp_del.borrow_mut().dirty = true;
-            fill_tui(s, state_temp_del.clone());
-            show_message(s, "Entry deleted successfully. The first remaning element has been selected\nYou may need to scroll to it manually."); 
+            let res = Dialog::new()
+            .title("Rustpwman delete entry")
+            .padding_lrtb(2, 2, 1, 1)
+            .content(
+                LinearLayout::vertical()
+                .child(TextView::new(format!("Delete entry \"{}\"?", &name)))
+            )
+            .button("Cancel", |s| { s.pop_layer(); })            
+            .button("OK", move |s| {
+                state_temp_del.borrow_mut().store.remove(&name);
+                state_temp_del.borrow_mut().dirty = true;
+                fill_tui(s, state_temp_del.clone());
+                s.pop_layer();
+                show_message(s, "Entry deleted successfully. The first remaning element has been selected\nYou may need to scroll to it manually."); 
+            });
+            
+            s.add_layer(res); 
         },
         None => {
             show_message(s, "Unable to determine selected entry"); 
