@@ -12,7 +12,7 @@ const SCROLL_VIEW: &str = "scrollview";
 const SELECT_VIEW: &str = "entrylist";
 const PANEL_AREA_MAIN: &str = "entrytitle";
 const TEXT_AREA_TITLE: &str = "texttitle";
-const FILE_NAME: &str = "editfile";
+const EDIT_FILE_NAME: &str = "editfile";
 
 use cursive::traits::*;
 use cursive::views::{Dialog, LinearLayout, TextView, EditView, SelectView, TextArea, Panel};
@@ -340,12 +340,12 @@ fn load_entry(s: &mut Cursive, state_for_add_entry: Rc<RefCell<AppState>>) {
             LinearLayout::horizontal()
                 .child(TextView::new("Filename: "))
                 .child(EditView::new()
-                    .with_name(FILE_NAME)
+                    .with_name(EDIT_FILE_NAME)
                     .fixed_width(60))
         )
     )
     .button("OK", move |s| {
-        let file_name = match s.call_on_name(FILE_NAME, |view: &mut EditView| { view.get_content() }) {
+        let file_name = match s.call_on_name(EDIT_FILE_NAME, |view: &mut EditView| { view.get_content() }) {
             Some(name) => {
                 name.clone()
             },
