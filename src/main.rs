@@ -508,6 +508,10 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
                 change_password(s, state_temp_pw.clone())
             })
             .delimiter()
+            .leaf("About ...", |s| {
+                show_message(s, "\n   A basic password manager\n\nWritten by Martin Grap in 2021\n")
+            })            
+            .delimiter()
             .leaf("Quit and print", move |s| {
                 let key = match get_selected_entry_name(s) {
                     Some(k) => k,
