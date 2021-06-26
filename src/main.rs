@@ -235,7 +235,10 @@ fn process_save_command(s: &mut Cursive, state_temp_save: Rc<RefCell<AppState>>)
     let file_name = mut_state.file_name.clone();
 
     match mut_state.store.to_enc_file(&file_name, &password) {
-        Err(e) => { show_message(s, &format!("Unable to save: {:?}", e)); return; }
+        Err(e) => { 
+            show_message(s, &format!("Unable to save: {:?}", e)); 
+            return; 
+        }
         _ => {
             mut_state.dirty = false
         }
