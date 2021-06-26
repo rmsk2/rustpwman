@@ -459,6 +459,7 @@ fn generate_password(s: &mut Cursive, state_for_gen_pw: Rc<RefCell<AppState>>) {
         };
 
         value.push_str(&new_pw);
+        value.push_str("\n");
 
         state_for_gen_pw.borrow_mut().store.insert(&entry_name, &value);
         state_for_gen_pw.borrow_mut().dirty = true;

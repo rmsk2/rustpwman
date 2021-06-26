@@ -132,6 +132,7 @@ impl GcmContext {
         // though the paranoid may prefer OsRng.        
         let mut rng = rand::thread_rng();
         
+        // ToDo: Error handling with fill_bytes()?
         let mut temp_nonce: [u8; DEFAULT_NONCE_SIZE] = [0; DEFAULT_NONCE_SIZE];
         rng.fill_bytes(&mut temp_nonce);
         let mut temp_salt: [u8; DEFAULT_SALT_SIZE] = [0; DEFAULT_SALT_SIZE];
