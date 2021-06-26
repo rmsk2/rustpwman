@@ -6,7 +6,7 @@ mod jots;
 mod pwgen;
 
 const PW_WIDTH: usize = 35;
-const PW_SEC_LEVEL: usize = 8;
+const PW_SEC_LEVEL: usize = 7;
 const PW_MAX_SEC_LEVEL: usize = 24;
 const EDIT_NAME: &str = "nameedit";
 const TEXT_AREA_MAIN: &str = "entrytext";
