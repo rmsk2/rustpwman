@@ -12,6 +12,7 @@ const SCROLL_VIEW: &str = "scrollview";
 const SELECT_VIEW: &str = "entrylist";
 const PANEL_AREA_MAIN: &str = "entrytitle";
 const TEXT_AREA_TITLE: &str = "texttitle";
+const FILE_NAME: &str = "editfile";
 
 use cursive::traits::*;
 use cursive::views::{Dialog, LinearLayout, TextView, EditView, SelectView, TextArea, Panel};
@@ -24,8 +25,6 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use std::sync::mpsc::{Sender, Receiver};
 use std::sync::mpsc;
-//use std::thread;
-
 use std::fs;
 
 pub fn path_exists(path: &str) -> bool {
@@ -322,6 +321,56 @@ fn add_entry(s: &mut Cursive, state_for_add_entry: Rc<RefCell<AppState>>) {
     s.add_layer(res);
 }
 
+fn load_entry(s: &mut Cursive, state_for_add_entry: Rc<RefCell<AppState>>) {
+    let entry_name = match get_selected_entry_name(s) {
+        Some(name) => name,
+        None => {
+            show_message(s, "Unable to determine selected entry"); 
+            return; 
+        }
+    }; 
+
+    let res = Dialog::new()
+    .title("Rustpwman enter load entry from file")
+    .padding_lrtb(2, 2, 1, 1)
+    .content(
+        LinearLayout::vertical()
+        .child(TextView::new("Please enter the name of a file to load.\n\n"))
+        .child(
+            LinearLayout::horizontal()
+                .child(TextView::new("Filename: "))
+                .child(EditView::new()
+                    .with_name(FILE_NAME)
+                    .fixed_width(60))
+        )
+    )
+    .button("OK", move |s| {
+        let file_name = match s.call_on_name(FILE_NAME, |view: &mut EditView| { view.get_content() }) {
+            Some(name) => {
+                name.clone()
+            },
+            None => { show_message(s, "Unable to read file name"); return }
+        }; 
+
+        let value = match fs::read_to_string(&file_name[..]) {
+            Ok(s) => s,
+            Err(e) => {
+                show_message(s, &format!("Unable to read file: {:?}", e)); 
+                return;
+            }
+        };
+
+        state_for_add_entry.borrow_mut().store.insert(&entry_name, &value);
+        state_for_add_entry.borrow_mut().dirty = true;
+        s.pop_layer();
+        display_entry(s, state_for_add_entry.clone(), &entry_name, true);
+    })
+    .button("Cancel", |s| { s.pop_layer(); });                
+    
+    s.add_layer(res);
+}
+
+
 fn edit_entry(s: &mut Cursive, state_for_edit_entry: Rc<RefCell<AppState>>) {
     let entry_name = match get_selected_entry_name(s) {
         Some(name) => name,
@@ -333,7 +382,7 @@ fn edit_entry(s: &mut Cursive, state_for_edit_entry: Rc<RefCell<AppState>>) {
 
     let content = match state_for_edit_entry.borrow().store.get(&entry_name) {
         Some(c) => c,
-        None => { show_message(s, "Unable to read password"); return }
+        None => { show_message(s, "Unable to read value of entry"); return }
     };
 
     let res = Dialog::new()
@@ -439,6 +488,7 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
     let state_temp_del = shared_state.clone();
     let state_temp_pw = shared_state.clone();
     let state_temp_edit = shared_state.clone();
+    let state_temp_load = shared_state.clone();
     let sender = sndr.clone();
     let sender2 = sndr.clone();
 
@@ -448,16 +498,6 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
     s.menubar()    
     .add_subtree(
         "File", MenuTree::new()
-            .leaf("Edit Entry", move |s| {
-                edit_entry(s, state_temp_edit.clone())
-            })        
-            .leaf("Add Entry", move |s| {
-                add_entry(s, state_temp_add.clone());
-            })
-            .leaf("Delete Entry", move |s| {
-                delete_entry(s, state_temp_del.clone()); 
-            })
-            .delimiter()
             .leaf("Save File", move |s| { 
                 process_save_command(s, state_temp_save.clone()); 
             })
@@ -480,7 +520,25 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
 
                 pwman_quit(s, sender2.clone(), out_str, state_temp_print.borrow().dirty) 
             })            
-            .leaf("Quit", move |s| pwman_quit(s, sender.clone(), String::from(""), shared_state.borrow().dirty )));
+            .leaf("Quit", move |s| pwman_quit(s, sender.clone(), String::from(""), shared_state.borrow().dirty ))
+        )
+        .add_subtree(
+            "Entry", MenuTree::new()
+            .leaf("Edit Entry", move |s| {
+                edit_entry(s, state_temp_edit.clone())
+            })        
+            .leaf("Add Entry", move |s| {
+                add_entry(s, state_temp_add.clone());
+            })
+            .leaf("Delete Entry", move |s| {
+                delete_entry(s, state_temp_del.clone()); 
+            })            
+            .leaf("Load Entry", move |s| {
+                  load_entry(s, state_temp_load.clone())  
+            })        
+            .leaf("Generate password", |_s| {
+                    
+            }));        
 
     s.set_autohide_menu(false);
     s.add_global_callback(Key::Esc, |s| s.select_menubar());
