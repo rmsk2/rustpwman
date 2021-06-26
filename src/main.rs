@@ -501,7 +501,7 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
             .leaf("Save File", move |s| { 
                 process_save_command(s, state_temp_save.clone()); 
             })
-            .leaf("Change password", move |s| {
+            .leaf("Change password ...", move |s| {
                 change_password(s, state_temp_pw.clone())
             })
             .delimiter()
@@ -524,19 +524,19 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
         )
         .add_subtree(
             "Entry", MenuTree::new()
-            .leaf("Edit Entry", move |s| {
+            .leaf("Edit Entry ...", move |s| {
                 edit_entry(s, state_temp_edit.clone())
             })        
-            .leaf("Add Entry", move |s| {
+            .leaf("Add Entry ...", move |s| {
                 add_entry(s, state_temp_add.clone());
             })
             .leaf("Delete Entry", move |s| {
                 delete_entry(s, state_temp_del.clone()); 
             })            
-            .leaf("Load Entry", move |s| {
+            .leaf("Load Entry ...", move |s| {
                   load_entry(s, state_temp_load.clone())  
             })        
-            .leaf("Generate password", |_s| {
+            .leaf("Generate password ...", |_s| {
                     
             }));        
 
