@@ -3,8 +3,11 @@ use std::env;
 mod tests;
 mod fcrypt;
 mod jots;
+mod pwgen;
 
 const PW_WIDTH: usize = 35;
+const PW_SEC_LEVEL: usize = 7;
+const PW_MAX_SEC_LEVEL: usize = 24;
 const EDIT_NAME: &str = "nameedit";
 const TEXT_AREA_MAIN: &str = "entrytext";
 const TEXT_AREA_NAME: &str = "textareaedit";
@@ -13,9 +16,11 @@ const SELECT_VIEW: &str = "entrylist";
 const PANEL_AREA_MAIN: &str = "entrytitle";
 const TEXT_AREA_TITLE: &str = "texttitle";
 const EDIT_FILE_NAME: &str = "editfile";
+const SLIDER_SEC_NAME: &str = "securityslider";
+const BITS_SEC_VALUE: &str = "securitybits";
 
 use cursive::traits::*;
-use cursive::views::{Dialog, LinearLayout, TextView, EditView, SelectView, TextArea, Panel};
+use cursive::views::{Dialog, LinearLayout, TextView, EditView, SelectView, TextArea, Panel, SliderView, RadioGroup};
 use cursive::Cursive;
 use cursive::menu::MenuTree;
 use cursive::align::HAlign;
@@ -26,6 +31,9 @@ use std::cell::RefCell;
 use std::sync::mpsc::{Sender, Receiver};
 use std::sync::mpsc;
 use std::fs;
+
+use pwgen::GenerationStrategy;
+use pwgen::PasswordGenerator;
 
 pub fn path_exists(path: &str) -> bool {
     fs::metadata(path).is_ok()
@@ -373,6 +381,95 @@ fn load_entry(s: &mut Cursive, state_for_add_entry: Rc<RefCell<AppState>>) {
     s.add_layer(res);
 }
 
+fn show_sec_bits(s: &mut Cursive, val: usize) {
+    s.call_on_name(BITS_SEC_VALUE, |view: &mut TextArea| {
+        let out = format!("{}", (val + 1) * 8);
+        view.set_content(out.clone());
+    });
+}
+
+fn generate_password(s: &mut Cursive, state_for_gen_pw: Rc<RefCell<AppState>>) {
+    let entry_name = match get_selected_entry_name(s) {
+        Some(name) => name,
+        None => {
+            show_message(s, "Unable to determine selected entry"); 
+            return; 
+        }
+    }; 
+
+    let mut strategy_group: RadioGroup<GenerationStrategy> = RadioGroup::new();
+
+    let res = Dialog::new()
+    .title("Rustpwman generate password")
+    .padding_lrtb(2, 2, 1, 1)
+    .content(
+        LinearLayout::vertical()
+        .child(TextView::new("Please select parameters for password generation.\n\n"))
+        .child(LinearLayout::horizontal()
+            .child(TextView::new("Security level "))
+            .child(TextArea::new()
+                .content("")
+                .disabled()
+                .with_name(BITS_SEC_VALUE)
+                .fixed_height(1)
+                .fixed_width(4)
+            )            
+            .child(TextView::new("Bits: "))
+            .child(SliderView::horizontal(PW_MAX_SEC_LEVEL)
+                .value(PW_SEC_LEVEL)
+                .on_change(|s, slider_val| { show_sec_bits(s, slider_val) })
+                .with_name(SLIDER_SEC_NAME))
+        )
+        .child(TextView::new("\n"))
+        .child(LinearLayout::horizontal()
+            .child(TextView::new("Contained characters: "))
+            .child(strategy_group.button(GenerationStrategy::Base64, "Base64"))
+            .child(TextView::new(" "))
+            .child(strategy_group.button(GenerationStrategy::Hex, "Hex"))
+            .child(TextView::new(" "))
+            .child(strategy_group.button(GenerationStrategy::Special, "Special"))            
+        )
+    )
+    .button("OK", move |s| {
+        let mut value = match state_for_gen_pw.borrow().store.get(&entry_name) {
+            Some(c) => c,
+            None => { show_message(s, "Unable to read value of entry"); return }
+        };
+
+        let rand_bytes = match s.call_on_name(SLIDER_SEC_NAME, |view: &mut SliderView| { view.get_value() }) {
+            Some(v) => v,
+            None => { show_message(s, "Unable to determine security level"); return }
+        };
+
+        let b64_gen = pwgen::B64Generator::new();
+        let hex_gen = pwgen::HexGenerator::new();
+
+        let mut generator: Box<dyn PasswordGenerator> = match *strategy_group.selection() {
+            GenerationStrategy::Base64 => Box::new(b64_gen),
+            GenerationStrategy::Hex => Box::new(hex_gen),
+            _ => Box::new(hex_gen)
+        };
+
+        let new_pw = match generator.gen_password(rand_bytes + 1) {
+            Some(pw) => pw,
+            None => {
+                show_message(s, "Unable to generate password"); 
+                return;
+            }
+        };
+
+        value.push_str(&new_pw);
+
+        state_for_gen_pw.borrow_mut().store.insert(&entry_name, &value);
+        state_for_gen_pw.borrow_mut().dirty = true;
+        s.pop_layer();
+        display_entry(s, state_for_gen_pw.clone(), &entry_name, true);        
+    })
+    .button("Cancel", |s| { s.pop_layer(); });
+    
+    s.add_layer(res);
+    show_sec_bits(s, PW_SEC_LEVEL);
+}
 
 fn edit_entry(s: &mut Cursive, state_for_edit_entry: Rc<RefCell<AppState>>) {
     let entry_name = match get_selected_entry_name(s) {
@@ -492,6 +589,7 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
     let state_temp_pw = shared_state.clone();
     let state_temp_edit = shared_state.clone();
     let state_temp_load = shared_state.clone();
+    let state_temp_pw_gen = shared_state.clone();    
     let sender = sndr.clone();
     let sender2 = sndr.clone();
 
@@ -541,10 +639,10 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
                 delete_entry(s, state_temp_del.clone()); 
             })            
             .leaf("Load Entry ...", move |s| {
-                  load_entry(s, state_temp_load.clone())  
+                load_entry(s, state_temp_load.clone())  
             })        
-            .leaf("Generate password ...", |_s| {
-                    
+            .leaf("Generate password ...", move |s| {
+                generate_password(s, state_temp_pw_gen.clone())
             }));        
 
     s.set_autohide_menu(false);
