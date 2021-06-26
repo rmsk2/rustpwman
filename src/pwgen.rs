@@ -100,7 +100,7 @@ impl SpecialGenerator {
     fn get_group(&mut self) -> String {
         let consonants = "bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ";
         let vowels = "aeiouAEIOU";        
-        let pos1 = self.rng.gen_range(0..21);
+        let pos1 = self.rng.gen_range(0..42);
         let pos2 = self.rng.gen_range(0..10);
 
         let mut res = String::from(&consonants[pos1..pos1+1]);
