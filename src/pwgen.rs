@@ -1,6 +1,7 @@
 use rand::RngCore;
 use base64;
 use std::io::{Error, ErrorKind};
+use rand::Rng;
 
 use crate::PW_MAX_SEC_LEVEL;
 
@@ -82,5 +83,46 @@ impl PasswordGenerator for HexGenerator {
         buf.into_iter().for_each(|i| res.push_str(&format!("{:02X}", i)));
 
         Some(res)
+    }
+}
+
+pub struct SpecialGenerator {
+    rng: rand::prelude::ThreadRng
+}
+
+impl SpecialGenerator {
+    pub fn new() -> SpecialGenerator {
+        return SpecialGenerator {
+            rng: rand::thread_rng()
+        }
+    }
+
+    fn get_group(&mut self) -> String {
+        let consonants = "bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ";
+        let vowels = "aeiouAEIOU";        
+        let pos1 = self.rng.gen_range(0..21);
+        let pos2 = self.rng.gen_range(0..10);
+
+        let mut res = String::from(&consonants[pos1..pos1+1]);
+        res.push_str(&vowels[pos2..pos2+1]);
+
+        return res;
+    }
+}
+
+impl PasswordGenerator for SpecialGenerator {
+    fn gen_password(&mut self, num_bytes: usize) -> Option<String> {
+        let security_level: f64 = (8 * num_bytes) as f64;
+        let number_of_groups = (security_level - 13.0) / 8.7;
+        let number_of_groups: usize = number_of_groups.ceil() as usize;
+        let mut res = String::from("");
+
+        for _ in 0..number_of_groups {
+            res.push_str(&self.get_group())
+        }
+
+        res.push_str(&format!("{:04}", self.rng.gen_range(0..10000)));
+
+        return Some(res);
     }
 }

@@ -443,11 +443,12 @@ fn generate_password(s: &mut Cursive, state_for_gen_pw: Rc<RefCell<AppState>>) {
 
         let mut b64_gen = pwgen::B64Generator::new();
         let mut hex_gen = pwgen::HexGenerator::new();
+        let mut special_gen = pwgen::SpecialGenerator::new();        
 
         let generator: &mut dyn PasswordGenerator = match *strategy_group.selection() {
             GenerationStrategy::Base64 => &mut b64_gen,
             GenerationStrategy::Hex => &mut hex_gen,
-            _ => &mut hex_gen
+            GenerationStrategy::Special => &mut special_gen
         };
 
         let new_pw = match generator.gen_password(rand_bytes + 1) {
