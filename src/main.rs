@@ -367,8 +367,8 @@ fn edit_entry(s: &mut Cursive, state_for_edit_entry: Rc<RefCell<AppState>>) {
         }; 
 
         state_for_edit_entry.borrow_mut().store.insert(&entry_name, &entry_text);
-        s.call_on_name(TEXT_AREA_MAIN, |view: &mut TextArea| { view.set_content(entry_text); });
         state_for_edit_entry.borrow_mut().dirty = true;
+        display_entry(s, state_for_edit_entry.clone(), &entry_name, true);
 
         s.pop_layer();
     })
