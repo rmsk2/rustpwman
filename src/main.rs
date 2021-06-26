@@ -6,7 +6,7 @@ mod jots;
 mod pwgen;
 
 const PW_WIDTH: usize = 35;
-const PW_SEC_LEVEL: usize = 7;
+const PW_SEC_LEVEL: usize = 8;
 const PW_MAX_SEC_LEVEL: usize = 24;
 const EDIT_NAME: &str = "nameedit";
 const TEXT_AREA_MAIN: &str = "entrytext";
@@ -317,7 +317,7 @@ fn add_entry(s: &mut Cursive, state_for_add_entry: Rc<RefCell<AppState>>) {
         match old_entry {
             Some(_) => { show_message(s, "Entry already exists"); return },
             None => {
-                let new_text = String::from("New entry");
+                let new_text = String::from("New entry\n");
                 state_for_add_entry.borrow_mut().store.insert(&entry_name, &new_text);
                 state_for_add_entry.borrow_mut().dirty = true;
                 fill_tui(s, state_for_add_entry.clone());
@@ -441,13 +441,13 @@ fn generate_password(s: &mut Cursive, state_for_gen_pw: Rc<RefCell<AppState>>) {
             None => { show_message(s, "Unable to determine security level"); return }
         };
 
-        let b64_gen = pwgen::B64Generator::new();
-        let hex_gen = pwgen::HexGenerator::new();
+        let mut b64_gen = pwgen::B64Generator::new();
+        let mut hex_gen = pwgen::HexGenerator::new();
 
-        let mut generator: Box<dyn PasswordGenerator> = match *strategy_group.selection() {
-            GenerationStrategy::Base64 => Box::new(b64_gen),
-            GenerationStrategy::Hex => Box::new(hex_gen),
-            _ => Box::new(hex_gen)
+        let generator: &mut dyn PasswordGenerator = match *strategy_group.selection() {
+            GenerationStrategy::Base64 => &mut b64_gen,
+            GenerationStrategy::Hex => &mut hex_gen,
+            _ => &mut hex_gen
         };
 
         let new_pw = match generator.gen_password(rand_bytes + 1) {
