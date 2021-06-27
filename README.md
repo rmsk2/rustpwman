@@ -12,7 +12,7 @@ or `cargo run --release -- <file_name>` which will result, after a successful pa
 
 ![](/screenshot.png?raw=true "Screenshot of rustpwman")
 
-It is expected that the referenced file contains encrypted password information. `rustpwman` encrypts its data at rest using AES-256 in GCM mode with a 128 bit tag length and 96 bit nonce. The encrypted data file is a simple JSON data structure. This may serve as an example:
+It is expected that the referenced file contains encrypted password information. `rustpwman` encrypts its data at rest using AES-256 in GCM mode with a 128 bit tag length and a 96 bit nonce. The encrypted data file is a simple JSON data structure. This may serve as an example:
 
 ```
 {
@@ -41,11 +41,11 @@ The `File` menu contains the following entries.
 
 ### Save file
 
-Selecting this entry saves the encrypted data file using the password that was specified during program start.
+Selecting this entry saves the encrypted data file using the password that was specified during program start or has been changed using `Change password`.
 
 ### Change password
 
-Using this entry allows to select a new password. After a new password has been selected the encrypted data file is saved automatically.
+Using this entry allows to select a new password. After a new password has been selected the encrypted data file is saved automatically. The new password is also used in subsequent save operations.
 
 ### About
 
@@ -111,7 +111,7 @@ A similar problem occurs when importing existing password information into `rust
 
 This section provides information about stuff which is in my view suboptimal and should be (and possibly will be) improved in the future.
 
-- When the list of entries changes (after an add or delete) it may be possible that the entry selected after the change is not visible in the `ScrollView` on the left. Up to this moment I was not able force cursive to scroll to the newly selected entry. This is most probably my fault and meanwhile an appropriate warning dialog is displayed.
+- When the list of entries changes (after an add or delete) it may be possible that the entry selected after the change is not visible in the `ScrollView` on the left. I was not successfull in forcing cursive to scroll to the newly selected entry. This is most probably my fault and meanwhile an appropriate warning dialog is displayed.
 - I am fairly new to Rust. I guess it shows in the code.
 - There is no possibility to rename an entry.
 - On a MacBook Air 2018 using the touchpad to click elements in the TUI does not work. The problem does not manifest itself when using a mouse. Using the touchpad seems to work though on other models. I do not think that this is a hardware problem on my MacBook and I unfortunately have no idea why this happens.
