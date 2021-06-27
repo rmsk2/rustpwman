@@ -22,7 +22,7 @@ mod pwgen;
 const VERSION_STRING: &str = "0.5.1";
 
 const PW_WIDTH: usize = 35;
-const PW_SEC_LEVEL: usize = 7;
+const PW_SEC_LEVEL: usize = 9;
 const PW_MAX_SEC_LEVEL: usize = 24;
 const EDIT_NAME: &str = "nameedit";
 const TEXT_AREA_MAIN: &str = "entrytext";
@@ -61,18 +61,24 @@ pub struct AppState {
     password: Option<String>,
     file_name: String,
     dirty: bool,
-    pw_gens: HashMap<GenerationStrategy, Box<dyn PasswordGenerator>>
+    pw_gens: HashMap<GenerationStrategy, Box<dyn PasswordGenerator>>,
+    default_security_level: usize
 }
 
 impl AppState {
-    fn new(s: jots::Jots, f_name: &String, generators: HashMap<GenerationStrategy, Box<dyn PasswordGenerator>>) -> Self {
+    fn new(s: jots::Jots, f_name: &String, generators: HashMap<GenerationStrategy, Box<dyn PasswordGenerator>>, default_sec: usize) -> Self {
         return AppState {
             store: s,
             password: None,
             file_name: f_name.clone(),
             dirty: false,
-            pw_gens: generators  
+            pw_gens: generators,
+            default_security_level: default_sec
         }
+    }
+
+    fn get_default_bits(&self) -> usize {
+        return self.default_security_level;
     }
 }
 
@@ -101,7 +107,7 @@ fn main() {
         generators.insert(GenerationStrategy::Hex, Box::new(pwgen::HexGenerator::new()));
         generators.insert(GenerationStrategy::Special, Box::new(pwgen::SpecialGenerator::new()));           
 
-        let state = AppState::new(jots_store, &f_name, generators);
+        let state = AppState::new(jots_store, &f_name, generators, PW_SEC_LEVEL);
 
         if let Some(state_after_open) = open_file(s, password, state) {
             main_window(s, state_after_open, sender_main.clone());
@@ -452,6 +458,8 @@ fn generate_password(s: &mut Cursive, state_for_gen_pw: Rc<RefCell<AppState>>) {
         }
     }; 
 
+    let sec_bits = state_for_gen_pw.borrow().get_default_bits();
+
     let mut strategy_group: RadioGroup<GenerationStrategy> = RadioGroup::new();
 
     let res = Dialog::new()
@@ -471,7 +479,7 @@ fn generate_password(s: &mut Cursive, state_for_gen_pw: Rc<RefCell<AppState>>) {
             )            
             .child(TextView::new("Bits: "))
             .child(SliderView::horizontal(PW_MAX_SEC_LEVEL)
-                .value(PW_SEC_LEVEL)
+                .value(sec_bits)
                 .on_change(|s, slider_val| { show_sec_bits(s, slider_val) })
                 .with_name(SLIDER_SEC_NAME))
         )
