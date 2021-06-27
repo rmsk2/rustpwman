@@ -6,7 +6,7 @@ A simple password manager written in Rust using the cursive TUI library. The bas
 ./rustpwman <file_name>
 ```
 
-or `cargo run --release -- <file_name>`
+or `cargo run --release -- <file_name>` which will result, after a successful password entry, in a window similar to this one.
 
 ![](/screenshot.png?raw=true "Screenshot of rustpwman")
 
