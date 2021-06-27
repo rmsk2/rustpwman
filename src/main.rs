@@ -190,6 +190,8 @@ fn fill_tui(siv: &mut Cursive, state: Rc<RefCell<AppState>>) {
     let mut initial_entry = String::from("");
 
     siv.call_on_name(SELECT_VIEW, |view: &mut SelectView| { view.clear(); } );
+    siv.call_on_name(TEXT_AREA_MAIN, |view: &mut TextArea| { view.set_content(""); });
+    siv.call_on_name(TEXT_AREA_TITLE, |view: &mut TextArea| { view.set_content(""); });
 
     {
         let store = &state.borrow().store;
