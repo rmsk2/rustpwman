@@ -93,7 +93,7 @@ security level is 64 bits.
 
 Additionally the user may select the set of characters which may appear in the randomly generated password. Currently the following alternatives are offered:
 
-- Base64
+- Base64, where the potential padding character `=`is removed
 - Hex
 - Special: This password generator aims to create pronouncable passwords which are constructed from the following elements: A sequence of two letter groups which consist of a consonant followed by a vowel. There are 420 such groups. Therefore when selecting one of these groups at random each one contains 8.7 bits of entropy. The final four character group is a consonant followed by a three digit number. There are 26*1000 such four character groups so it has an entropy of 14.6 Bits when one is chosen randomly.
 
