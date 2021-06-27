@@ -111,5 +111,6 @@ This section provides information about stuff which is in my view suboptimal and
 - When the list of entry changes (after an add or delete) it may be possible that the entry selected after the change is not visible in the `ScrollView` on the left. Up to this moment I was not able force cursive to scroll to the newly selected entry. This is most probably my fault and meanwhile an appropriate warning dialog is displayed.
 - I am fairly new to Rust. I guess it shows in the code.
 - There is no possibility to rename an entry.
+- On a MacBook Air 2018 using the touchpad to click elements in the TUI does not work. The problem does not manifest itself when using a mouse. Using the touchpad seems to work though on other models. I do not think that this is a hardware problem on my MacBook and I unfortunately have no idea why this happens.
 
 
