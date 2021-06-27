@@ -19,7 +19,7 @@ mod fcrypt;
 mod jots;
 mod pwgen;
 
-const VERSION_STRING: &str = "0.5.0";
+const VERSION_STRING: &str = "0.5.1";
 
 const PW_WIDTH: usize = 35;
 const PW_SEC_LEVEL: usize = 7;
