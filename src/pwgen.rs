@@ -6,7 +6,7 @@ use rand::Rng;
 use crate::PW_MAX_SEC_LEVEL;
 
 
-#[derive(Debug)]
+#[derive(Debug, Hash, PartialEq, Eq)]
 pub enum GenerationStrategy {
     Base64,
     Hex,

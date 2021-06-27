@@ -31,6 +31,7 @@ use std::cell::RefCell;
 use std::sync::mpsc::{Sender, Receiver};
 use std::sync::mpsc;
 use std::fs;
+use std::collections::HashMap;
 
 use pwgen::GenerationStrategy;
 use pwgen::PasswordGenerator;
@@ -43,16 +44,18 @@ pub struct AppState {
     store: jots::Jots,
     password: Option<String>,
     file_name: String,
-    dirty: bool
+    dirty: bool,
+    pw_gens: HashMap<GenerationStrategy, Box<dyn PasswordGenerator>>
 }
 
 impl AppState {
-    fn new(s: jots::Jots, f_name: &String) -> Self {
+    fn new(s: jots::Jots, f_name: &String, generators: HashMap<GenerationStrategy, Box<dyn PasswordGenerator>>) -> Self {
         return AppState {
             store: s,
             password: None,
             file_name: f_name.clone(),
-            dirty: false  
+            dirty: false,
+            pw_gens: generators  
         }
     }
 }
@@ -76,7 +79,13 @@ fn main() {
     let pw_callback = Box::new(move |s: &mut Cursive, password: &String| {
         let jots_store = jots::Jots::new();
         let f_name = capture_file_name.clone();
-        let state = AppState::new(jots_store, &f_name);
+        let mut generators: HashMap<GenerationStrategy, Box<dyn PasswordGenerator>> = HashMap::new();
+
+        generators.insert(GenerationStrategy::Base64, Box::new(pwgen::B64Generator::new()));
+        generators.insert(GenerationStrategy::Hex, Box::new(pwgen::HexGenerator::new()));
+        generators.insert(GenerationStrategy::Special, Box::new(pwgen::SpecialGenerator::new()));           
+
+        let state = AppState::new(jots_store, &f_name, generators);
 
         if let Some(state_after_open) = open_file(s, password, state) {
             main_window(s, state_after_open, sender_main.clone());
@@ -342,7 +351,7 @@ fn load_entry(s: &mut Cursive, state_for_add_entry: Rc<RefCell<AppState>>) {
     }; 
 
     let res = Dialog::new()
-    .title("Rustpwman enter load entry from file")
+    .title("Rustpwman load entry from file")
     .padding_lrtb(2, 2, 1, 1)
     .content(
         LinearLayout::vertical()
@@ -441,23 +450,24 @@ fn generate_password(s: &mut Cursive, state_for_gen_pw: Rc<RefCell<AppState>>) {
             None => { show_message(s, "Unable to determine security level"); return }
         };
 
-        let mut b64_gen = pwgen::B64Generator::new();
-        let mut hex_gen = pwgen::HexGenerator::new();
-        let mut special_gen = pwgen::SpecialGenerator::new();        
+        let new_pw: String;
 
-        let generator: &mut dyn PasswordGenerator = match *strategy_group.selection() {
-            GenerationStrategy::Base64 => &mut b64_gen,
-            GenerationStrategy::Hex => &mut hex_gen,
-            GenerationStrategy::Special => &mut special_gen
-        };
-
-        let new_pw = match generator.gen_password(rand_bytes + 1) {
-            Some(pw) => pw,
-            None => {
-                show_message(s, "Unable to generate password"); 
-                return;
-            }
-        };
+        {
+            let generator_map: &mut HashMap<GenerationStrategy, Box<dyn PasswordGenerator>> = &mut state_for_gen_pw.borrow_mut().pw_gens;
+            
+            let generator: &mut Box<dyn PasswordGenerator> = match generator_map.get_mut(&strategy_group.selection()) {
+                None => { show_message(s, "Unable create generator"); return },
+                Some(g) => g
+            };
+    
+            new_pw = match generator.gen_password(rand_bytes + 1) {
+                Some(pw) => pw,
+                None => {
+                    show_message(s, "Unable to generate password"); 
+                    return;
+                }
+            };
+        }
 
         value.push_str(&new_pw);
         value.push_str("\n");
