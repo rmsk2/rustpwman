@@ -86,9 +86,18 @@ impl PasswordGenerator for HexGenerator {
     }
 }
 
+// This password generator aims to create pronouncable passwords which consist of
+// the following elements: A sequence of two letter groups which consist of a consonant
+// followed by a vowel. There are 420 such groups. Therefore when selecting one of these
+// groups at random each one contains 8.7 bits of entropy. The final four character group
+// is a consonant followed by a three digit number. There are 26*1000 such four character 
+// groups so it has an entropy of 14.6 Bits.
 pub struct SpecialGenerator {
-    rng: rand::prelude::ThreadRng
+    rng: rand::prelude::ThreadRng,
 }
+
+const CONSONANTS: &str = "bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ";
+const VOWELS: &str = "aeiouAEIOU";
 
 impl SpecialGenerator {
     pub fn new() -> SpecialGenerator {
@@ -97,14 +106,12 @@ impl SpecialGenerator {
         }
     }
 
-    fn get_group(&mut self) -> String {
-        let consonants = "bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ";
-        let vowels = "aeiouAEIOU";        
+    fn get_group(&mut self) -> String {       
         let pos1 = self.rng.gen_range(0..42);
         let pos2 = self.rng.gen_range(0..10);
 
-        let mut res = String::from(&consonants[pos1..pos1+1]);
-        res.push_str(&vowels[pos2..pos2+1]);
+        let mut res = String::from(&CONSONANTS[pos1..pos1+1]);
+        res.push_str(&VOWELS[pos2..pos2+1]);
 
         return res;
     }
@@ -113,7 +120,7 @@ impl SpecialGenerator {
 impl PasswordGenerator for SpecialGenerator {
     fn gen_password(&mut self, num_bytes: usize) -> Option<String> {
         let security_level: f64 = (8 * num_bytes) as f64;
-        let number_of_groups = (security_level - 13.0) / 8.7;
+        let number_of_groups = (security_level - 14.6) / 8.7;
         let number_of_groups: usize = number_of_groups.ceil() as usize;
         let mut res = String::from("");
 
@@ -121,7 +128,9 @@ impl PasswordGenerator for SpecialGenerator {
             res.push_str(&self.get_group())
         }
 
-        res.push_str(&format!("{:04}", self.rng.gen_range(0..10000)));
+        let pos1 = self.rng.gen_range(0..42);
+        res.push_str(&CONSONANTS[pos1..pos1+1]);
+        res.push_str(&format!("{:03}", self.rng.gen_range(0..1000)));
 
         return Some(res);
     }
