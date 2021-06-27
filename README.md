@@ -8,6 +8,8 @@ A simple password manager written in Rust using the cursive TUI library. The bas
 
 or `cargo run --release -- <file_name>`
 
+![](/screenshot.png?raw=true "Screenshot of rustpwman")
+
 It is expected that the referenced file contains encrypted password information. `rustpwman` encrypts its data at rest using AES-256 in GCM mode with a 128 bit tag length and 96 bit nonce. The encrypted data file is a simple JSON data structure. This may serve as an example:
 
 ```
