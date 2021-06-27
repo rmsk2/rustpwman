@@ -1,6 +1,6 @@
 # rustpwman
 
-A simple password manager written in Rust using the cursive TUI library. In order to start the programm use
+A simple password manager written in Rust using the cursive TUI library. The basic concept of `rustpwman` is to manage a set of entries which have corresponding values or contents. The entries are presented in a flat list and no further structuring is offered at the moment. In order to start the programm use
 
 ```
  ./rustpwman <file_name>
@@ -21,9 +21,13 @@ JSON data structure. This may serve as an example:
 }
  ```
 
-If the referenced file does not exist the user is offered to create an empty encrypted data file using a new password and the file name specified on the command line.
+If the referenced file does not exist the user is offered to create an empty encrypted data file using a new password and the file name specified on the command line. The actual encryption key is derived from the specified password using the following calculation:
 
-The basic concept of `rustpwman` is to manage a set of entries which have corresponding values or contents. The entries are presented in a flat list and no further structuring is offered at the moment.
+```
+SHA-256( password | salt | password )
+```
+
+where `salt` is a 10 byte random value.
 
 # Functionality
 
@@ -97,8 +101,15 @@ According to the Rust documentation the random number generator underlying the w
 
 # A note about the lack of the clipboard
 
-While using cursive was a largely pleasant experience it has to be noted that copying and pasting text is not possible in a terminal window while the cursive application is running. This in turn is probably an unfixable problem as cursive by definition controls the cursor in the terminal window, which may preclude the OS to "do its thing". 
+While using cursive was a largely pleasant experience it has to be noted that copying and pasting text is not possible in a terminal window while the cursive application is running. This in turn is probably an unfixable problem as cursive by definition controls the cursor in the terminal window, which may preclude the OS from "doing its thing". 
 
-While a password manager is still useful without copy and paste
+While a password manager is still useful without copy and paste it is not optimal to type in longer randomly chosen passwords into password dialogs which also hide what is typed. I therefore cam up with the solution `Quit and print`. When using this menu item `rustpwman` is stopped and the contents of the currently selected entry is printed to the terminal window after the TUI has been closed and control of the OS over the terminal has been reestsblished. In other words the necessary information can now be copied from the terminal into the clipboard and pasted where needed.
+
+A similar problem occurs when importing existing password information into `rustpwman`. Ideally it would be possible to select the information in the other application and paste it into the terminal in which `rustpwman` is running. As a workaround there is the possibility to load data from a file into an existing entry using the `Load entry` menu entry.
 
 # Caveats
+
+This section provides information about stuff which is in my view suboptimal and should be (and possibly will be) improved in the future.
+
+- When the list of entry changes (after an add or delete) it may be possible that the entry selected after the change is not visible in the `ScrollView`. Up to this moment I was not able force cursive to scroll to the newly selected entry. This is probably my fault. A appropriate warning dialog is displayed.
+-  
