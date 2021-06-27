@@ -835,7 +835,7 @@ fn file_init_dialog(sndr: Rc<Sender<String>>, ok_cb: Box<dyn Fn(&mut Cursive, &S
         .padding_lrtb(2, 2, 1, 1)
         .content(
             LinearLayout::vertical()
-            .child(TextView::new("File not found! Enter a new password\n to create a new empty data file.\n\n"))
+            .child(TextView::new("File not found! Enter a new password\nto create a new empty data file.\n\n"))
             .child(
                 LinearLayout::horizontal()
                     .child(TextView::new("New Password   : "))
