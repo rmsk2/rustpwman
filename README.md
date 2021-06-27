@@ -1,6 +1,6 @@
 # rustpwman
 
-A simple password manager written in Rust using the cursive TUI library. The basic concept of `rustpwman` is to manage a set of entries which have value or content. **This is work in progress**.
+A simple password manager written in Rust using the cursive TUI library. The basic concept of `rustpwman` is to manage a set of entries which have a value or content. **This is work in progress**.
 
 The entries are presented in a flat list and no further structuring is offered at the moment. In order to start the programm use
 
