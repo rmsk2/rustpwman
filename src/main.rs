@@ -290,6 +290,34 @@ fn delete_entry(s: &mut Cursive, state_temp_del: Rc<RefCell<AppState>>) {
     } 
 }
 
+fn clear_entry(s: &mut Cursive, state_temp_clear: Rc<RefCell<AppState>>) { 
+    match get_selected_entry_name(s) {
+        Some(name) => {
+            let res = Dialog::new()
+            .title("Rustpwman clear entry")
+            .padding_lrtb(2, 2, 1, 1)
+            .content(
+                LinearLayout::vertical()
+                .child(TextView::new(format!("Clear entry \"{}\"?", &name)))
+            )
+            .button("Cancel", |s| { s.pop_layer(); })            
+            .button("OK", move |s| {
+                let empty = String::from("Empty entry\n");
+                state_temp_clear.borrow_mut().store.insert(&name, &empty);
+                state_temp_clear.borrow_mut().dirty = true;
+                s.pop_layer();
+                display_entry(s, state_temp_clear.clone(), &name, true);
+            });
+            
+            s.add_layer(res); 
+        },
+        None => {
+            show_message(s, "Unable to determine selected entry"); 
+            return; 
+        }
+    } 
+}
+
 fn add_entry(s: &mut Cursive, state_for_add_entry: Rc<RefCell<AppState>>) {
     let res = Dialog::new()
     .title("Rustpwman enter new entry name")
@@ -601,7 +629,8 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
     let state_temp_pw = shared_state.clone();
     let state_temp_edit = shared_state.clone();
     let state_temp_load = shared_state.clone();
-    let state_temp_pw_gen = shared_state.clone();    
+    let state_temp_pw_gen = shared_state.clone();
+    let state_temp_clear = shared_state.clone();  
     let sender = sndr.clone();
     let sender2 = sndr.clone();
 
@@ -649,7 +678,10 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
             })
             .leaf("Delete Entry", move |s| {
                 delete_entry(s, state_temp_del.clone()); 
-            })            
+            }) 
+            .leaf("Clear Entry", move |s| {
+                clear_entry(s, state_temp_clear.clone()); 
+            })                    
             .leaf("Load Entry ...", move |s| {
                 load_entry(s, state_temp_load.clone())  
             })        
