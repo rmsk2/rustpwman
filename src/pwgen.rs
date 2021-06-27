@@ -91,7 +91,7 @@ impl PasswordGenerator for HexGenerator {
 // followed by a vowel. There are 420 such groups. Therefore when selecting one of these
 // groups at random each one contains 8.7 bits of entropy. The final four character group
 // is a consonant followed by a three digit number. There are 26*1000 such four character 
-// groups so it has an entropy of 14.6 Bits.
+// groups so it has an entropy of 14.6 Bits when one is chosen randomly.
 pub struct SpecialGenerator {
     rng: rand::prelude::ThreadRng,
 }
