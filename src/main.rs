@@ -19,7 +19,7 @@ mod fcrypt;
 mod jots;
 mod pwgen;
 
-const VERSION_STRING: &str = "0.5.1";
+const VERSION_STRING: &str = "0.5.2";
 
 const PW_WIDTH: usize = 35;
 const PW_SEC_LEVEL: usize = 9;
@@ -34,6 +34,8 @@ const TEXT_AREA_TITLE: &str = "texttitle";
 const EDIT_FILE_NAME: &str = "editfile";
 const SLIDER_SEC_NAME: &str = "securityslider";
 const BITS_SEC_VALUE: &str = "securitybits";
+
+const SEC_BIT_ENV_VAR: &str = "RUSTPWMAN_SEC_BITS";
 
 use cursive::traits::*;
 use cursive::views::{Dialog, LinearLayout, TextView, EditView, SelectView, TextArea, Panel, SliderView, RadioGroup};
@@ -82,6 +84,26 @@ impl AppState {
     }
 }
 
+fn determine_sec_level() -> usize {
+    return match env::var(SEC_BIT_ENV_VAR)  {
+        Ok(s) => {
+            match s.parse::<usize>() {
+                Err(_) => PW_SEC_LEVEL,
+                Ok(b) => {
+                    if b < PW_MAX_SEC_LEVEL {
+                        b
+                    } else {
+                        PW_SEC_LEVEL
+                    }
+                }
+            }
+        },
+        Err(_) => {
+            PW_SEC_LEVEL
+        } 
+    };
+}
+
 fn main() {
     let args: Vec<String> = env::args().skip(1).collect();
 
@@ -97,6 +119,7 @@ fn main() {
     let mut siv = cursive::default();
     let sender = Rc::new(tx);
     let sender_main = sender.clone();
+    let default_sec_bits = determine_sec_level();
 
     let pw_callback = Box::new(move |s: &mut Cursive, password: &String| {
         let jots_store = jots::Jots::new();
@@ -107,7 +130,7 @@ fn main() {
         generators.insert(GenerationStrategy::Hex, Box::new(pwgen::HexGenerator::new()));
         generators.insert(GenerationStrategy::Special, Box::new(pwgen::SpecialGenerator::new()));           
 
-        let state = AppState::new(jots_store, &f_name, generators, PW_SEC_LEVEL);
+        let state = AppState::new(jots_store, &f_name, generators, default_sec_bits);
 
         if let Some(state_after_open) = open_file(s, password, state) {
             main_window(s, state_after_open, sender_main.clone());
@@ -534,7 +557,7 @@ fn generate_password(s: &mut Cursive, state_for_gen_pw: Rc<RefCell<AppState>>) {
     .button("Cancel", |s| { s.pop_layer(); });
     
     s.add_layer(res);
-    show_sec_bits(s, PW_SEC_LEVEL);
+    show_sec_bits(s, sec_bits);
 }
 
 fn edit_entry(s: &mut Cursive, state_for_edit_entry: Rc<RefCell<AppState>>) {

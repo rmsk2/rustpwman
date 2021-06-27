@@ -89,7 +89,7 @@ This allows to load the contents of a (text-)file into an entry. The current con
 
 This menu entry allows to append a randomly generated password to the currently selected entry. The user has to choose the
 parameters to use while generating the password. One parameter is the security level in bits (of entropy). This describes how large the set of passwords should be from which the generator selects one at random. A security level of `k` bits means that there are `2**k` passwords to choose from. This parameter in essence determines the difficulty for an attacker when performing a brute force password search. The default
-security level is 64 bits.
+security level is 80 bits but can be changed by an environment variable (see below).
 
 Additionally the user may select the set of characters which may appear in the randomly generated password. Currently the following alternatives are offered:
 
@@ -106,6 +106,10 @@ While using cursive was a largely pleasant experience it has to be noted that co
 While a password manager is still useful without copy and paste it is not optimal to first read and then type randomly chosen passwords into password dialogs that also hide what is typed. I therefore came up with the solution `Quit and print`. When using this menu item `rustpwman` is stopped and the contents of the currently selected entry is printed to the terminal window after the TUI has been closed and control of the OS over the terminal has been restored. In other words the necessary information can now be copied from the terminal into the clipboard and pasted where needed.
 
 A similar problem occurs when importing existing password information into `rustpwman`. Ideally it would be possible to select the information in the other application and paste it into the terminal in which `rustpwman` is running. As a workaround there is a possibility to load data from a file into an existing entry using the `Load entry` menu entry.
+
+# Configuration
+
+If the environment variable `SEC_BIT_ENV_VAR` is present and is parsable as a nonnegative integer value `n` < 24 then `(n + 1) * 8` is used as the default security level in bits.
 
 # Caveats
 
