@@ -27,7 +27,7 @@ If the referenced file does not exist the user is offered to create an empty enc
 SHA-256( password | salt | password )
 ```
 
-where `salt` is a 10 byte random value.
+where `salt` is a 10 byte random value and `|` symbolizes concatenation.
 
 # Functionality
 
@@ -111,5 +111,7 @@ A similar problem occurs when importing existing password information into `rust
 
 This section provides information about stuff which is in my view suboptimal and should be (and possibly will be) improved in the future.
 
-- When the list of entry changes (after an add or delete) it may be possible that the entry selected after the change is not visible in the `ScrollView`. Up to this moment I was not able force cursive to scroll to the newly selected entry. This is probably my fault. A appropriate warning dialog is displayed.
--  
+- When the list of entry changes (after an add or delete) it may be possible that the entry selected after the change is not visible in the `ScrollView`. Up to this moment I was not able force cursive to scroll to the newly selected entry. This is most probably my fault. An appropriate warning dialog is displayed.
+- I am new to Rust. I guess it shows in the code.
+- There is no possibility to rename an entry
+
