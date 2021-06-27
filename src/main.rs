@@ -5,6 +5,8 @@ mod fcrypt;
 mod jots;
 mod pwgen;
 
+const VERSION_STRING: &str = "0.5.0";
+
 const PW_WIDTH: usize = 35;
 const PW_SEC_LEVEL: usize = 7;
 const PW_MAX_SEC_LEVEL: usize = 24;
@@ -648,7 +650,8 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
             })
             .delimiter()
             .leaf("About ...", |s| {
-                show_message(s, "\n   A basic password manager\n\nWritten by Martin Grap in 2021\n")
+                let msg_str = format!("\n   A basic password manager\n\nWritten by Martin Grap in 2021\n\n        Version {}", VERSION_STRING);
+                show_message(s, &msg_str[..]);
             })            
             .delimiter()
             .leaf("Quit and print", move |s| {
