@@ -19,7 +19,7 @@ mod fcrypt;
 mod jots;
 mod pwgen;
 
-const VERSION_STRING: &str = "0.5.2";
+const VERSION_STRING: &str = "0.5.3";
 
 const PW_WIDTH: usize = 35;
 const PW_SEC_LEVEL: usize = 9;
@@ -53,6 +53,7 @@ use std::collections::HashMap;
 
 use pwgen::GenerationStrategy;
 use pwgen::PasswordGenerator;
+use fcrypt::GcmContext;
 
 pub fn path_exists(path: &str) -> bool {
     fs::metadata(path).is_ok()
@@ -122,7 +123,7 @@ fn main() {
     let default_sec_bits = AppState::determine_sec_level();
 
     let pw_callback = Box::new(move |s: &mut Cursive, password: &String| {
-        let jots_store = jots::Jots::new();
+        let jots_store = jots::Jots::new(GcmContext::sha256_deriver);
         let f_name = capture_file_name.clone();
         let mut generators: HashMap<GenerationStrategy, Box<dyn PasswordGenerator>> = HashMap::new();
 

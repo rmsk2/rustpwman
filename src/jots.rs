@@ -20,6 +20,7 @@ use std::io::BufReader;
 use std::io::BufWriter;
 use std::io::{Error, ErrorKind};
 use crate::fcrypt;
+use fcrypt::KeyDeriver;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct KvEntry {
@@ -73,12 +74,14 @@ impl<'a> Iterator for JotsIter<'a> {
 
 pub struct Jots {
     pub contents: HashMap<String, String>,
+    pub kdf: KeyDeriver
 }
 
 impl Jots {
-    pub fn new() -> Jots {
+    pub fn new(d: KeyDeriver) -> Jots {
         return Jots {
             contents: HashMap::new(),
+            kdf: d,
         };
     }
 
@@ -130,7 +133,7 @@ impl Jots {
     }  
 
     pub fn from_enc_file(&mut self, file_name: &str, password: &str) -> std::io::Result<()> {
-        let mut ctx = fcrypt::GcmContext::new();
+        let mut ctx = fcrypt::GcmContext::new_with_kdf(self.kdf);
 
         let data = ctx.from_file(file_name)?;
         let plain_data = match ctx.decrypt(password, &data) {
@@ -144,7 +147,7 @@ impl Jots {
     }
 
     pub fn to_enc_file(&self, file_name: &str, password: &str) -> std::io::Result<()> {
-        let mut ctx = fcrypt::GcmContext::new();
+        let mut ctx = fcrypt::GcmContext::new_with_kdf(self.kdf);
         let mut serialized: Vec<u8> = Vec::new();
 
         self.to_writer(&mut serialized)?;

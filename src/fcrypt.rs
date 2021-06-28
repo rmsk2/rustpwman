@@ -35,7 +35,6 @@ const DEFAULT_SALT_SIZE: usize = 10;
 
 #[derive(Debug)]
 pub enum FcryptError {
-    //UnsupportedNonceSize,
     CiphertextTooShort,
     DecryptionError,
     EncryptionError
@@ -54,21 +53,43 @@ struct CryptedJson {
     data: String
 }
 
+pub type KeyDeriver = fn(&Vec<u8>, &str) -> Vec<u8>;
+
 pub struct GcmContext {
     pub salt: Vec<u8>,
     pub nonce: Vec<u8>,
+    pub kdf: KeyDeriver
 } 
 
 impl GcmContext {
+    #![allow(dead_code)]
     pub fn new() -> GcmContext {
+        return GcmContext::new_with_kdf(GcmContext::sha256_deriver)
+    }
+
+    pub fn new_with_kdf(derive: KeyDeriver) -> GcmContext {
         let mut res = GcmContext {
             salt: vec![0; DEFAULT_SALT_SIZE],
-            nonce: vec![0; DEFAULT_NONCE_SIZE]
+            nonce: vec![0; DEFAULT_NONCE_SIZE],
+            kdf: derive
         };
 
         res.fill_random();
 
-        return res;
+        return res;        
+    }
+
+    pub fn sha256_deriver(salt: &Vec<u8>, password: &str) -> Vec<u8> {
+        let mut res_buffer: [u8; 32] = [0; 32];
+        let mut sha_256 = Sha256::new();
+
+        sha_256.input_str(password);
+        sha_256.input(salt);
+        sha_256.input_str(password);
+
+        sha_256.result(&mut res_buffer);
+
+        return res_buffer.to_vec();
     }
 
     pub fn from_reader<T: Read>(&mut self, reader: T) -> std::io::Result<Vec<u8>> {
@@ -157,16 +178,7 @@ impl GcmContext {
     }
 
     fn regenerate_key(&self, password: &str) -> Vec<u8> {
-        let mut res_buffer: [u8; 32] = [0; 32];
-        let mut sha_256 = Sha256::new();
-
-        sha_256.input_str(password);
-        sha_256.input(&self.salt);
-        sha_256.input_str(password);
-
-        sha_256.result(&mut res_buffer);
-
-        return res_buffer.to_vec();
+        return (self.kdf)(&self.salt, password);
     }
 
     pub fn decrypt(&self, password: &str, data: &Vec<u8>) -> Result<Vec<u8>, FcryptError> {
