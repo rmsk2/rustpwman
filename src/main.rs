@@ -82,26 +82,26 @@ impl AppState {
     fn get_default_bits(&self) -> usize {
         return self.default_security_level;
     }
-}
 
-fn determine_sec_level() -> usize {
-    return match env::var(SEC_BIT_ENV_VAR)  {
-        Ok(s) => {
-            match s.parse::<usize>() {
-                Err(_) => PW_SEC_LEVEL,
-                Ok(b) => {
-                    if b < PW_MAX_SEC_LEVEL {
-                        b
-                    } else {
-                        PW_SEC_LEVEL
+    fn determine_sec_level() -> usize {
+        return match env::var(SEC_BIT_ENV_VAR)  {
+            Ok(s) => {
+                match s.parse::<usize>() {
+                    Err(_) => PW_SEC_LEVEL,
+                    Ok(b) => {
+                        if b < PW_MAX_SEC_LEVEL {
+                            b
+                        } else {
+                            PW_SEC_LEVEL
+                        }
                     }
                 }
-            }
-        },
-        Err(_) => {
-            PW_SEC_LEVEL
-        } 
-    };
+            },
+            Err(_) => {
+                PW_SEC_LEVEL
+            } 
+        };
+    }    
 }
 
 fn main() {
@@ -119,7 +119,7 @@ fn main() {
     let mut siv = cursive::default();
     let sender = Rc::new(tx);
     let sender_main = sender.clone();
-    let default_sec_bits = determine_sec_level();
+    let default_sec_bits = AppState::determine_sec_level();
 
     let pw_callback = Box::new(move |s: &mut Cursive, password: &String| {
         let jots_store = jots::Jots::new();
@@ -282,20 +282,7 @@ fn process_save_command(s: &mut Cursive, state_temp_save: Rc<RefCell<AppState>>)
         None => { show_message(s, "Unable to read password"); return; }
     };
 
-    let item = match get_selected_entry_name(s) {
-        Some(k) => k,
-        _ => { show_message(s, "Unable to read entry"); return; }
-    };
-
-    let text_val_opt = s.call_on_name(TEXT_AREA_MAIN, |view: &mut TextArea| -> String { String::from(view.get_content()) });  
-    let text_val = match text_val_opt {
-        Some(st) => st,
-        None => { show_message(s, "Unable to read entry"); return; }
-    };
-
     let mut mut_state = state_temp_save.borrow_mut();
-
-    mut_state.store.insert(&item, &text_val);
     let file_name = mut_state.file_name.clone();
 
     match mut_state.store.to_enc_file(&file_name, &password) {
