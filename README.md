@@ -119,6 +119,7 @@ This section provides information about stuff which is in my view suboptimal and
 - I am fairly new to Rust. I guess it shows in the code.
 - There is no possibility to rename an entry.
 - On a MacBook Air 2018 using the touchpad to click elements in the TUI does not work. The problem does not manifest itself when using a mouse. Using the touchpad seems to work though on other models. I do not think that this is a hardware problem on my MacBook and I unfortunately have no idea why this happens.
+- Use a proper key derivation function instead of plain SHA-256
 - I am developing this under MacOS and Linux. It should work under Windows too, but I have not tested it yet.
 
 
