@@ -109,7 +109,7 @@ A similar problem occurs when importing existing password information into `rust
 
 # Configuration
 
-If the environment variable `RUSTPWMAN_SEC_BITSˋ is present and is parsable as a nonnegative integer value `n` < 24 then `(n + 1) * 8` is used as the default security level in bits.
+If the environment variable RUSTPWMAN_SEC_BITS is present and is parsable as a nonnegative integer value `n` < 24 then `(n + 1) * 8` is used as the default security level in bits.
 
 # Caveats
 
