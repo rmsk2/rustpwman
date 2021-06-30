@@ -17,7 +17,7 @@ use base64;
 use std::io::{Error, ErrorKind};
 use rand::Rng;
 
-use crate::PW_MAX_SEC_LEVEL;
+use crate::modtui::PW_MAX_SEC_LEVEL;
 
 
 #[derive(Debug, Hash, PartialEq, Eq)]
