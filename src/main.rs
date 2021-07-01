@@ -31,5 +31,5 @@ fn main() {
     let data_file_name = args[0].clone();
     let default_sec_bits = modtui::AppState::determine_sec_level();
 
-    modtui::main_gui(data_file_name, default_sec_bits, fcrypt::GcmContext::sha256_deriver);
+    modtui::main_gui(data_file_name, default_sec_bits, fcrypt::GcmContext::scrypt_deriver);
 }

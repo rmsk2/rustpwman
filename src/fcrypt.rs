@@ -28,6 +28,8 @@ use aes;
 use base64;
 use aes_gcm::{Key, Nonce, AesGcm, Tag};
 use aes_gcm::aead::{Aead, AeadInPlace, NewAead};
+use crypto::scrypt::scrypt;
+use crypto::scrypt::ScryptParams;
 
 const DEFAULT_TAG_SIZE: usize = 16;
 const DEFAULT_NONCE_SIZE: usize = 12;
@@ -61,6 +63,8 @@ pub struct GcmContext {
     pub kdf: KeyDeriver
 } 
 
+
+
 impl GcmContext {
     #![allow(dead_code)]
     pub fn new() -> GcmContext {
@@ -77,6 +81,17 @@ impl GcmContext {
         res.fill_random();
 
         return res;        
+    }
+
+    pub fn scrypt_deriver(salt: &Vec<u8>, password: &str) -> Vec<u8> {
+        let parms = ScryptParams::new(11, 8, 1);
+        let mut aes_key: [u8; 32] = [0; 32];
+    
+        scrypt(password.as_bytes(), salt.as_slice(), &parms, &mut aes_key);
+        let mut res:Vec<u8> = Vec::new();
+        aes_key.iter().for_each(|i| {res.push(*i)} );
+    
+        return res;
     }
 
     pub fn sha256_deriver(salt: &Vec<u8>, password: &str) -> Vec<u8> {
