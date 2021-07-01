@@ -67,7 +67,7 @@ pub struct AppState {
 }
 
 impl AppState {
-    fn new(s: jots::Jots, f_name: &String, generators: HashMap<GenerationStrategy, Box<dyn PasswordGenerator>>, default_sec: usize) -> Self {
+    pub fn new(s: jots::Jots, f_name: &String, generators: HashMap<GenerationStrategy, Box<dyn PasswordGenerator>>, default_sec: usize) -> Self {
         return AppState {
             store: s,
             password: None,
@@ -78,11 +78,11 @@ impl AppState {
         }
     }
 
-    fn get_default_bits(&self) -> usize {
+    pub fn get_default_bits(&self) -> usize {
         return self.default_security_level;
     }
 
-    fn determine_sec_level() -> usize {
+    pub fn determine_sec_level() -> usize {
         return match env::var(SEC_BIT_ENV_VAR)  {
             Ok(s) => {
                 match s.parse::<usize>() {
@@ -103,14 +103,13 @@ impl AppState {
     }    
 }
 
-pub fn main_gui(data_file_name: String) {
+pub fn main_gui(data_file_name: String, default_sec_bits: usize) {
     let (tx, rx): (Sender<String>, Receiver<String>) = mpsc::channel();
 
     let capture_file_name = data_file_name.clone();
     let mut siv = cursive::default();
     let sender = Rc::new(tx);
     let sender_main = sender.clone();
-    let default_sec_bits = AppState::determine_sec_level();
 
     let pw_callback = Box::new(move |s: &mut Cursive, password: &String| {
         let jots_store = jots::Jots::new(GcmContext::sha256_deriver);
