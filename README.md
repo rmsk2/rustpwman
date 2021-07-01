@@ -8,7 +8,7 @@ The entries are presented in a flat list and no further structuring is offered a
 ./rustpwman gui -i <file_name>
 ```
 
-or `cargo run --release -- <file_name>` which will result, after a successful password entry, in a window similar to this one.
+or `cargo run --release -- gui -i <file_name>` which will result, after a successful password entry, in a window similar to this one.
 
 ![](/screenshot.png?raw=true "Screenshot of rustpwman")
 
