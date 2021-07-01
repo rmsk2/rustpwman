@@ -50,7 +50,7 @@ use std::collections::HashMap;
 use crate::pwgen;
 use crate::pwgen::GenerationStrategy;
 use crate::pwgen::PasswordGenerator;
-use crate::fcrypt::GcmContext;
+use crate::fcrypt::KeyDeriver;
 use crate::jots;
 
 pub fn path_exists(path: &str) -> bool {
@@ -103,7 +103,7 @@ impl AppState {
     }    
 }
 
-pub fn main_gui(data_file_name: String, default_sec_bits: usize) {
+pub fn main_gui(data_file_name: String, default_sec_bits: usize, derive_func: KeyDeriver) {
     let (tx, rx): (Sender<String>, Receiver<String>) = mpsc::channel();
 
     let capture_file_name = data_file_name.clone();
@@ -112,7 +112,7 @@ pub fn main_gui(data_file_name: String, default_sec_bits: usize) {
     let sender_main = sender.clone();
 
     let pw_callback = Box::new(move |s: &mut Cursive, password: &String| {
-        let jots_store = jots::Jots::new(GcmContext::sha256_deriver);
+        let jots_store = jots::Jots::new(derive_func);
         let f_name = capture_file_name.clone();
         let mut generators: HashMap<GenerationStrategy, Box<dyn PasswordGenerator>> = HashMap::new();
 
