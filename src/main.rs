@@ -19,6 +19,10 @@ mod pwgen;
 mod modtui;
 
 use clap::{Arg, App, SubCommand};
+use rpassword;
+use std::fs::File;
+use std::io::BufReader;
+use std::io::BufWriter;
 
 const COMMAND_ENCRYPT: &str = "enc";
 const COMMAND_DECRYPT: &str = "dec";
@@ -85,11 +89,126 @@ fn main() {
     let subcommand = matches.subcommand();
 
     match subcommand {
-        (COMMAND_ENCRYPT, Some(_encrypt_matches)) => {
-            ()
+        (COMMAND_ENCRYPT, Some(encrypt_matches)) => {
+            let mut derive: fcrypt::KeyDeriver = fcrypt::GcmContext::sha256_deriver;
+
+            if encrypt_matches.is_present(ARG_SCRYPT) {
+                derive = fcrypt::GcmContext::scrypt_deriver;
+            }
+
+            let mut file_names_in: Vec<String> = Vec::new();
+            if let Some(in_files) = encrypt_matches.values_of(ARG_INPUT_FILE) {
+                in_files.for_each(|x| file_names_in.push(String::from(x)));
+            }
+            
+            let mut file_names_out: Vec<String> = Vec::new();
+            if let Some(out_files) = encrypt_matches.values_of(ARG_OUTPUT_FILE) {
+                out_files.for_each(|x| file_names_out.push(String::from(x)));
+            }
+            
+            let pw1 = match rpassword::read_password_from_tty(Some("Password: ")) {
+                Err(_) => { 
+                    println!("Error reading password");
+                    return;
+                },
+                Ok(p) => p
+            };            
+
+            let pw2 = match rpassword::read_password_from_tty(Some("Verfication: ")) {
+                Err(_) => { 
+                    println!("Error reading password");
+                    return;
+                },
+                Ok(p) => p
+            };
+
+            if pw1 != pw2 {
+                println!("Passwords differ");
+                return;                
+            }
+
+            let mut jots_file = jots::Jots::new(derive);
+
+            let file = match File::open(&file_names_in[0]) {
+                Ok(f) => f,
+                Err(e) => {
+                    println!("Error reading file. {:?}", e);
+                    return;                    
+                }
+            };
+
+            let reader = BufReader::new(file);
+            
+            match jots_file.from_reader(reader) {
+                Err(e) => {
+                    println!("Error reading file. {:?}", e);
+                    return;                    
+                },
+                Ok(_) => ()                
+            }
+
+            match jots_file.to_enc_file(&file_names_out[0], &pw1[..]) {
+                Ok(_) => (),
+                Err(e) => { 
+                    println!("Error creating file. {:?}", e);
+                    return;
+                },
+            };
         },
-        (COMMAND_DECRYPT, Some(_decrypt_matches)) => {
-            ()
+        (COMMAND_DECRYPT, Some(decrypt_matches)) => {
+            let mut derive: fcrypt::KeyDeriver = fcrypt::GcmContext::sha256_deriver;
+
+            if decrypt_matches.is_present(ARG_SCRYPT) {
+                derive = fcrypt::GcmContext::scrypt_deriver;
+            }
+
+            let mut file_names_in: Vec<String> = Vec::new();
+            if let Some(in_files) = decrypt_matches.values_of(ARG_INPUT_FILE) {
+                in_files.for_each(|x| file_names_in.push(String::from(x)));
+            }
+            
+            let mut file_names_out: Vec<String> = Vec::new();
+            if let Some(out_files) = decrypt_matches.values_of(ARG_OUTPUT_FILE) {
+                out_files.for_each(|x| file_names_out.push(String::from(x)));
+            }
+            
+            let mut jots_file = jots::Jots::new(derive);
+
+            let pw = match rpassword::read_password_from_tty(Some("Password: ")) {
+                Err(_) => { 
+                    println!("Error reading password");
+                    return;
+                },
+                Ok(p) => p
+            };
+            
+            println!();
+
+            match jots_file.from_enc_file(&file_names_in[0], &pw[..]) {
+                Err(e) => {
+                    println!("Error reading file. {:?}", e);
+                    return;                    
+                },
+                Ok(_) => ()
+            };
+
+            let file = match File::create(&file_names_out[0]) {
+                Err(e) => {
+                    println!("Error creating file. {:?}", e);
+                    return;                    
+                },
+                Ok(f) => f      
+            };
+
+            let w = BufWriter::new(file);
+
+            match jots_file.to_writer(w) {
+                Err(e) => {
+                    println!("Error writing file. {:?}", e);
+                    return;                    
+                },
+                Ok(_) => ()
+            };
         },
         (COMMAND_GUI, Some(gui_matches)) => {
             let mut derive: fcrypt::KeyDeriver = fcrypt::GcmContext::sha256_deriver;
