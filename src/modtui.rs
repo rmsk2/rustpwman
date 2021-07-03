@@ -16,7 +16,7 @@ use std::env;
 
 pub const PW_MAX_SEC_LEVEL: usize = 24;
 
-const VERSION_STRING: &str = "0.5.3";
+pub const VERSION_STRING: &str = "0.5.5";
 
 const PW_WIDTH: usize = 35;
 const PW_SEC_LEVEL: usize = 9;
