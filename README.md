@@ -1,8 +1,37 @@
 # rustpwman
 
-A simple password manager written in Rust using the cursive TUI library. The basic concept of `rustpwman` is to manage a set of entries which have a value or content. **This is work in progress**.
+A simple password manager written in Rust using the cursive TUI library. **This is work in progress**.
 
-The entries are presented in a flat list and no further structuring is offered at the moment. In order to start the programm use
+The password manager offers the following functionality:
+
+```
+rustpwman 0.5.5
+Martin Grap <rmsk2@gmx.de>
+A password manager for the cursive TUI in Rust
+
+USAGE:
+    rustpwman [SUBCOMMAND]
+
+FLAGS:
+    -h, --help       
+            Prints help information
+
+    -V, --version    
+            Prints version information
+
+
+SUBCOMMANDS:
+    dec     Decrypt file
+    enc     Encrypt file
+    gui     Open file in TUI
+    help    Prints this message or the help of the given subcommand(s)
+```
+
+The `enc` and `dec` commands can be used to reencrypt an existing data file when one wishes to switch to another password based key derivation function.
+
+# Introduction
+
+The basic concept of `rustpwman` is to manage a set of entries which have a value or content. The entries are presented in a flat list and no further structuring is offered at the moment. In order to start the programm use
 
 ```
 ./rustpwman gui -i <file_name>
@@ -76,6 +105,11 @@ Select this menu entry to create a new empty password entry. Use then `Edit entr
 ### Delete entry 
 
 Use this menu entry to delete the currently selected password entry. Before deleting the entry the user is prompted whether the entry is really to be deleted. 
+
+### Rename entry 
+
+Via this menu entry the curretly selected entry can be renamed. It is not allowed to use the empty string as a new name. rustpwman also checks that the no entry with the new name already exists.
+
 
 ### Clear entry
 
