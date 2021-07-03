@@ -28,6 +28,7 @@ const SELECT_VIEW: &str = "entrylist";
 const PANEL_AREA_MAIN: &str = "entrytitle";
 const TEXT_AREA_TITLE: &str = "texttitle";
 const EDIT_FILE_NAME: &str = "editfile";
+const RENAME_EDIT_NAME: &str = "renamedit";
 const SLIDER_SEC_NAME: &str = "securityslider";
 const BITS_SEC_VALUE: &str = "securitybits";
 
@@ -592,6 +593,73 @@ fn edit_entry(s: &mut Cursive, state_for_edit_entry: Rc<RefCell<AppState>>) {
     s.add_layer(res);
 }
 
+fn rename_entry(s: &mut Cursive, state_for_rename_entry: Rc<RefCell<AppState>>) {
+    let old_entry_name = match get_selected_entry_name(s) {
+        Some(name) => name,
+        None => {
+            show_message(s, "Unable to determine selected entry"); 
+            return; 
+        }
+    };
+
+    let res = Dialog::new()
+    .title("Rustpwman rename entry")
+    .padding_lrtb(2, 2, 1, 1)
+    .content(
+        LinearLayout::vertical()
+        .child(TextView::new(format!("Please enter new name for '{}'.\n\n", old_entry_name)))
+        .child(
+            LinearLayout::horizontal()
+                .child(TextView::new("New name: "))
+                .child(EditView::new()
+                    .content(old_entry_name.clone())
+                    .with_name(RENAME_EDIT_NAME)
+                    .fixed_width(40))
+        )
+    )
+    .button("OK", move |s| {
+        let new_entry_name = match s.call_on_name(RENAME_EDIT_NAME, |view: &mut EditView| {view.get_content()}) {
+            Some(entry) => {
+                if entry.len() == 0 {
+                    show_message(s, "New entry name is empty"); 
+                    return;
+                }
+                entry.clone()
+            },
+            None => { show_message(s, "Unable to read new entry name"); return }
+        }; 
+
+        let old_entry_contents: Option<String>;
+        old_entry_contents = state_for_rename_entry.borrow().store.get(&old_entry_name);
+
+        let contents = match old_entry_contents {
+            None =>  { show_message(s, "Unable to read old entry"); return },
+            Some(s) => s
+        };
+
+        let new_entry_contents: Option<String>;
+        new_entry_contents = state_for_rename_entry.borrow().store.get(&new_entry_name);
+
+        match new_entry_contents {
+            Some(_) => { show_message(s, "An entry with the new name already exists"); return },
+            None => {
+                state_for_rename_entry.borrow_mut().store.remove(&old_entry_name);
+                state_for_rename_entry.borrow_mut().store.insert(&new_entry_name, &contents);
+                state_for_rename_entry.borrow_mut().dirty = true;
+                fill_tui(s, state_for_rename_entry.clone());
+                s.pop_layer();
+                display_entry(s, state_for_rename_entry.clone(), &new_entry_name, true);
+                show_message(s, "Entry renamed successfully. The renamed entry has been selected\n but you may need to scroll to it manually.");
+            }
+        }
+    })
+    .button("Cancel", |s| { s.pop_layer(); });                
+    
+    s.add_layer(res);
+
+
+}
+
 fn change_password(s: &mut Cursive, state_for_pw_change: Rc<RefCell<AppState>>) {
     let res = Dialog::new()
         .title("Rustpwman change password")
@@ -656,7 +724,8 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
     let state_temp_edit = shared_state.clone();
     let state_temp_load = shared_state.clone();
     let state_temp_pw_gen = shared_state.clone();
-    let state_temp_clear = shared_state.clone();  
+    let state_temp_clear = shared_state.clone();
+    let state_temp_rename = shared_state.clone();      
     let sender = sndr.clone();
     let sender2 = sndr.clone();
 
@@ -705,6 +774,9 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
             })
             .leaf("Delete Entry", move |s| {
                 delete_entry(s, state_temp_del.clone()); 
+            }) 
+            .leaf("Rename Entry ...", move |s| {
+                rename_entry(s, state_temp_rename.clone()); 
             }) 
             .leaf("Clear Entry", move |s| {
                 clear_entry(s, state_temp_clear.clone()); 
