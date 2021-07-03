@@ -87,7 +87,7 @@ fn perform_encrypt_command(encrypt_matches: &clap::ArgMatches) {
     let file = match File::open(&file_in) {
         Ok(f) => f,
         Err(e) => {
-            println!("Error reading file. {:?}", e);
+            println!("Error opening file. {:?}", e);
             return;                    
         }
     };
