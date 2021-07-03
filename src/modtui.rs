@@ -772,13 +772,13 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
             .leaf("Add Entry ...", move |s| {
                 add_entry(s, state_temp_add.clone());
             })
-            .leaf("Delete Entry", move |s| {
+            .leaf("Delete Entry ...", move |s| {
                 delete_entry(s, state_temp_del.clone()); 
             }) 
             .leaf("Rename Entry ...", move |s| {
                 rename_entry(s, state_temp_rename.clone()); 
             }) 
-            .leaf("Clear Entry", move |s| {
+            .leaf("Clear Entry ...", move |s| {
                 clear_entry(s, state_temp_clear.clone()); 
             })                    
             .leaf("Load Entry ...", move |s| {
