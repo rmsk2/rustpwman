@@ -26,13 +26,13 @@ It is expected that the referenced file contains encrypted password information.
 }
  ```
 
-If the referenced file does not exist the user is offered to create an empty encrypted data file using a new password and the file name specified on the command line. The actual encryption key is derived from the specified password using the following calculation:
+If the referenced file does not exist the user is offered to create an empty encrypted data file using a new password and the file name specified on the command line. as a default the actual encryption key is derived from the specified password using the following calculation:
 
 ```
 SHA-256( password | salt | password )
 ```
 
-where `salt` is a 10 byte random value and `|` symbolizes concatenation.
+where `salt` is a 10 byte random value and `|` symbolizes concatenation. It is possible to select another password based key derivation function. Currently the `scrypt` PBKDF is used when the CLI parameter `--scrypt` is provided.
 
 # Functionality
 
@@ -119,7 +119,6 @@ This section provides information about stuff which is in my view suboptimal and
 - I am fairly new to Rust. I guess it shows in the code.
 - There is no possibility to rename an entry.
 - On a MacBook Air 2018 using the touchpad to click elements in the TUI does not work. The problem does not manifest itself when using a mouse. Using the touchpad seems to work though on other models. I do not think that this is a hardware problem on my MacBook and I unfortunately have no idea why this happens.
-- Use a proper key derivation function instead of plain SHA-256
 - I am developing this under MacOS and Linux. It should work under Windows too, but I have not tested it yet.
 
 
