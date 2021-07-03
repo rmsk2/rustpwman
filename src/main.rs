@@ -32,22 +32,34 @@ const ARG_INPUT_FILE: &str = "inputfile";
 const ARG_OUTPUT_FILE: &str = "outputfile";
 const ARG_SCRYPT: &str = "scrypt";
 
-fn perform_encrypt_command(encrypt_matches: &clap::ArgMatches) {
+fn determine_pbkdf(matches: &clap::ArgMatches) -> fcrypt::KeyDeriver {
     let mut derive: fcrypt::KeyDeriver = fcrypt::GcmContext::sha256_deriver;
 
-    if encrypt_matches.is_present(ARG_SCRYPT) {
+    if matches.is_present(ARG_SCRYPT) {
         derive = fcrypt::GcmContext::scrypt_deriver;
     }
 
+    return derive;
+}
+
+fn determine_in_out_files(matches: &clap::ArgMatches) -> (String, String) {
     let mut file_names_in: Vec<String> = Vec::new();
-    if let Some(in_files) = encrypt_matches.values_of(ARG_INPUT_FILE) {
+    if let Some(in_files) = matches.values_of(ARG_INPUT_FILE) {
         in_files.for_each(|x| file_names_in.push(String::from(x)));
     }
     
     let mut file_names_out: Vec<String> = Vec::new();
-    if let Some(out_files) = encrypt_matches.values_of(ARG_OUTPUT_FILE) {
+    if let Some(out_files) = matches.values_of(ARG_OUTPUT_FILE) {
         out_files.for_each(|x| file_names_out.push(String::from(x)));
     }
+
+    return (file_names_in[0].clone(), file_names_out[0].clone());
+}
+
+fn perform_encrypt_command(encrypt_matches: &clap::ArgMatches) {
+    let derive: fcrypt::KeyDeriver = determine_pbkdf(encrypt_matches);
+
+    let (file_in, file_out) = determine_in_out_files(encrypt_matches);
     
     let pw1 = match rpassword::read_password_from_tty(Some("Password: ")) {
         Err(_) => { 
@@ -72,7 +84,7 @@ fn perform_encrypt_command(encrypt_matches: &clap::ArgMatches) {
 
     let mut jots_file = jots::Jots::new(derive);
 
-    let file = match File::open(&file_names_in[0]) {
+    let file = match File::open(&file_in) {
         Ok(f) => f,
         Err(e) => {
             println!("Error reading file. {:?}", e);
@@ -90,7 +102,7 @@ fn perform_encrypt_command(encrypt_matches: &clap::ArgMatches) {
         Ok(_) => ()                
     }
 
-    match jots_file.to_enc_file(&file_names_out[0], &pw1[..]) {
+    match jots_file.to_enc_file(&file_out, &pw1[..]) {
         Ok(_) => (),
         Err(e) => { 
             println!("Error creating file. {:?}", e);
@@ -101,21 +113,9 @@ fn perform_encrypt_command(encrypt_matches: &clap::ArgMatches) {
 }
 
 fn perform_decrypt_command(decrypt_matches: &clap::ArgMatches) {
-    let mut derive: fcrypt::KeyDeriver = fcrypt::GcmContext::sha256_deriver;
+    let derive: fcrypt::KeyDeriver = determine_pbkdf(decrypt_matches);
 
-    if decrypt_matches.is_present(ARG_SCRYPT) {
-        derive = fcrypt::GcmContext::scrypt_deriver;
-    }
-
-    let mut file_names_in: Vec<String> = Vec::new();
-    if let Some(in_files) = decrypt_matches.values_of(ARG_INPUT_FILE) {
-        in_files.for_each(|x| file_names_in.push(String::from(x)));
-    }
-    
-    let mut file_names_out: Vec<String> = Vec::new();
-    if let Some(out_files) = decrypt_matches.values_of(ARG_OUTPUT_FILE) {
-        out_files.for_each(|x| file_names_out.push(String::from(x)));
-    }
+    let (file_in, file_out) = determine_in_out_files(decrypt_matches);
     
     let mut jots_file = jots::Jots::new(derive);
 
@@ -129,7 +129,7 @@ fn perform_decrypt_command(decrypt_matches: &clap::ArgMatches) {
     
     println!();
 
-    match jots_file.from_enc_file(&file_names_in[0], &pw[..]) {
+    match jots_file.from_enc_file(&file_in, &pw[..]) {
         Err(e) => {
             println!("Error reading file. {:?}", e);
             return;                    
@@ -137,7 +137,7 @@ fn perform_decrypt_command(decrypt_matches: &clap::ArgMatches) {
         Ok(_) => ()
     };
 
-    let file = match File::create(&file_names_out[0]) {
+    let file = match File::create(&file_out) {
         Err(e) => {
             println!("Error creating file. {:?}", e);
             return;                    
@@ -158,11 +158,7 @@ fn perform_decrypt_command(decrypt_matches: &clap::ArgMatches) {
 }
 
 fn perform_gui_command(gui_matches: &clap::ArgMatches) {
-    let mut derive: fcrypt::KeyDeriver = fcrypt::GcmContext::sha256_deriver;
-
-    if gui_matches.is_present(ARG_SCRYPT) {
-        derive = fcrypt::GcmContext::scrypt_deriver;
-    }
+    let derive: fcrypt::KeyDeriver = determine_pbkdf(gui_matches);
 
     let mut file_names: Vec<String> = Vec::new();
     if let Some(in_files) = gui_matches.values_of(ARG_INPUT_FILE) {
