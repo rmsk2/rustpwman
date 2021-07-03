@@ -33,7 +33,7 @@ use crypto::scrypt::ScryptParams;
 
 const DEFAULT_TAG_SIZE: usize = 16;
 const DEFAULT_NONCE_SIZE: usize = 12;
-const DEFAULT_SALT_SIZE: usize = 10;
+const DEFAULT_SALT_SIZE: usize = 16;
 
 #[derive(Debug)]
 pub enum FcryptError {
@@ -127,11 +127,7 @@ impl GcmContext {
 
         if nonce.len() != DEFAULT_NONCE_SIZE {
             return Err(Error::new(ErrorKind::Other, "Unsupported nonce size"));
-        }
-
-        if salt.len() != DEFAULT_SALT_SIZE {
-            return Err(Error::new(ErrorKind::Other, "Unsupported salt size"));
-        }        
+        }       
 
         self.salt = salt;
         self.nonce = nonce;
