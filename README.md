@@ -55,7 +55,7 @@ It is expected that the referenced file contains encrypted password information.
 }
  ```
 
-If the referenced file does not exist the user is offered to create an empty encrypted data file using a new password and the file name specified on the command line. as a default the actual encryption key is derived from the specified password using the following calculation:
+If the referenced file does not exist the user is offered to create an empty encrypted data file using a new password and the file name specified on the command line. As a default the actual encryption key is derived from the specified password using the following calculation:
 
 ```
 SHA-256( password | salt | password )
@@ -108,8 +108,7 @@ Use this menu entry to delete the currently selected password entry. Before dele
 
 ### Rename entry 
 
-Via this menu entry the curretly selected entry can be renamed. It is not allowed to use the empty string as a new name. rustpwman also checks that the no entry with the new name already exists.
-
+Via this menu entry the currently selected entry can be renamed. It is not allowed to use the empty string as a new name. rustpwman also checks that no entry having the new name already exists.
 
 ### Clear entry
 
