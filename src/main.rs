@@ -25,7 +25,7 @@ use std::io::BufReader;
 use std::io::BufWriter;
 use std::io::{Error, ErrorKind};
 
-pub const VERSION_STRING: &str = "0.5.6";
+pub const VERSION_STRING: &'static str = env!("CARGO_PKG_VERSION");
 const COMMAND_ENCRYPT: &str = "enc";
 const COMMAND_DECRYPT: &str = "dec";
 const COMMAND_GUI: &str = "gui";
