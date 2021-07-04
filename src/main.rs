@@ -23,6 +23,7 @@ use rpassword;
 use std::fs::File;
 use std::io::BufReader;
 use std::io::BufWriter;
+use std::io::{Error, ErrorKind};
 use modtui::VERSION_STRING;
 
 const COMMAND_ENCRYPT: &str = "enc";
@@ -56,31 +57,28 @@ fn determine_in_out_files(matches: &clap::ArgMatches) -> (String, String) {
     return (file_names_in[0].clone(), file_names_out[0].clone());
 }
 
+fn enter_password_verified() -> std::io::Result<String> {
+    let pw1 = rpassword::read_password_from_tty(Some("Password: "))?;
+    let pw2 = rpassword::read_password_from_tty(Some("Verfication: "))?;
+
+    if pw1 != pw2 {
+        return Err(Error::new(ErrorKind::Other, "Passwords differ"));
+    }
+
+    return Ok(pw1);
+}
+
 fn perform_encrypt_command(encrypt_matches: &clap::ArgMatches) {
     let derive: fcrypt::KeyDeriver = determine_pbkdf(encrypt_matches);
-
     let (file_in, file_out) = determine_in_out_files(encrypt_matches);
     
-    let pw1 = match rpassword::read_password_from_tty(Some("Password: ")) {
-        Err(_) => { 
-            println!("Error reading password");
-            return;
-        },
-        Ok(p) => p
-    };            
-
-    let pw2 = match rpassword::read_password_from_tty(Some("Verfication: ")) {
-        Err(_) => { 
-            println!("Error reading password");
+    let pw = match enter_password_verified() {
+        Err(e) => { 
+            println!("Error reading password: {:?}", e);
             return;
         },
         Ok(p) => p
     };
-
-    if pw1 != pw2 {
-        println!("Passwords differ");
-        return;                
-    }
 
     let mut jots_file = jots::Jots::new(derive);
 
@@ -102,7 +100,7 @@ fn perform_encrypt_command(encrypt_matches: &clap::ArgMatches) {
         Ok(_) => ()                
     }
 
-    match jots_file.to_enc_file(&file_out, &pw1[..]) {
+    match jots_file.to_enc_file(&file_out, &pw[..]) {
         Ok(_) => (),
         Err(e) => { 
             println!("Error creating file. {:?}", e);
@@ -114,7 +112,6 @@ fn perform_encrypt_command(encrypt_matches: &clap::ArgMatches) {
 
 fn perform_decrypt_command(decrypt_matches: &clap::ArgMatches) {
     let derive: fcrypt::KeyDeriver = determine_pbkdf(decrypt_matches);
-
     let (file_in, file_out) = determine_in_out_files(decrypt_matches);
     
     let mut jots_file = jots::Jots::new(derive);
