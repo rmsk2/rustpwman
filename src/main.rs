@@ -24,8 +24,8 @@ use std::fs::File;
 use std::io::BufReader;
 use std::io::BufWriter;
 use std::io::{Error, ErrorKind};
-use modtui::VERSION_STRING;
 
+pub const VERSION_STRING: &str = "0.5.6";
 const COMMAND_ENCRYPT: &str = "enc";
 const COMMAND_DECRYPT: &str = "dec";
 const COMMAND_GUI: &str = "gui";
@@ -107,7 +107,6 @@ fn perform_encrypt_command(encrypt_matches: &clap::ArgMatches) {
             return;
         },
     };
-
 }
 
 fn perform_decrypt_command(decrypt_matches: &clap::ArgMatches) {
@@ -151,7 +150,6 @@ fn perform_decrypt_command(decrypt_matches: &clap::ArgMatches) {
         },
         Ok(_) => ()
     };
-
 }
 
 fn perform_gui_command(gui_matches: &clap::ArgMatches) {

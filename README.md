@@ -61,7 +61,7 @@ If the referenced file does not exist the user is offered to create an empty enc
 SHA-256( password | salt | password )
 ```
 
-where `salt` is a 10 byte random value and `|` symbolizes concatenation. It is possible to select another password based key derivation function. Currently the `scrypt` PBKDF is used when the CLI parameter `--scrypt` is provided.
+where `salt` is a random value of appropriate length and `|` symbolizes concatenation. It is possible to select another password based key derivation function. Currently the `scrypt` PBKDF is used when the CLI parameter `--scrypt` is provided.
 
 # Functionality
 

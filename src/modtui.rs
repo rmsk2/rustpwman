@@ -16,8 +16,6 @@ use std::env;
 
 pub const PW_MAX_SEC_LEVEL: usize = 24;
 
-pub const VERSION_STRING: &str = "0.5.5";
-
 const PW_WIDTH: usize = 35;
 const PW_SEC_LEVEL: usize = 9;
 const EDIT_NAME: &str = "nameedit";
@@ -34,6 +32,7 @@ const BITS_SEC_VALUE: &str = "securitybits";
 
 const SEC_BIT_ENV_VAR: &str = "RUSTPWMAN_SEC_BITS";
 
+use crate::VERSION_STRING;
 use cursive::traits::*;
 use cursive::views::{Dialog, LinearLayout, TextView, EditView, SelectView, TextArea, Panel, SliderView, RadioGroup};
 use cursive::Cursive;
