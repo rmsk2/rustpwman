@@ -41,6 +41,8 @@ or `cargo run --release -- gui -i <file_name>` which will result, after a succes
 
 ![](/screenshot.png?raw=true "Screenshot of rustpwman")
 
+## About the crypto
+
 It is expected that the referenced file contains encrypted password information. `rustpwman` encrypts its data at rest using AES-256 in GCM mode with a 128 bit tag length and a 96 bit nonce. The encrypted data file is a simple JSON data structure. This may serve as an example:
 
 ```
@@ -62,6 +64,23 @@ SHA-256( password | salt | password )
 ```
 
 where `salt` is a random value of appropriate length and `|` symbolizes concatenation. It is possible to select another password based key derivation function. Currently the `scrypt` PBKDF is used when the CLI parameter `--scrypt` is provided.
+
+## Format of payload data
+
+The plaintext password data is simply stored as key value pairs in an obvious way using JSON. There is not much more to know than shown in this example: 
+
+```
+[
+  {
+    "Key": "test2",
+    "Text": "first test \n"
+  },
+  {
+    "Key": "test42",
+    "Text": "second test \n"
+  }
+]
+```
 
 # Functionality
 
