@@ -84,8 +84,8 @@ impl GcmContext {
     }
 
     pub fn scrypt_deriver(salt: &Vec<u8>, password: &str) -> Vec<u8> {
-        // N = 2048, r = 8, p = 1
-        let parms = ScryptParams::new(11, 8, 1);
+        // N = 32768, r = 8, p = 1
+        let parms = ScryptParams::new(15, 8, 1);
         let mut aes_key: [u8; 32] = [0; 32];
     
         scrypt(password.as_bytes(), salt.as_slice(), &parms, &mut aes_key);
