@@ -174,6 +174,7 @@ This section provides information about stuff which is in my view suboptimal and
 - In non `--release` builds scrypt with the chosen parameters is *extremely* slow
 - Also offer Argon2 as a PBKDF
 - Should the encrypted file also name the PBKDF used to derive the key?
+- https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#scrypt
 
 
 

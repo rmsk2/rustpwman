@@ -30,10 +30,16 @@ use aes_gcm::{Key, Nonce, AesGcm, Tag};
 use aes_gcm::aead::{Aead, AeadInPlace, NewAead};
 use crypto::scrypt::scrypt;
 use crypto::scrypt::ScryptParams;
+use bcrypt_pbkdf::bcrypt_pbkdf;
 
 const DEFAULT_TAG_SIZE: usize = 16;
 const DEFAULT_NONCE_SIZE: usize = 12;
 const DEFAULT_SALT_SIZE: usize = 16;
+// bcrypt has an input length limitation.
+// It does not seem to be clear what this limitation is though.
+// One recommendation is that 50 is a safe choice for all sensible
+// bcrypt implementations.
+const MAX_PW_SIZE_IN_BYTES: usize = 50;  
 
 #[derive(Debug)]
 pub enum FcryptError {
@@ -83,9 +89,27 @@ impl GcmContext {
         return res;        
     }
 
+    pub fn check_password(pw: &str) -> Option<Error> {
+        if pw.as_bytes().len() > MAX_PW_SIZE_IN_BYTES {
+            return Some(Error::new(ErrorKind::Other, "Password too long"));
+        }
+
+        return None;
+    }
+
+    pub fn bcrypt_deriver(salt: &Vec<u8>, password: &str) -> Vec<u8> {
+        let mut aes_key: [u8; 32] = [0; 32];
+        bcrypt_pbkdf(password, &salt[..], 1024, &mut aes_key).unwrap();
+    
+        let mut res:Vec<u8> = Vec::new();
+        aes_key.iter().for_each(|i| { res.push(*i) });
+    
+        return res;
+    }
+
     pub fn scrypt_deriver(salt: &Vec<u8>, password: &str) -> Vec<u8> {
-        // N = 32768, r = 8, p = 1
-        let parms = ScryptParams::new(15, 8, 1);
+        // N = 32768, r = 8, p = 2
+        let parms = ScryptParams::new(15, 8, 2);
         let mut aes_key: [u8; 32] = [0; 32];
     
         scrypt(password.as_bytes(), salt.as_slice(), &parms, &mut aes_key);

@@ -31,13 +31,22 @@ const COMMAND_DECRYPT: &str = "dec";
 const COMMAND_GUI: &str = "gui";
 const ARG_INPUT_FILE: &str = "inputfile";
 const ARG_OUTPUT_FILE: &str = "outputfile";
-const ARG_SCRYPT: &str = "scrypt";
+const ARG_KDF: &str = "kdf";
 
 fn determine_pbkdf(matches: &clap::ArgMatches) -> fcrypt::KeyDeriver {
-    let mut derive: fcrypt::KeyDeriver = fcrypt::GcmContext::sha256_deriver;
+    let derive: fcrypt::KeyDeriver = fcrypt::GcmContext::sha256_deriver;
 
-    if matches.is_present(ARG_SCRYPT) {
-        derive = fcrypt::GcmContext::scrypt_deriver;
+    if matches.is_present(ARG_KDF) {
+        let mut kdf_names: Vec<String> = Vec::new();
+        if let Some(names) = matches.values_of(ARG_KDF) {
+            names.for_each(|x| kdf_names.push(String::from(x)));
+        }
+        
+        return match &kdf_names[0][..] {
+            "scrypt" => fcrypt::GcmContext::scrypt_deriver,
+            "bcrypt" => fcrypt::GcmContext::bcrypt_deriver,
+            _ => derive
+        };
     }
 
     return derive;
@@ -63,6 +72,11 @@ fn enter_password_verified() -> std::io::Result<String> {
 
     if pw1 != pw2 {
         return Err(Error::new(ErrorKind::Other, "Passwords differ"));
+    }
+
+    match fcrypt::GcmContext::check_password(&pw1) {
+        Some(e) => return Err(e),
+        None => ()
     }
 
     return Ok(pw1);
@@ -123,6 +137,14 @@ fn perform_decrypt_command(decrypt_matches: &clap::ArgMatches) {
         Ok(p) => p
     };
     
+    match fcrypt::GcmContext::check_password(&pw) {
+        Some(e) => {
+            println!("Password illegal: {:?}", e);
+            return;
+        },
+        None => ()
+    }    
+    
     println!();
 
     match jots_file.from_enc_file(&file_in, &pw[..]) {
@@ -176,49 +198,58 @@ fn main() {
                 .about("Encrypt file")        
                 .arg(Arg::with_name(ARG_INPUT_FILE)
                     .short("i")
-                    .long("input")
+                    .long(ARG_INPUT_FILE)
                     .takes_value(true)
                     .required(true)
                     .help("Name of plaintext file to encrypt"))
                 .arg(Arg::with_name(ARG_OUTPUT_FILE)
                     .short("o")
-                    .long("output")
+                    .long(ARG_OUTPUT_FILE)
                     .required(true)
                     .takes_value(true)
                     .help("Encrypted output file"))                    
-                .arg(Arg::with_name(ARG_SCRYPT)
-                    .long("scrypt")
-                    .help("Use Scrypt as PBKDF")))
+                .arg(Arg::with_name(ARG_KDF)
+                    .long(ARG_KDF)
+                    .takes_value(true)
+                    .help("Use other PBKDF")
+                    .possible_value("scrypt")
+                    .possible_value("bcrypt")))
         .subcommand(
             SubCommand::with_name(COMMAND_DECRYPT)
                 .about("Decrypt file")        
                 .arg(Arg::with_name(ARG_INPUT_FILE)
                     .short("i")
-                    .long("input")
+                    .long(ARG_INPUT_FILE)
                     .required(true)
                     .takes_value(true)
                     .help("Name of encrypted file"))
                 .arg(Arg::with_name(ARG_OUTPUT_FILE)
                     .short("o")
-                    .long("output")
+                    .long(ARG_OUTPUT_FILE)
                     .required(true)
                     .takes_value(true)
                     .help("Name of plaintext file"))                    
-                .arg(Arg::with_name(ARG_SCRYPT)
-                    .long("scrypt")
-                    .help("Use Scrypt as PBKDF")))
+                .arg(Arg::with_name(ARG_KDF)
+                    .long(ARG_KDF)
+                    .takes_value(true)
+                    .help("Use other PBKDF")
+                    .possible_value("scrypt")
+                    .possible_value("bcrypt")))
         .subcommand(
             SubCommand::with_name(COMMAND_GUI)
                 .about("Open file in TUI")        
                 .arg(Arg::with_name(ARG_INPUT_FILE)
                     .short("i")
-                    .long("input")
+                    .long(ARG_INPUT_FILE)
                     .required(true)
                     .takes_value(true)
                     .help("Name of encrypted data file"))                   
-                .arg(Arg::with_name(ARG_SCRYPT)
-                    .long("scrypt")
-                    .help("Use Scrypt as PBKDF")));                    
+                .arg(Arg::with_name(ARG_KDF)
+                    .long(ARG_KDF)
+                    .takes_value(true)
+                    .help("Use other PBKDF")
+                    .possible_value("scrypt")
+                    .possible_value("bcrypt")));                    
 
     let matches = app.clone().get_matches();
     let subcommand = matches.subcommand();

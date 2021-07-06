@@ -51,6 +51,7 @@ use crate::pwgen;
 use crate::pwgen::GenerationStrategy;
 use crate::pwgen::PasswordGenerator;
 use crate::fcrypt::KeyDeriver;
+use crate::fcrypt;
 use crate::jots;
 
 pub fn path_exists(path: &str) -> bool {
@@ -871,6 +872,11 @@ fn password_entry_dialog(sndr: Rc<Sender<String>>, ok_cb_with_state: Box<dyn Fn(
             None => { show_message(s, "Unable to read password"); return }
         };
 
+        if let Some(err) = fcrypt::GcmContext::check_password(&pw_text) {
+            show_message(s, &format!("Password incorrect: {:?}", err));
+            return;        
+        }        
+
         ok_cb_with_state(s, &pw_text);
     };
 
@@ -913,6 +919,11 @@ fn verify_passwords_with_names(s: &mut Cursive, ok_cb: &Box<dyn Fn(&mut Cursive,
     if pw1_text != pw2_text {
         show_message(s, "Passwords not equal!");
         return;
+    }
+
+    if let Some(err) = fcrypt::GcmContext::check_password(&pw1_text) {
+        show_message(s, &format!("Password incorrect: {:?}", err));
+        return;        
     }
 
     ok_cb(s, &pw2_text);
