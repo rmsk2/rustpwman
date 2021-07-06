@@ -5,7 +5,7 @@ A simple password manager written in Rust using the cursive TUI library. **This 
 The password manager offers the following functionality:
 
 ```
-rustpwman 0.5.5
+rustpwman 0.6.0
 Martin Grap <rmsk2@gmx.de>
 A password manager for the cursive TUI in Rust
 
@@ -63,7 +63,7 @@ If the referenced file does not exist the user is offered to create an empty enc
 SHA-256( password | salt | password )
 ```
 
-where `salt` is a random value of appropriate length and `|` symbolizes concatenation. It is possible to select another password based key derivation function. Currently the `scrypt` PBKDF is used when the CLI parameter `--scrypt` is provided.
+where `salt` is a random value of appropriate length and `|` symbolizes concatenation. It is possible to select another password based key derivation function. Currently `scrypt` or `bcrypt` are used as a PBKDF when they are specified as a parameter to the `--kdf` option.
 
 ## Format of payload data
 
@@ -172,7 +172,6 @@ This section provides information about stuff which is in my view suboptimal and
 - On a MacBook Air 2018 using the touchpad to click elements in the TUI does not work. The problem does not manifest itself when using a mouse. Using the touchpad seems to work though on other models. I do not think that this is a hardware problem on my MacBook and I unfortunately have no idea why this happens.
 - I am developing this under MacOS and Linux. It should work under Windows too, but I have not tested it yet.
 - In non `--release` builds scrypt with the chosen parameters is *extremely* slow
-- Also offer Argon2 as a PBKDF
 - Should the encrypted file also name the PBKDF used to derive the key?
 - https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#scrypt
 
