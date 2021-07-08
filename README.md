@@ -63,7 +63,7 @@ If the referenced file does not exist the user is offered to create an empty enc
 SHA-256( password | salt | password )
 ```
 
-where `salt` is a random value of appropriate length and `|` symbolizes concatenation. It is possible to select another password based key derivation function. Currently `scrypt` or `bcrypt` are used as a PBKDF when they are specified as a parameter to the `--kdf` option.
+where `salt` is a random value of appropriate length and `|` symbolizes concatenation. It is possible to select another password based key derivation function. Currently `scrypt`, `bcrypt` or `argon2` are used as a PBKDF when they are specified as a parameter to the `--kdf` option.
 
 ## Format of payload data
 
