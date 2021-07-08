@@ -31,6 +31,7 @@ use aes_gcm::aead::{Aead, AeadInPlace, NewAead};
 use crypto::scrypt::scrypt;
 use crypto::scrypt::ScryptParams;
 use bcrypt_pbkdf::bcrypt_pbkdf;
+use argon2;
 
 const DEFAULT_TAG_SIZE: usize = 16;
 const DEFAULT_NONCE_SIZE: usize = 12;
@@ -97,8 +98,23 @@ impl GcmContext {
         return None;
     }
 
+    pub fn argon2id_deriver(salt: &Vec<u8>, password: &str) -> Vec<u8> {
+        let mut aes_key: [u8; 32] = [0; 32];
+        let no_ad: [u8; 0] = [];
+
+        // 15 MiB, t=2, p=1
+        let ctx = argon2::Argon2::new(None, 2, 15*1024, 1, argon2::Version::V0x13).unwrap();
+        ctx.hash_password_into(argon2::Algorithm::Argon2id, password.as_bytes(), &salt[..], &no_ad, &mut aes_key).unwrap();
+        let mut res:Vec<u8> = Vec::new();
+        aes_key.iter().for_each(|i| { res.push(*i) });
+    
+        return res;        
+    }
+
     pub fn bcrypt_deriver(salt: &Vec<u8>, password: &str) -> Vec<u8> {
         let mut aes_key: [u8; 32] = [0; 32];
+
+        // work factor 10 = 2^10 = 1024
         bcrypt_pbkdf(password, &salt[..], 1024, &mut aes_key).unwrap();
     
         let mut res:Vec<u8> = Vec::new();
@@ -108,7 +124,7 @@ impl GcmContext {
     }
 
     pub fn scrypt_deriver(salt: &Vec<u8>, password: &str) -> Vec<u8> {
-        // N = 32768, r = 8, p = 2
+        // N = 32768 = 2^15, r=8, p=2
         let parms = ScryptParams::new(15, 8, 2);
         let mut aes_key: [u8; 32] = [0; 32];
     

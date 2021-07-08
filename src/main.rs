@@ -45,6 +45,7 @@ fn determine_pbkdf(matches: &clap::ArgMatches) -> fcrypt::KeyDeriver {
         return match &kdf_names[0][..] {
             "scrypt" => fcrypt::GcmContext::scrypt_deriver,
             "bcrypt" => fcrypt::GcmContext::bcrypt_deriver,
+            "argon2" => fcrypt::GcmContext::argon2id_deriver,
             _ => derive
         };
     }
@@ -188,6 +189,19 @@ fn perform_gui_command(gui_matches: &clap::ArgMatches) {
     modtui::main_gui(data_file_name, default_sec_bits, derive);
 }
 
+pub fn add_kdf_param() -> clap::Arg<'static, 'static> {
+    let mut arg = Arg::with_name(ARG_KDF);
+
+    arg = arg.long(ARG_KDF);
+    arg = arg.takes_value(true);
+    arg = arg.help("Use other PBKDF");
+    arg = arg.possible_value("scrypt");
+    arg = arg.possible_value("bcrypt");
+    arg = arg.possible_value("argon2");
+
+    return arg;
+}
+
 fn main() {
     let mut app = App::new("rustpwman")
         .version(VERSION_STRING)
@@ -208,12 +222,7 @@ fn main() {
                     .required(true)
                     .takes_value(true)
                     .help("Encrypted output file"))                    
-                .arg(Arg::with_name(ARG_KDF)
-                    .long(ARG_KDF)
-                    .takes_value(true)
-                    .help("Use other PBKDF")
-                    .possible_value("scrypt")
-                    .possible_value("bcrypt")))
+                .arg(add_kdf_param()))
         .subcommand(
             SubCommand::with_name(COMMAND_DECRYPT)
                 .about("Decrypt file")        
@@ -229,12 +238,7 @@ fn main() {
                     .required(true)
                     .takes_value(true)
                     .help("Name of plaintext file"))                    
-                .arg(Arg::with_name(ARG_KDF)
-                    .long(ARG_KDF)
-                    .takes_value(true)
-                    .help("Use other PBKDF")
-                    .possible_value("scrypt")
-                    .possible_value("bcrypt")))
+                .arg(add_kdf_param()))
         .subcommand(
             SubCommand::with_name(COMMAND_GUI)
                 .about("Open file in TUI")        
@@ -244,12 +248,7 @@ fn main() {
                     .required(true)
                     .takes_value(true)
                     .help("Name of encrypted data file"))                   
-                .arg(Arg::with_name(ARG_KDF)
-                    .long(ARG_KDF)
-                    .takes_value(true)
-                    .help("Use other PBKDF")
-                    .possible_value("scrypt")
-                    .possible_value("bcrypt")));                    
+                .arg(add_kdf_param()));                    
 
     let matches = app.clone().get_matches();
     let subcommand = matches.subcommand();
