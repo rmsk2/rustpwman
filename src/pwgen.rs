@@ -109,7 +109,7 @@ impl PasswordGenerator for HexGenerator {
 //
 // When setting use_hissing_sounds to true sch and ch are used as additional consonants,
 // which they in essence are in the german language. After implementing this feature it 
-// became apparant though that this is not really practical. 
+// became apparent though that this is not really practical. 
 pub struct SpecialGenerator {
     rng: rand::prelude::ThreadRng,
     use_ch: bool,

@@ -1,6 +1,6 @@
 [package]
 name = "rustpwman"
-version = "0.6.2"
+version = "0.6.3"
 authors = ["Martin <rmsk2@gmx.de>"]
 edition = "2018"
 
@@ -22,3 +22,4 @@ clap = "2.33.3"
 rpassword = "5.0.1"
 bcrypt-pbkdf = "0.6.1"
 argon2 = "0.2.1"
+toml = "0.5.8"

@@ -18,12 +18,14 @@ mod jots;
 mod pwgen;
 mod modtui;
 
+use std::env;
 use clap::{Arg, App, SubCommand};
 use rpassword;
 use std::fs::File;
 use std::io::BufReader;
 use std::io::BufWriter;
 use std::io::{Error, ErrorKind};
+use toml;
 
 pub const VERSION_STRING: &'static str = env!("CARGO_PKG_VERSION");
 const COMMAND_ENCRYPT: &str = "enc";
@@ -32,165 +34,209 @@ const COMMAND_GUI: &str = "gui";
 const ARG_INPUT_FILE: &str = "inputfile";
 const ARG_OUTPUT_FILE: &str = "outputfile";
 const ARG_KDF: &str = "kdf";
+const KDF_SCRYPT: &str = "scrypt";
+const KDF_BCRYPT: &str = "bcrypt";
+const KDF_ARGON2: &str = "argon2";
+const KDF_SHA256: &str = "sha256";
 
+const SEC_BIT_ENV_VAR: &str = "RUSTPWMAN_SEC_BITS";
 const DEFAULT_KDF: fcrypt::KeyDeriver = fcrypt::GcmContext::sha256_deriver;
 
-fn determine_pbkdf(matches: &clap::ArgMatches) -> fcrypt::KeyDeriver {
-    let derive: fcrypt::KeyDeriver = DEFAULT_KDF;
+struct RustPwMan {
+    default_deriver: fcrypt::KeyDeriver,
+    config_data: Option<toml::Value>
+}
 
-    if matches.is_present(ARG_KDF) {
-        let mut kdf_names: Vec<String> = Vec::new();
-        if let Some(names) = matches.values_of(ARG_KDF) {
-            names.for_each(|x| kdf_names.push(String::from(x)));
+impl RustPwMan {
+    fn new() -> Self {
+        return RustPwMan {
+            default_deriver: DEFAULT_KDF,
+            config_data: None
+        }
+    }
+
+    fn load_config(&mut self) {
+        self.config_data = None
+    }
+
+    pub fn determine_sec_level() -> usize {
+        return match env::var(SEC_BIT_ENV_VAR)  {
+            Ok(s) => {
+                match s.parse::<usize>() {
+                    Err(_) => modtui::PW_SEC_LEVEL,
+                    Ok(b) => {
+                        if b < modtui::PW_MAX_SEC_LEVEL {
+                            b
+                        } else {
+                            modtui::PW_SEC_LEVEL
+                        }
+                    }
+                }
+            },
+            Err(_) => {
+                modtui::PW_SEC_LEVEL
+            } 
+        };
+    } 
+
+    fn determine_pbkdf(&self, matches: &clap::ArgMatches) -> fcrypt::KeyDeriver {
+        let derive = self.default_deriver;
+    
+        if matches.is_present(ARG_KDF) {
+            let mut kdf_names: Vec<String> = Vec::new();
+            if let Some(names) = matches.values_of(ARG_KDF) {
+                names.for_each(|x| kdf_names.push(String::from(x)));
+            }
+            
+            return match &kdf_names[0][..] {
+                KDF_SCRYPT => fcrypt::GcmContext::scrypt_deriver,
+                KDF_BCRYPT => fcrypt::GcmContext::bcrypt_deriver,
+                KDF_ARGON2 => fcrypt::GcmContext::argon2id_deriver,
+                KDF_SHA256 => fcrypt::GcmContext::sha256_deriver,
+                _ => derive
+            };
+        }
+    
+        return derive;
+    }
+    
+    fn determine_in_out_files(matches: &clap::ArgMatches) -> (String, String) {
+        let mut file_names_in: Vec<String> = Vec::new();
+        if let Some(in_files) = matches.values_of(ARG_INPUT_FILE) {
+            in_files.for_each(|x| file_names_in.push(String::from(x)));
         }
         
-        return match &kdf_names[0][..] {
-            "scrypt" => fcrypt::GcmContext::scrypt_deriver,
-            "bcrypt" => fcrypt::GcmContext::bcrypt_deriver,
-            "argon2" => fcrypt::GcmContext::argon2id_deriver,
-            "sha256" => fcrypt::GcmContext::sha256_deriver,
-            _ => derive
+        let mut file_names_out: Vec<String> = Vec::new();
+        if let Some(out_files) = matches.values_of(ARG_OUTPUT_FILE) {
+            out_files.for_each(|x| file_names_out.push(String::from(x)));
+        }
+    
+        return (file_names_in[0].clone(), file_names_out[0].clone());
+    }
+    
+    fn enter_password_verified() -> std::io::Result<String> {
+        let pw1 = rpassword::read_password_from_tty(Some("Password: "))?;
+        let pw2 = rpassword::read_password_from_tty(Some("Verfication: "))?;
+    
+        if pw1 != pw2 {
+            return Err(Error::new(ErrorKind::Other, "Passwords differ"));
+        }
+    
+        match fcrypt::GcmContext::check_password(&pw1) {
+            Some(e) => return Err(e),
+            None => ()
+        }
+    
+        return Ok(pw1);
+    }
+    
+    fn perform_encrypt_command(&self, encrypt_matches: &clap::ArgMatches) {
+        let derive: fcrypt::KeyDeriver = self.determine_pbkdf(encrypt_matches);
+        let (file_in, file_out) = RustPwMan::determine_in_out_files(encrypt_matches);
+        
+        let pw = match RustPwMan::enter_password_verified() {
+            Err(e) => { 
+                println!("Error reading password: {:?}", e);
+                return;
+            },
+            Ok(p) => p
+        };
+    
+        let mut jots_file = jots::Jots::new(derive);
+    
+        let file = match File::open(&file_in) {
+            Ok(f) => f,
+            Err(e) => {
+                println!("Error opening file. {:?}", e);
+                return;                    
+            }
+        };
+    
+        let reader = BufReader::new(file);
+        
+        match jots_file.from_reader(reader) {
+            Err(e) => {
+                println!("Error reading file. {:?}", e);
+                return;                    
+            },
+            Ok(_) => ()                
+        }
+    
+        match jots_file.to_enc_file(&file_out, &pw[..]) {
+            Ok(_) => (),
+            Err(e) => { 
+                println!("Error creating file. {:?}", e);
+                return;
+            },
         };
     }
-
-    return derive;
-}
-
-fn determine_in_out_files(matches: &clap::ArgMatches) -> (String, String) {
-    let mut file_names_in: Vec<String> = Vec::new();
-    if let Some(in_files) = matches.values_of(ARG_INPUT_FILE) {
-        in_files.for_each(|x| file_names_in.push(String::from(x)));
+    
+    fn perform_decrypt_command(&self, decrypt_matches: &clap::ArgMatches) {
+        let derive: fcrypt::KeyDeriver = self.determine_pbkdf(decrypt_matches);
+        let (file_in, file_out) = RustPwMan::determine_in_out_files(decrypt_matches);
+        
+        let mut jots_file = jots::Jots::new(derive);
+    
+        let pw = match rpassword::read_password_from_tty(Some("Password: ")) {
+            Err(_) => { 
+                println!("Error reading password");
+                return;
+            },
+            Ok(p) => p
+        };
+        
+        match fcrypt::GcmContext::check_password(&pw) {
+            Some(e) => {
+                println!("Password illegal: {:?}", e);
+                return;
+            },
+            None => ()
+        }    
+        
+        println!();
+    
+        match jots_file.from_enc_file(&file_in, &pw[..]) {
+            Err(e) => {
+                println!("Error reading file. {:?}", e);
+                return;                    
+            },
+            Ok(_) => ()
+        };
+    
+        let file = match File::create(&file_out) {
+            Err(e) => {
+                println!("Error creating file. {:?}", e);
+                return;                    
+            },
+            Ok(f) => f      
+        };
+    
+        let w = BufWriter::new(file);
+    
+        match jots_file.to_writer(w) {
+            Err(e) => {
+                println!("Error writing file. {:?}", e);
+                return;                    
+            },
+            Ok(_) => ()
+        };
     }
     
-    let mut file_names_out: Vec<String> = Vec::new();
-    if let Some(out_files) = matches.values_of(ARG_OUTPUT_FILE) {
-        out_files.for_each(|x| file_names_out.push(String::from(x)));
-    }
-
-    return (file_names_in[0].clone(), file_names_out[0].clone());
-}
-
-fn enter_password_verified() -> std::io::Result<String> {
-    let pw1 = rpassword::read_password_from_tty(Some("Password: "))?;
-    let pw2 = rpassword::read_password_from_tty(Some("Verfication: "))?;
-
-    if pw1 != pw2 {
-        return Err(Error::new(ErrorKind::Other, "Passwords differ"));
-    }
-
-    match fcrypt::GcmContext::check_password(&pw1) {
-        Some(e) => return Err(e),
-        None => ()
-    }
-
-    return Ok(pw1);
-}
-
-fn perform_encrypt_command(encrypt_matches: &clap::ArgMatches) {
-    let derive: fcrypt::KeyDeriver = determine_pbkdf(encrypt_matches);
-    let (file_in, file_out) = determine_in_out_files(encrypt_matches);
+    fn perform_gui_command(&self, gui_matches: &clap::ArgMatches) {
+        let derive: fcrypt::KeyDeriver = self.determine_pbkdf(gui_matches);
     
-    let pw = match enter_password_verified() {
-        Err(e) => { 
-            println!("Error reading password: {:?}", e);
-            return;
-        },
-        Ok(p) => p
-    };
-
-    let mut jots_file = jots::Jots::new(derive);
-
-    let file = match File::open(&file_in) {
-        Ok(f) => f,
-        Err(e) => {
-            println!("Error opening file. {:?}", e);
-            return;                    
+        let mut file_names: Vec<String> = Vec::new();
+        if let Some(in_files) = gui_matches.values_of(ARG_INPUT_FILE) {
+            in_files.for_each(|x| file_names.push(String::from(x)));
         }
-    };
-
-    let reader = BufReader::new(file);
     
-    match jots_file.from_reader(reader) {
-        Err(e) => {
-            println!("Error reading file. {:?}", e);
-            return;                    
-        },
-        Ok(_) => ()                
+        let data_file_name = file_names[0].clone();
+        let default_sec_bits = RustPwMan::determine_sec_level();
+    
+        modtui::main_gui(data_file_name, default_sec_bits, derive, pwgen::GenerationStrategy::Special);
     }
-
-    match jots_file.to_enc_file(&file_out, &pw[..]) {
-        Ok(_) => (),
-        Err(e) => { 
-            println!("Error creating file. {:?}", e);
-            return;
-        },
-    };
 }
 
-fn perform_decrypt_command(decrypt_matches: &clap::ArgMatches) {
-    let derive: fcrypt::KeyDeriver = determine_pbkdf(decrypt_matches);
-    let (file_in, file_out) = determine_in_out_files(decrypt_matches);
-    
-    let mut jots_file = jots::Jots::new(derive);
-
-    let pw = match rpassword::read_password_from_tty(Some("Password: ")) {
-        Err(_) => { 
-            println!("Error reading password");
-            return;
-        },
-        Ok(p) => p
-    };
-    
-    match fcrypt::GcmContext::check_password(&pw) {
-        Some(e) => {
-            println!("Password illegal: {:?}", e);
-            return;
-        },
-        None => ()
-    }    
-    
-    println!();
-
-    match jots_file.from_enc_file(&file_in, &pw[..]) {
-        Err(e) => {
-            println!("Error reading file. {:?}", e);
-            return;                    
-        },
-        Ok(_) => ()
-    };
-
-    let file = match File::create(&file_out) {
-        Err(e) => {
-            println!("Error creating file. {:?}", e);
-            return;                    
-        },
-        Ok(f) => f      
-    };
-
-    let w = BufWriter::new(file);
-
-    match jots_file.to_writer(w) {
-        Err(e) => {
-            println!("Error writing file. {:?}", e);
-            return;                    
-        },
-        Ok(_) => ()
-    };
-}
-
-fn perform_gui_command(gui_matches: &clap::ArgMatches) {
-    let derive: fcrypt::KeyDeriver = determine_pbkdf(gui_matches);
-
-    let mut file_names: Vec<String> = Vec::new();
-    if let Some(in_files) = gui_matches.values_of(ARG_INPUT_FILE) {
-        in_files.for_each(|x| file_names.push(String::from(x)));
-    }
-
-    let data_file_name = file_names[0].clone();
-    let default_sec_bits = modtui::AppState::determine_sec_level();
-
-    modtui::main_gui(data_file_name, default_sec_bits, derive, pwgen::GenerationStrategy::Special);
-}
 
 pub fn add_kdf_param() -> clap::Arg<'static, 'static> {
     let mut arg = Arg::with_name(ARG_KDF);
@@ -198,10 +244,10 @@ pub fn add_kdf_param() -> clap::Arg<'static, 'static> {
     arg = arg.long(ARG_KDF);
     arg = arg.takes_value(true);
     arg = arg.help("Use other PBKDF");
-    arg = arg.possible_value("scrypt");
-    arg = arg.possible_value("bcrypt");
-    arg = arg.possible_value("argon2");
-    arg = arg.possible_value("sha256");
+    arg = arg.possible_value(KDF_SCRYPT);
+    arg = arg.possible_value(KDF_BCRYPT);
+    arg = arg.possible_value(KDF_ARGON2);
+    arg = arg.possible_value(KDF_SHA256);
 
     return arg;
 }
@@ -254,18 +300,21 @@ fn main() {
                     .help("Name of encrypted data file"))                   
                 .arg(add_kdf_param()));                    
 
+    let mut rustpwman = RustPwMan::new();
+    rustpwman.load_config();
+
     let matches = app.clone().get_matches();
     let subcommand = matches.subcommand();
 
     match subcommand {
         (COMMAND_ENCRYPT, Some(encrypt_matches)) => {
-            perform_encrypt_command(encrypt_matches);
+            rustpwman.perform_encrypt_command(encrypt_matches);
         },
         (COMMAND_DECRYPT, Some(decrypt_matches)) => {
-            perform_decrypt_command(decrypt_matches);
+            rustpwman.perform_decrypt_command(decrypt_matches);
         },
         (COMMAND_GUI, Some(gui_matches)) => {
-            perform_gui_command(gui_matches);
+            rustpwman.perform_gui_command(gui_matches);
         },        
         _ => {
             match app.print_long_help() {

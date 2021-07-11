@@ -12,12 +12,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-use std::env;
-
 pub const PW_MAX_SEC_LEVEL: usize = 24;
 
 const PW_WIDTH: usize = 35;
-const PW_SEC_LEVEL: usize = 9;
+pub const PW_SEC_LEVEL: usize = 9;
 const EDIT_NAME: &str = "nameedit";
 const TEXT_AREA_MAIN: &str = "entrytext";
 const TEXT_AREA_NAME: &str = "textareaedit";
@@ -30,7 +28,7 @@ const RENAME_EDIT_NAME: &str = "renamedit";
 const SLIDER_SEC_NAME: &str = "securityslider";
 const BITS_SEC_VALUE: &str = "securitybits";
 
-const SEC_BIT_ENV_VAR: &str = "RUSTPWMAN_SEC_BITS";
+
 
 use crate::VERSION_STRING;
 use cursive::traits::*;
@@ -84,27 +82,7 @@ impl AppState {
 
     pub fn get_default_bits(&self) -> usize {
         return self.default_security_level;
-    }
-
-    pub fn determine_sec_level() -> usize {
-        return match env::var(SEC_BIT_ENV_VAR)  {
-            Ok(s) => {
-                match s.parse::<usize>() {
-                    Err(_) => PW_SEC_LEVEL,
-                    Ok(b) => {
-                        if b < PW_MAX_SEC_LEVEL {
-                            b
-                        } else {
-                            PW_SEC_LEVEL
-                        }
-                    }
-                }
-            },
-            Err(_) => {
-                PW_SEC_LEVEL
-            } 
-        };
-    }    
+    }   
 }
 
 pub fn main_gui(data_file_name: String, default_sec_bits: usize, derive_func: KeyDeriver, default_pw_gen: GenerationStrategy) {
