@@ -20,7 +20,7 @@ use rand::Rng;
 use crate::modtui::PW_MAX_SEC_LEVEL;
 
 
-#[derive(Debug, Hash, PartialEq, Eq)]
+#[derive(Debug, Hash, PartialEq, Eq, Copy, Clone)]
 pub enum GenerationStrategy {
     Base64,
     Hex,

@@ -33,8 +33,10 @@ const ARG_INPUT_FILE: &str = "inputfile";
 const ARG_OUTPUT_FILE: &str = "outputfile";
 const ARG_KDF: &str = "kdf";
 
+const DEFAULT_KDF: fcrypt::KeyDeriver = fcrypt::GcmContext::sha256_deriver;
+
 fn determine_pbkdf(matches: &clap::ArgMatches) -> fcrypt::KeyDeriver {
-    let derive: fcrypt::KeyDeriver = fcrypt::GcmContext::sha256_deriver;
+    let derive: fcrypt::KeyDeriver = DEFAULT_KDF;
 
     if matches.is_present(ARG_KDF) {
         let mut kdf_names: Vec<String> = Vec::new();
@@ -46,6 +48,7 @@ fn determine_pbkdf(matches: &clap::ArgMatches) -> fcrypt::KeyDeriver {
             "scrypt" => fcrypt::GcmContext::scrypt_deriver,
             "bcrypt" => fcrypt::GcmContext::bcrypt_deriver,
             "argon2" => fcrypt::GcmContext::argon2id_deriver,
+            "sha256" => fcrypt::GcmContext::sha256_deriver,
             _ => derive
         };
     }
@@ -186,7 +189,7 @@ fn perform_gui_command(gui_matches: &clap::ArgMatches) {
     let data_file_name = file_names[0].clone();
     let default_sec_bits = modtui::AppState::determine_sec_level();
 
-    modtui::main_gui(data_file_name, default_sec_bits, derive);
+    modtui::main_gui(data_file_name, default_sec_bits, derive, pwgen::GenerationStrategy::Special);
 }
 
 pub fn add_kdf_param() -> clap::Arg<'static, 'static> {
@@ -198,6 +201,7 @@ pub fn add_kdf_param() -> clap::Arg<'static, 'static> {
     arg = arg.possible_value("scrypt");
     arg = arg.possible_value("bcrypt");
     arg = arg.possible_value("argon2");
+    arg = arg.possible_value("sha256");
 
     return arg;
 }

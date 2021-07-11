@@ -34,8 +34,9 @@ const SEC_BIT_ENV_VAR: &str = "RUSTPWMAN_SEC_BITS";
 
 use crate::VERSION_STRING;
 use cursive::traits::*;
-use cursive::views::{Dialog, LinearLayout, TextView, EditView, SelectView, TextArea, Panel, SliderView, RadioGroup};
+use cursive::views::{Dialog, LinearLayout, TextView, EditView, SelectView, TextArea, Panel, SliderView, RadioGroup, RadioButton};
 use cursive::Cursive;
+use cursive::event::EventResult;
 use cursive::menu::MenuTree;
 use cursive::align::HAlign;
 use cursive::event::Key;
@@ -64,18 +65,20 @@ pub struct AppState {
     file_name: String,
     dirty: bool,
     pw_gens: HashMap<GenerationStrategy, Box<dyn PasswordGenerator>>,
-    default_security_level: usize
+    default_security_level: usize,
+    default_generator: GenerationStrategy
 }
 
 impl AppState {
-    pub fn new(s: jots::Jots, f_name: &String, generators: HashMap<GenerationStrategy, Box<dyn PasswordGenerator>>, default_sec: usize) -> Self {
+    pub fn new(s: jots::Jots, f_name: &String, generators: HashMap<GenerationStrategy, Box<dyn PasswordGenerator>>, default_sec: usize, default_gen: GenerationStrategy) -> Self {
         return AppState {
             store: s,
             password: None,
             file_name: f_name.clone(),
             dirty: false,
             pw_gens: generators,
-            default_security_level: default_sec
+            default_security_level: default_sec,
+            default_generator: default_gen
         }
     }
 
@@ -104,7 +107,7 @@ impl AppState {
     }    
 }
 
-pub fn main_gui(data_file_name: String, default_sec_bits: usize, derive_func: KeyDeriver) {
+pub fn main_gui(data_file_name: String, default_sec_bits: usize, derive_func: KeyDeriver, default_pw_gen: GenerationStrategy) {
     let (tx, rx): (Sender<String>, Receiver<String>) = mpsc::channel();
 
     let capture_file_name = data_file_name.clone();
@@ -121,7 +124,7 @@ pub fn main_gui(data_file_name: String, default_sec_bits: usize, derive_func: Ke
         generators.insert(GenerationStrategy::Hex, Box::new(pwgen::HexGenerator::new()));
         generators.insert(GenerationStrategy::Special, Box::new(pwgen::SpecialGenerator::new(false)));           
 
-        let state = AppState::new(jots_store, &f_name, generators, default_sec_bits);
+        let state = AppState::new(jots_store, &f_name, generators, default_sec_bits, default_pw_gen);
 
         if let Some(state_after_open) = open_file(s, password, state) {
             main_window(s, state_after_open, sender_main.clone());
@@ -450,6 +453,29 @@ fn show_sec_bits(s: &mut Cursive, val: usize) {
     });
 }
 
+fn select_default_pw_generator_type(s: &mut Cursive, selector: &mut HashMap<GenerationStrategy, &mut RadioButton<GenerationStrategy>>, def_generator: GenerationStrategy) -> bool {
+    let event_result = match selector.get_mut(&def_generator) {
+        Some(button) => button.select(),
+        None => {
+            show_message(s, "Unable to select default password generator"); 
+            return false; 
+        }
+    };
+
+    match event_result {
+        EventResult::Ignored => {
+            show_message(s, "Unable to select default password generator"); 
+            return false; 
+        },
+        EventResult::Consumed(c) => {
+            match c {
+                Some(cb) => { cb(s); true },
+                None => true
+            }
+        }
+    }
+}
+
 fn generate_password(s: &mut Cursive, state_for_gen_pw: Rc<RefCell<AppState>>) {
     let entry_name = match get_selected_entry_name(s) {
         Some(name) => name,
@@ -462,6 +488,20 @@ fn generate_password(s: &mut Cursive, state_for_gen_pw: Rc<RefCell<AppState>>) {
     let sec_bits = state_for_gen_pw.borrow().get_default_bits();
 
     let mut strategy_group: RadioGroup<GenerationStrategy> = RadioGroup::new();
+    let mut radio_base64 = strategy_group.button(GenerationStrategy::Base64, "Base64");
+    let mut radio_hex = strategy_group.button(GenerationStrategy::Hex, "Hex");
+    let mut radio_special = strategy_group.button(GenerationStrategy::Special, "Special");
+
+    {
+        let mut selector: HashMap<GenerationStrategy, &mut RadioButton<GenerationStrategy>> = HashMap::new();
+        selector.insert(GenerationStrategy::Base64, &mut radio_base64);
+        selector.insert(GenerationStrategy::Hex, &mut radio_hex);
+        selector.insert(GenerationStrategy::Special, &mut radio_special);
+    
+        if !select_default_pw_generator_type(s, &mut selector, state_for_gen_pw.borrow().default_generator) {
+            return;
+        }
+    }
 
     let res = Dialog::new()
     .title("Rustpwman generate password")
@@ -487,11 +527,11 @@ fn generate_password(s: &mut Cursive, state_for_gen_pw: Rc<RefCell<AppState>>) {
         .child(TextView::new("\n"))
         .child(LinearLayout::horizontal()
             .child(TextView::new("Contained characters: "))
-            .child(strategy_group.button(GenerationStrategy::Base64, "Base64"))
+            .child(radio_base64)
             .child(TextView::new(" "))
-            .child(strategy_group.button(GenerationStrategy::Hex, "Hex"))
+            .child(radio_hex)
             .child(TextView::new(" "))
-            .child(strategy_group.button(GenerationStrategy::Special, "Special"))            
+            .child(radio_special)            
         )
     )
     .button("OK", move |s| {
