@@ -106,26 +106,68 @@ impl PasswordGenerator for HexGenerator {
 // groups at random each one contains 8.7 bits of entropy. The final four character group
 // is a consonant followed by a three digit number. There are 26*1000 such four character 
 // groups so it has an entropy of 14.6 Bits when one is chosen randomly.
+//
+// When setting use_hissing_sounds to true sch and ch are used as additional consonants,
+// which they in essence are in the german language. After implementing this feature it 
+// became apparant though that this is not really practical. 
 pub struct SpecialGenerator {
     rng: rand::prelude::ThreadRng,
+    use_ch: bool,
+    vowels: Vec<String>,
+    consonants: Vec<String>,
+    entropy_per_group: f64,
+    entropy_in_last_group: f64
 }
 
-const CONSONANTS: &str = "bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ";
-const VOWELS: &str = "aeiouAEIOU";
+const ALL_CONSONANTS: &str = "bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ";
+const ALL_VOWELS: &str = "aeiouAEIOU";
 
 impl SpecialGenerator {
-    pub fn new() -> SpecialGenerator {
-        return SpecialGenerator {
-            rng: rand::thread_rng()
+    pub fn new(use_hissing_sounds: bool) -> SpecialGenerator {
+        let mut res = SpecialGenerator {
+            rng: rand::thread_rng(),
+            use_ch: use_hissing_sounds,
+            vowels: Vec::new(),
+            consonants: Vec::new(),
+            entropy_per_group: 8.7,
+            entropy_in_last_group: 14.6
+        };        
+        
+        let hc = String::from(ALL_CONSONANTS);
+        let hv = String::from(ALL_VOWELS);
+
+        hc.chars().for_each(|i| res.consonants.push(String::from(i)));
+        hv.chars().for_each(|i| res.vowels.push(String::from(i)));
+
+        if res.use_ch {
+            res.consonants.push(String::from("ch"));
+            res.consonants.push(String::from("Ch"));
+            res.consonants.push(String::from("CH"));
+            res.consonants.push(String::from("cH"));
+
+            res.consonants.push(String::from("sch"));
+            res.consonants.push(String::from("sCh"));
+            res.consonants.push(String::from("sCH"));
+            res.consonants.push(String::from("scH"));
+
+            res.consonants.push(String::from("Sch"));
+            res.consonants.push(String::from("SCh"));
+            res.consonants.push(String::from("SCH"));
+            res.consonants.push(String::from("ScH"));                        
         }
+
+        res.entropy_per_group = ((res.consonants.len() * res.vowels.len()) as f64).log2();
+        res.entropy_in_last_group = ((res.consonants.len() * 1000) as f64).log2();
+
+        return res;
     }
 
     fn get_group(&mut self) -> String {       
-        let pos1 = self.rng.gen_range(0..42);
-        let pos2 = self.rng.gen_range(0..10);
+        let pos1 = self.rng.gen_range(0..self.consonants.len());
+        let pos2 = self.rng.gen_range(0..self.vowels.len());
 
-        let mut res = String::from(&CONSONANTS[pos1..pos1+1]);
-        res.push_str(&VOWELS[pos2..pos2+1]);
+        let mut res = self.consonants[pos1].clone();
+        res.push_str(&self.vowels[pos2]);
 
         return res;
     }
@@ -134,7 +176,7 @@ impl SpecialGenerator {
 impl PasswordGenerator for SpecialGenerator {
     fn gen_password(&mut self, num_bytes: usize) -> Option<String> {
         let security_level: f64 = (8 * num_bytes) as f64;
-        let number_of_groups = (security_level - 14.6) / 8.7;
+        let number_of_groups = (security_level - self.entropy_in_last_group) / self.entropy_per_group;
         let number_of_groups: usize = number_of_groups.ceil() as usize;
         let mut res = String::from("");
 
@@ -143,7 +185,7 @@ impl PasswordGenerator for SpecialGenerator {
         }
 
         let pos1 = self.rng.gen_range(0..42);
-        res.push_str(&CONSONANTS[pos1..pos1+1]);
+        res.push_str(&self.consonants[pos1]);
         res.push_str(&format!("{:03}", self.rng.gen_range(0..1000)));
 
         return Some(res);

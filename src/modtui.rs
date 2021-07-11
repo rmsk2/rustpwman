@@ -119,7 +119,7 @@ pub fn main_gui(data_file_name: String, default_sec_bits: usize, derive_func: Ke
 
         generators.insert(GenerationStrategy::Base64, Box::new(pwgen::B64Generator::new()));
         generators.insert(GenerationStrategy::Hex, Box::new(pwgen::HexGenerator::new()));
-        generators.insert(GenerationStrategy::Special, Box::new(pwgen::SpecialGenerator::new()));           
+        generators.insert(GenerationStrategy::Special, Box::new(pwgen::SpecialGenerator::new(false)));           
 
         let state = AppState::new(jots_store, &f_name, generators, default_sec_bits);
 
