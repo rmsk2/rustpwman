@@ -5,7 +5,7 @@ A simple password manager written in Rust using the cursive TUI library. **This 
 The password manager offers the following functionality:
 
 ```
-rustpwman 0.6.0
+rustpwman 0.7.0
 Martin Grap <rmsk2@gmx.de>
 A password manager for the cursive TUI in Rust
 
@@ -161,7 +161,18 @@ A similar problem occurs when importing existing password information into `rust
 
 # Configuration
 
-If the environment variable `RUSTPWMAN_SEC_BITS` is present and is parsable as a nonnegative integer value `n` < 24 then `(n + 1) * 8` is used as the default security level in bits.
+Rustpwman uses a config file for setting the default security level, the default password generator and the default PBKDF. 
+
+```
+[defaults]
+seclevel = 18
+pbkdf = "argon2"
+pwgen = "special"
+```
+
+- `seclevel` has to be an integer between 1 and 23. 
+- `pbkdf` is a string that can assume the values `scrypt`, `bcrypt`, `argon2`, `sha256`
+- `pwgen` is one of the strings `base64`, `hex` or `special`
 
 # Caveats
 
