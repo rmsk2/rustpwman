@@ -19,12 +19,15 @@ mod pwgen;
 mod modtui;
 
 use std::env;
+use std::fs;
+use dirs;
 use clap::{Arg, App, SubCommand};
 use rpassword;
 use std::fs::File;
 use std::io::BufReader;
 use std::io::BufWriter;
 use std::io::{Error, ErrorKind};
+use pwgen::GenerationStrategy;
 use toml;
 
 pub const VERSION_STRING: &'static str = env!("CARGO_PKG_VERSION");
@@ -38,46 +41,83 @@ const KDF_SCRYPT: &str = "scrypt";
 const KDF_BCRYPT: &str = "bcrypt";
 const KDF_ARGON2: &str = "argon2";
 const KDF_SHA256: &str = "sha256";
+const CFG_FILE_NAME: &str = ".rustpwman";
+const GEN_BASE64: &str = "base64";
+const GEN_HEX: &str = "hex";
+const GEN_SPECIAL: &str = "special";
 
-const SEC_BIT_ENV_VAR: &str = "RUSTPWMAN_SEC_BITS";
 const DEFAULT_KDF: fcrypt::KeyDeriver = fcrypt::GcmContext::sha256_deriver;
+
 
 struct RustPwMan {
     default_deriver: fcrypt::KeyDeriver,
-    config_data: Option<toml::Value>
+    default_sec_level: usize,
+    default_pw_gen: GenerationStrategy
 }
 
 impl RustPwMan {
     fn new() -> Self {
         return RustPwMan {
             default_deriver: DEFAULT_KDF,
-            config_data: None
+            default_sec_level: modtui::PW_SEC_LEVEL,
+            default_pw_gen: GenerationStrategy::Base64
         }
     }
 
     fn load_config(&mut self) {
-        self.config_data = None
-    }
+        let mut home_dir = match dirs::home_dir() {
+            Some(p) => p,
+            None => return
+        };
 
-    pub fn determine_sec_level() -> usize {
-        return match env::var(SEC_BIT_ENV_VAR)  {
-            Ok(s) => {
-                match s.parse::<usize>() {
-                    Err(_) => modtui::PW_SEC_LEVEL,
-                    Ok(b) => {
-                        if b < modtui::PW_MAX_SEC_LEVEL {
-                            b
-                        } else {
-                            modtui::PW_SEC_LEVEL
-                        }
-                    }
+        home_dir.push(CFG_FILE_NAME);
+
+        let raw_string: String = match fs::read_to_string(home_dir) {
+            Ok(d) => d,
+            Err(_) => return 
+        };
+
+        let value: toml::Value = match toml::from_str(&raw_string[..]) {
+            Ok(v) => v,
+            Err(_) => return
+        };
+
+        match value["defaults"]["seclevel"].as_integer() {
+            Some(i) => {
+                if (i > 0) && (i < modtui::PW_MAX_SEC_LEVEL as i64) {
+                    self.default_sec_level = i as usize;
                 }
             },
-            Err(_) => {
-                modtui::PW_SEC_LEVEL
-            } 
+            None => ()
         };
-    } 
+
+        self.default_deriver = match value["defaults"]["pbkdf"].as_str() {
+            Some(i) => self.str_to_deriver(i),
+            None => self.default_deriver
+        };
+        
+        self.default_pw_gen = match value["defaults"]["pwgen"].as_str() {
+            Some(i) => {
+                match i {
+                    GEN_BASE64 => GenerationStrategy::Base64,
+                    GEN_HEX => GenerationStrategy::Hex,
+                    GEN_SPECIAL => GenerationStrategy::Special,
+                    _ => self.default_pw_gen
+                }
+            },
+            None => self.default_pw_gen
+        };         
+    }
+
+    fn str_to_deriver(&self, deriver_name: &str) -> fcrypt::KeyDeriver {
+        return match deriver_name {
+            KDF_SCRYPT => fcrypt::GcmContext::scrypt_deriver,
+            KDF_BCRYPT => fcrypt::GcmContext::bcrypt_deriver,
+            KDF_ARGON2 => fcrypt::GcmContext::argon2id_deriver,
+            KDF_SHA256 => fcrypt::GcmContext::sha256_deriver,
+            _ => self.default_deriver
+        };        
+    }
 
     fn determine_pbkdf(&self, matches: &clap::ArgMatches) -> fcrypt::KeyDeriver {
         let derive = self.default_deriver;
@@ -88,13 +128,7 @@ impl RustPwMan {
                 names.for_each(|x| kdf_names.push(String::from(x)));
             }
             
-            return match &kdf_names[0][..] {
-                KDF_SCRYPT => fcrypt::GcmContext::scrypt_deriver,
-                KDF_BCRYPT => fcrypt::GcmContext::bcrypt_deriver,
-                KDF_ARGON2 => fcrypt::GcmContext::argon2id_deriver,
-                KDF_SHA256 => fcrypt::GcmContext::sha256_deriver,
-                _ => derive
-            };
+            return self.str_to_deriver(&kdf_names[0][..]);
         }
     
         return derive;
@@ -231,9 +265,8 @@ impl RustPwMan {
         }
     
         let data_file_name = file_names[0].clone();
-        let default_sec_bits = RustPwMan::determine_sec_level();
     
-        modtui::main_gui(data_file_name, default_sec_bits, derive, pwgen::GenerationStrategy::Special);
+        modtui::main_gui(data_file_name, self.default_sec_level, derive, self.default_pw_gen);
     }
 }
 
