@@ -243,7 +243,7 @@ pub fn add_kdf_param() -> clap::Arg<'static, 'static> {
 
     arg = arg.long(ARG_KDF);
     arg = arg.takes_value(true);
-    arg = arg.help("Use other PBKDF");
+    arg = arg.help("Use specific PBKDF");
     arg = arg.possible_value(KDF_SCRYPT);
     arg = arg.possible_value(KDF_BCRYPT);
     arg = arg.possible_value(KDF_ARGON2);
