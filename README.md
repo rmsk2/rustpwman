@@ -63,7 +63,7 @@ If the referenced file does not exist the user is offered to create an empty enc
 SHA-256( password | salt | password )
 ```
 
-where `salt` is a random value of appropriate length and `|` symbolizes concatenation. It is possible to select another password based key derivation function. Currently `scrypt`, `bcrypt` or `argon2` are used as a PBKDF when they are specified as a parameter to the `--kdf` option.
+where `salt` is a random value of appropriate length and `|` symbolizes concatenation. It is also possible to select this or another password based key derivation function through the `--kdf` option. Currently `scrypt`, `bcrypt`, `argon2` and `sha256` are valid as a parameter for this option.
 
 ## Format of payload data
 
@@ -174,6 +174,7 @@ This section provides information about stuff which is in my view suboptimal and
 - In non `--release` builds scrypt with the chosen parameters is *extremely* slow
 - Should the encrypted file also name the PBKDF used to derive the key?
 - https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#scrypt
+- Put following elements in config file: Default security level, default password generator, default PBKDF
 
 
 
