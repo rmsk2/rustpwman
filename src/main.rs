@@ -84,7 +84,7 @@ impl RustPwMan {
 
         match value["defaults"]["seclevel"].as_integer() {
             Some(i) => {
-                if (i > 0) && (i < modtui::PW_MAX_SEC_LEVEL as i64) {
+                if (i >= 0) && (i < modtui::PW_MAX_SEC_LEVEL as i64) {
                     self.default_sec_level = i as usize;
                 }
             },
