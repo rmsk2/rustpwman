@@ -170,7 +170,7 @@ pbkdf = "argon2"
 pwgen = "special"
 ```
 
-- `seclevel` has to be an integer between 0 and 23. The security level in bits is calculated as `seclevel` * 8 + 1. 
+- `seclevel` has to be an integer between 0 and 23. The security level in bits is calculated as (`seclevel` + 1) * 8. 
 - `pbkdf` is a string that can assume the values `scrypt`, `bcrypt`, `argon2`, `sha256`
 - `pwgen` is one of the strings `base64`, `hex` or `special`
 
