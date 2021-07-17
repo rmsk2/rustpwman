@@ -187,7 +187,6 @@ This section provides information about stuff which is in my view suboptimal and
 - In non `--release` builds scrypt with the chosen parameters is *extremely* slow
 - Should the encrypted file also name the PBKDF used to derive the key?
 - https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#scrypt
-- Put following elements in config file: Default security level, default password generator, default PBKDF
 
 
 
