@@ -20,6 +20,10 @@ use crate::jots;
 use crypto::scrypt::scrypt;
 #[cfg(test)]
 use crypto::scrypt::ScryptParams;
+#[cfg(test)]
+use crate::tomlconfig;
+#[cfg(test)]
+use std::env;
 
 #[test]
 pub fn test_fcrypt_enc_dec() {
@@ -254,4 +258,28 @@ pub fn test_argon2id_params() {
     ];
 
     assert_eq!(verified, aes_key);
+}
+
+#[test]
+fn test_save_load_config() {
+    let mut current_dir = env::current_dir().unwrap();
+    const TEST_CONF_NAME: &str = "config_test_delete_me.toml";
+
+    current_dir.push(TEST_CONF_NAME);
+    let c = tomlconfig::RustPwManSerialize::new(15, "egal1", "egal2");
+
+    match tomlconfig::save(&current_dir, c) {
+        Some(e) => panic!("{:?}", e),
+        None => ()
+    };
+
+    let res = tomlconfig::load(&current_dir);
+    let res_val = match res {
+        Ok(v) => v,
+        Err(e) => panic!("{:?}", e)
+    };
+
+    assert_eq!(res_val.seclevel, 15);
+    assert_eq!(res_val.pbkdf, String::from("egal1"));
+    assert_eq!(res_val.pwgen, String::from("egal2"));
 }

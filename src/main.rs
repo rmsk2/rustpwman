@@ -17,9 +17,9 @@ mod fcrypt;
 mod jots;
 mod pwgen;
 mod modtui;
+mod tomlconfig;
 
 use std::env;
-use std::fs;
 use dirs;
 use clap::{Arg, App, SubCommand};
 use rpassword;
@@ -28,7 +28,6 @@ use std::io::BufReader;
 use std::io::BufWriter;
 use std::io::{Error, ErrorKind};
 use pwgen::GenerationStrategy;
-use toml;
 
 pub const VERSION_STRING: &'static str = env!("CARGO_PKG_VERSION");
 const COMMAND_ENCRYPT: &str = "enc";
@@ -41,13 +40,12 @@ const KDF_SCRYPT: &str = "scrypt";
 const KDF_BCRYPT: &str = "bcrypt";
 const KDF_ARGON2: &str = "argon2";
 const KDF_SHA256: &str = "sha256";
-const CFG_FILE_NAME: &str = ".rustpwman";
+pub const CFG_FILE_NAME: &str = ".rustpwman";
 const GEN_BASE64: &str = "base64";
 const GEN_HEX: &str = "hex";
 const GEN_SPECIAL: &str = "special";
 
 const DEFAULT_KDF: fcrypt::KeyDeriver = fcrypt::GcmContext::sha256_deriver;
-
 
 struct RustPwMan {
     default_deriver: fcrypt::KeyDeriver,
@@ -72,41 +70,23 @@ impl RustPwMan {
 
         home_dir.push(CFG_FILE_NAME);
 
-        let raw_string: String = match fs::read_to_string(home_dir) {
-            Ok(d) => d,
-            Err(_) => return 
-        };
-
-        let value: toml::Value = match toml::from_str(&raw_string[..]) {
-            Ok(v) => v,
+        let loaded_config = match tomlconfig::load(&home_dir) {
+            Ok(c) => c,
             Err(_) => return
         };
 
-        match value["defaults"]["seclevel"].as_integer() {
-            Some(i) => {
-                if (i >= 0) && (i < modtui::PW_MAX_SEC_LEVEL as i64) {
-                    self.default_sec_level = i as usize;
-                }
-            },
-            None => ()
-        };
+        self.default_deriver = self.str_to_deriver(&loaded_config.pbkdf[..]);
+        self.default_pw_gen = self.str_to_gen_strategy(&loaded_config.pwgen[..]);
+        self.default_sec_level = loaded_config.seclevel;
+    }
 
-        self.default_deriver = match value["defaults"]["pbkdf"].as_str() {
-            Some(i) => self.str_to_deriver(i),
-            None => self.default_deriver
-        };
-        
-        self.default_pw_gen = match value["defaults"]["pwgen"].as_str() {
-            Some(i) => {
-                match i {
-                    GEN_BASE64 => GenerationStrategy::Base64,
-                    GEN_HEX => GenerationStrategy::Hex,
-                    GEN_SPECIAL => GenerationStrategy::Special,
-                    _ => self.default_pw_gen
-                }
-            },
-            None => self.default_pw_gen
-        };         
+    fn str_to_gen_strategy(&self, strategy_name: &str) -> GenerationStrategy {
+        return match strategy_name {
+            GEN_BASE64 => GenerationStrategy::Base64,
+            GEN_HEX => GenerationStrategy::Hex,
+            GEN_SPECIAL => GenerationStrategy::Special,
+            _ => self.default_pw_gen
+        };       
     }
 
     fn str_to_deriver(&self, deriver_name: &str) -> fcrypt::KeyDeriver {
