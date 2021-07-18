@@ -42,6 +42,11 @@ const DEFAULT_SALT_SIZE: usize = 16;
 // bcrypt implementations.
 const MAX_PW_SIZE_IN_BYTES: usize = 50;  
 
+pub const KDF_SCRYPT: &str = "scrypt";
+pub const KDF_BCRYPT: &str = "bcrypt";
+pub const KDF_ARGON2: &str = "argon2";
+pub const KDF_SHA256: &str = "sha256";
+
 #[derive(Debug)]
 pub enum FcryptError {
     CiphertextTooShort,
@@ -67,22 +72,27 @@ pub type KeyDeriver = fn(&Vec<u8>, &str) -> Vec<u8>;
 pub struct GcmContext {
     pub salt: Vec<u8>,
     pub nonce: Vec<u8>,
-    pub kdf: KeyDeriver
+    pub kdf: KeyDeriver,
+    pub kdf_name: String
 } 
-
 
 
 impl GcmContext {
     #![allow(dead_code)]
     pub fn new() -> GcmContext {
-        return GcmContext::new_with_kdf(GcmContext::sha256_deriver)
+        return GcmContext::new_with_kdf_str(GcmContext::sha256_deriver, KDF_SHA256)
     }
 
-    pub fn new_with_kdf(derive: KeyDeriver) -> GcmContext {
+    pub fn new_with_kdf_str(derive: KeyDeriver, deriver_name: &str) -> GcmContext {
+        return GcmContext::new_with_kdf(derive, &String::from(deriver_name));
+    }
+
+    pub fn new_with_kdf(derive: KeyDeriver, deriver_name: &String) -> GcmContext {
         let mut res = GcmContext {
             salt: vec![0; DEFAULT_SALT_SIZE],
             nonce: vec![0; DEFAULT_NONCE_SIZE],
-            kdf: derive
+            kdf: derive,
+            kdf_name: deriver_name.clone()
         };
 
         res.fill_random();

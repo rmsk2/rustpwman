@@ -85,16 +85,17 @@ impl AppState {
     }   
 }
 
-pub fn main_gui(data_file_name: String, default_sec_bits: usize, derive_func: KeyDeriver, default_pw_gen: GenerationStrategy) {
+pub fn main_gui(data_file_name: String, default_sec_bits: usize, derive_func: KeyDeriver, deriver_name: &String, default_pw_gen: GenerationStrategy) {
     let (tx, rx): (Sender<String>, Receiver<String>) = mpsc::channel();
 
     let capture_file_name = data_file_name.clone();
     let mut siv = cursive::default();
     let sender = Rc::new(tx);
     let sender_main = sender.clone();
+    let deriver_id = deriver_name.clone();
 
     let pw_callback = Box::new(move |s: &mut Cursive, password: &String| {
-        let jots_store = jots::Jots::new(derive_func);
+        let jots_store = jots::Jots::new(derive_func, &deriver_id);
         let f_name = capture_file_name.clone();
         let mut generators: HashMap<GenerationStrategy, Box<dyn PasswordGenerator>> = HashMap::new();
 

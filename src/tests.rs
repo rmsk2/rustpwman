@@ -139,7 +139,7 @@ pub fn test_jots_serialize_deserialize() {
     let d3 = String::from("data3"); 
     
     {
-        let mut j = jots::Jots::new(fcrypt::GcmContext::sha256_deriver);
+        let mut j = jots::Jots::new_str(fcrypt::GcmContext::sha256_deriver, fcrypt::KDF_SHA256);
         j.insert(&t1, &d1);
         j.insert(&t2, &d2);
         j.insert(&t3, &d3);
@@ -154,7 +154,7 @@ pub fn test_jots_serialize_deserialize() {
         };
     }
 
-    let mut j2 = jots::Jots::new(fcrypt::GcmContext::sha256_deriver);
+    let mut j2 = jots::Jots::new_str(fcrypt::GcmContext::sha256_deriver, fcrypt::KDF_SHA256);
     match j2.from_reader(serialized.as_slice()) {
         Ok(_) => (),
         Err(e) => { panic!("Deserialization failed {:?}", e); }          
@@ -196,7 +196,7 @@ pub fn test_jots_iter() {
     let d2 = String::from("data2");   
     let d3 = String::from("data3"); 
     
-    let mut j = jots::Jots::new(fcrypt::GcmContext::sha256_deriver);
+    let mut j = jots::Jots::new_str(fcrypt::GcmContext::sha256_deriver, fcrypt::KDF_SHA256);
     j.insert(&t1, &d1);
     j.insert(&t2, &d2);
     j.insert(&t3, &d3);
