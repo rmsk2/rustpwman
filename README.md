@@ -64,7 +64,7 @@ If the referenced file does not exist the user is offered to create an empty enc
 SHA-256( password | salt | password )
 ```
 
-where `salt` is a random value of appropriate length and `|` symbolizes concatenation. It is also possible to select this or another password based key derivation function through the `--kdf` option. Currently `scrypt`, `bcrypt`, `argon2` and `sha256` are valid as a parameter for this option.
+where `salt` is a random value of appropriate length and `|` symbolizes concatenation. It is also possible to select this or another password based key derivation function through the `--kdf` option or by a config file. Currently `scrypt`, `bcrypt`, `argon2` and `sha256` are valid as a parameter for this option and as a config file entry.
 
 ## Format of payload data
 
@@ -142,7 +142,7 @@ This allows to load the contents of a (text-)file into an entry. The current con
 
 This menu entry allows to append a randomly generated password to the currently selected entry. The user has to choose the
 parameters to use while generating the password. One parameter is the security level in bits (of entropy). This describes how large the set of passwords should be from which the generator selects one at random. A security level of `k` bits means that there are `2**k` passwords to choose from. This parameter in essence determines the difficulty for an attacker when performing a brute force password search. The default
-security level is 80 bits but can be changed by an environment variable (see below).
+security level is 80 bits but this can be changed by a config file (see below).
 
 Additionally the user may select the set of characters which may appear in the randomly generated password. Currently the following alternatives are offered:
 
