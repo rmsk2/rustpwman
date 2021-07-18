@@ -115,7 +115,7 @@ impl RustPwMan {
         };        
     }
 
-    fn determine_pbkdf(&mut self, matches: &clap::ArgMatches) {    
+    fn set_pbkdf_from_command_line(&mut self, matches: &clap::ArgMatches) {    
         if matches.is_present(ARG_KDF) {
             let mut kdf_names: Vec<String> = Vec::new();
             if let Some(names) = matches.values_of(ARG_KDF) {
@@ -160,7 +160,7 @@ impl RustPwMan {
     }
     
     fn perform_encrypt_command(&mut self, encrypt_matches: &clap::ArgMatches) {
-        self.determine_pbkdf(encrypt_matches);
+        self.set_pbkdf_from_command_line(encrypt_matches);
         let (file_in, file_out) = RustPwMan::determine_in_out_files(encrypt_matches);
         
         let pw = match RustPwMan::enter_password_verified() {
@@ -201,7 +201,7 @@ impl RustPwMan {
     }
     
     fn perform_decrypt_command(&mut self, decrypt_matches: &clap::ArgMatches) {
-        self.determine_pbkdf(decrypt_matches);
+        self.set_pbkdf_from_command_line(decrypt_matches);
         let (file_in, file_out) = RustPwMan::determine_in_out_files(decrypt_matches);
         
         let mut jots_file = jots::Jots::new(self.default_deriver, &self.default_deriver_name);
@@ -252,7 +252,7 @@ impl RustPwMan {
     }
     
     fn perform_gui_command(&mut self, gui_matches: &clap::ArgMatches) {
-        self.determine_pbkdf(gui_matches);
+        self.set_pbkdf_from_command_line(gui_matches);
     
         let mut file_names: Vec<String> = Vec::new();
         if let Some(in_files) = gui_matches.values_of(ARG_INPUT_FILE) {
