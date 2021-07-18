@@ -56,6 +56,9 @@ pub enum FcryptError {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct CryptedJson {
+    #[serde(rename(deserialize = "PbKdf"))]
+    #[serde(rename(serialize = "PbKdf"))]
+    pbkdf: String,    
     #[serde(rename(deserialize = "Salt"))]
     #[serde(rename(serialize = "Salt"))]
     salt: String,
@@ -161,6 +164,10 @@ impl GcmContext {
     pub fn from_reader<T: Read>(&mut self, reader: T) -> std::io::Result<Vec<u8>> {
         let json_struct: CryptedJson = serde_json::from_reader(reader)?;
 
+        if json_struct.pbkdf != self.kdf_name {
+            return Err(Error::new(ErrorKind::Other, format!("Key derivation function mismatch. {} was used not {}", &json_struct.pbkdf, &self.kdf_name)));
+        }
+
         let salt = match base64::decode(&json_struct.salt) {
             Ok(s) => s,
             Err(_) => {
@@ -201,11 +208,11 @@ impl GcmContext {
         let reader = BufReader::new(file);
 
         return self.from_reader(reader);
-
     }
 
     pub fn to_writer<T: Write>(&self, writer: T, data: &Vec<u8>) -> std::io::Result<()> {
         let j = CryptedJson {
+            pbkdf: self.kdf_name.clone(),
             salt: base64::encode(&self.salt),
             nonce: base64::encode(&self.nonce),
             data: base64::encode(data)

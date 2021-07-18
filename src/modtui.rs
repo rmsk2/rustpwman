@@ -870,8 +870,8 @@ fn open_file(s: &mut Cursive, password: &String, state: AppState) -> Option<AppS
 
     match state.store.from_enc_file(&file_name, password) {
         Ok(_) => { },
-        Err(_) => {
-            show_message(s, &format!("Unable to read file\n\n{}\n\nWrong password?", file_name));
+        Err(e) => {
+            show_message(s, &format!("Unable to read file '{}'\n\nError: '{:?}'", file_name, e));
             return None;                
         }
     }

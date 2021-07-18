@@ -115,19 +115,18 @@ impl RustPwMan {
         };        
     }
 
-    fn determine_pbkdf(&self, matches: &clap::ArgMatches) -> fcrypt::KeyDeriver {
-        let derive = self.default_deriver;
-    
+    fn determine_pbkdf(&mut self, matches: &clap::ArgMatches) {    
         if matches.is_present(ARG_KDF) {
             let mut kdf_names: Vec<String> = Vec::new();
             if let Some(names) = matches.values_of(ARG_KDF) {
                 names.for_each(|x| kdf_names.push(String::from(x)));
             }
             
-            return self.str_to_deriver(&kdf_names[0][..]).0;
+            let (k, kn) = self.str_to_deriver(&kdf_names[0][..]);
+
+            self.default_deriver = k;
+            self.default_deriver_name = kn;
         }
-    
-        return derive;
     }
     
     fn determine_in_out_files(matches: &clap::ArgMatches) -> (String, String) {
@@ -160,8 +159,8 @@ impl RustPwMan {
         return Ok(pw1);
     }
     
-    fn perform_encrypt_command(&self, encrypt_matches: &clap::ArgMatches) {
-        let derive: fcrypt::KeyDeriver = self.determine_pbkdf(encrypt_matches);
+    fn perform_encrypt_command(&mut self, encrypt_matches: &clap::ArgMatches) {
+        self.determine_pbkdf(encrypt_matches);
         let (file_in, file_out) = RustPwMan::determine_in_out_files(encrypt_matches);
         
         let pw = match RustPwMan::enter_password_verified() {
@@ -172,7 +171,7 @@ impl RustPwMan {
             Ok(p) => p
         };
     
-        let mut jots_file = jots::Jots::new(derive, &self.default_deriver_name);
+        let mut jots_file = jots::Jots::new(self.default_deriver, &self.default_deriver_name);
     
         let file = match File::open(&file_in) {
             Ok(f) => f,
@@ -201,11 +200,11 @@ impl RustPwMan {
         };
     }
     
-    fn perform_decrypt_command(&self, decrypt_matches: &clap::ArgMatches) {
-        let derive: fcrypt::KeyDeriver = self.determine_pbkdf(decrypt_matches);
+    fn perform_decrypt_command(&mut self, decrypt_matches: &clap::ArgMatches) {
+        self.determine_pbkdf(decrypt_matches);
         let (file_in, file_out) = RustPwMan::determine_in_out_files(decrypt_matches);
         
-        let mut jots_file = jots::Jots::new(derive, &self.default_deriver_name);
+        let mut jots_file = jots::Jots::new(self.default_deriver, &self.default_deriver_name);
     
         let pw = match rpassword::read_password_from_tty(Some("Password: ")) {
             Err(_) => { 
@@ -252,8 +251,8 @@ impl RustPwMan {
         };
     }
     
-    fn perform_gui_command(&self, gui_matches: &clap::ArgMatches) {
-        let derive: fcrypt::KeyDeriver = self.determine_pbkdf(gui_matches);
+    fn perform_gui_command(&mut self, gui_matches: &clap::ArgMatches) {
+        self.determine_pbkdf(gui_matches);
     
         let mut file_names: Vec<String> = Vec::new();
         if let Some(in_files) = gui_matches.values_of(ARG_INPUT_FILE) {
@@ -262,7 +261,7 @@ impl RustPwMan {
     
         let data_file_name = file_names[0].clone();
     
-        modtui::main_gui(data_file_name, self.default_sec_level, derive, &self.default_deriver_name, self.default_pw_gen);
+        modtui::main_gui(data_file_name, self.default_sec_level, self.default_deriver, &self.default_deriver_name, self.default_pw_gen);
     }
 }
 
