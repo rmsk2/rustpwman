@@ -62,15 +62,24 @@ impl RustPwMan {
         }
     }
 
-    fn load_config(&mut self) {
+    pub fn get_cfg_file_name() -> Option<std::path::PathBuf> {
         let mut home_dir = match dirs::home_dir() {
+            Some(p) => p,
+            None => return None
+        };
+
+        home_dir.push(CFG_FILE_NAME);
+        
+        return Some(home_dir);
+    }
+
+    fn load_config(&mut self) {
+        let cfg_file = match RustPwMan::get_cfg_file_name() {
             Some(p) => p,
             None => return
         };
 
-        home_dir.push(CFG_FILE_NAME);
-
-        let loaded_config = match tomlconfig::load(&home_dir) {
+        let loaded_config = match tomlconfig::load(&cfg_file) {
             Ok(c) => c,
             Err(_) => return
         };
