@@ -181,7 +181,7 @@ The config file is stored in the users' home directory in a file named `.rustpwm
 
 This section provides information about stuff which is in my view suboptimal and should be (and possibly will be) improved in the future.
 
-- Beginning with version 0.8 the name of key derivation function is stored in the encrypted data file. You may have to manually add the line `"PbKdf": "sha256",` (or similar if an alternative PBKDF was used) to existing JSON files.
+- Beginning with version 0.8 the name of the key derivation function is stored in the encrypted data file and checked upon decryption. You may have to manually add the line `"PbKdf": "sha256",` (or similar if an alternative PBKDF was used) to existing JSON files.
 - When the list of entries changes (after an add or delete) it may be possible that the entry selected after the change is not visible in the `ScrollView` on the left. I was not successfull in forcing cursive to scroll to the newly selected entry. This is most probably my fault and meanwhile an appropriate warning dialog is displayed.
 - I am fairly new to Rust. I guess it shows in the code.
 - On a MacBook Air 2018 using the touchpad to click elements in the TUI does not work. The problem does not manifest itself when using a mouse. Using the touchpad seems to work though on other models. I do not think that this is a hardware problem on my MacBook and I unfortunately have no idea why this happens.
