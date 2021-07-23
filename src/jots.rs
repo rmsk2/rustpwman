@@ -75,20 +75,20 @@ impl<'a> Iterator for JotsIter<'a> {
 pub struct Jots {
     pub contents: HashMap<String, String>,
     pub kdf: KeyDeriver,
-    pub kdf_name: String
+    pub kdf_id: fcrypt::KdfId
 }
 
 impl Jots {
-    pub fn new(d: KeyDeriver, kdf_name: &String) -> Jots {
+    pub fn new(d: KeyDeriver, kdf_id: fcrypt::KdfId) -> Jots {
         return Jots {
             contents: HashMap::new(),
             kdf: d,
-            kdf_name: kdf_name.clone()
+            kdf_id: kdf_id
         };
     }
 
-    pub fn new_str(d: KeyDeriver, kdf_name: &str) -> Jots {
-        return Jots::new(d, &String::from(kdf_name));
+    pub fn new_id(d: KeyDeriver, kdf_id: fcrypt::KdfId) -> Jots {
+        return Jots::new(d, kdf_id);
     }
 
     pub fn from_reader<T: Read>(&mut self, r: T) -> std::io::Result<()> {
@@ -139,7 +139,7 @@ impl Jots {
     }  
 
     pub fn from_enc_file(&mut self, file_name: &str, password: &str) -> std::io::Result<()> {
-        let mut ctx = fcrypt::GcmContext::new_with_kdf(self.kdf, &self.kdf_name);
+        let mut ctx = fcrypt::GcmContext::new_with_kdf(self.kdf, self.kdf_id);
 
         let data = ctx.from_file(file_name)?;
         let plain_data = match ctx.decrypt(password, &data) {
@@ -153,7 +153,7 @@ impl Jots {
     }
 
     pub fn to_enc_file(&self, file_name: &str, password: &str) -> std::io::Result<()> {
-        let mut ctx = fcrypt::GcmContext::new_with_kdf(self.kdf, &self.kdf_name);
+        let mut ctx = fcrypt::GcmContext::new_with_kdf(self.kdf, self.kdf_id);
         let mut serialized: Vec<u8> = Vec::new();
 
         self.to_writer(&mut serialized)?;

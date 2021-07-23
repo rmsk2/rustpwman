@@ -18,13 +18,35 @@ use std::io::{Error, ErrorKind};
 use rand::Rng;
 
 use crate::modtui::PW_MAX_SEC_LEVEL;
-
+const GEN_BASE64: &str = "base64";
+const GEN_HEX: &str = "hex";
+const GEN_SPECIAL: &str = "special";
 
 #[derive(Debug, Hash, PartialEq, Eq, Copy, Clone)]
 pub enum GenerationStrategy {
     Base64,
     Hex,
     Special
+}
+
+impl GenerationStrategy {
+    pub fn from_str(name: &str) -> Option<Self> {
+        return match name {
+            GEN_BASE64 => Some(GenerationStrategy::Base64),
+            GEN_HEX => Some(GenerationStrategy::Hex),
+            GEN_SPECIAL => Some(GenerationStrategy::Special),
+            _ => None
+        };  
+    }
+
+    #[allow(dead_code)]
+    pub fn to_str(self) -> &'static str {
+        match self {
+            GenerationStrategy::Base64 => GEN_BASE64,
+            GenerationStrategy::Hex => GEN_HEX,
+            GenerationStrategy::Special => GEN_SPECIAL
+        }
+    }
 }
 
 pub trait PasswordGenerator {

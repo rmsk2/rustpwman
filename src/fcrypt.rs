@@ -42,10 +42,47 @@ const DEFAULT_SALT_SIZE: usize = 16;
 // bcrypt implementations.
 const MAX_PW_SIZE_IN_BYTES: usize = 50;  
 
-pub const KDF_SCRYPT: &str = "scrypt";
-pub const KDF_BCRYPT: &str = "bcrypt";
-pub const KDF_ARGON2: &str = "argon2";
-pub const KDF_SHA256: &str = "sha256";
+const KDF_SCRYPT: &str = "scrypt";
+const KDF_BCRYPT: &str = "bcrypt";
+const KDF_ARGON2: &str = "argon2";
+const KDF_SHA256: &str = "sha256"; 
+
+#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
+pub enum KdfId {
+    Scrypt,
+    Bcrypt,
+    Argon2,
+    Sha256
+}
+
+impl KdfId {
+    pub fn to_string(self) -> String {
+        return String::from(self.to_str())
+    }
+
+    pub fn to_str(self) -> &'static str {
+        match self {
+            KdfId::Scrypt => KDF_SCRYPT,
+            KdfId::Bcrypt => KDF_BCRYPT,
+            KdfId::Argon2 => KDF_ARGON2,
+            KdfId::Sha256 => KDF_SHA256
+        }
+    }
+
+    pub fn from_str(name: &str) -> Option<Self> {
+        return KdfId::from_string(&String::from(name));
+    }
+
+    pub fn from_string(name: &String) -> Option<Self> {
+        match &name[..] {
+            KDF_SHA256 => Some(KdfId::Sha256),
+            KDF_SCRYPT => Some(KdfId::Scrypt),
+            KDF_BCRYPT => Some(KdfId::Bcrypt),
+            KDF_ARGON2 => Some(KdfId::Argon2),
+            _ => None
+        }
+    }
+}
 
 #[derive(Debug)]
 pub enum FcryptError {
@@ -76,26 +113,26 @@ pub struct GcmContext {
     pub salt: Vec<u8>,
     pub nonce: Vec<u8>,
     pub kdf: KeyDeriver,
-    pub kdf_name: String
+    pub kdf_id: KdfId
 } 
 
 
 impl GcmContext {
     #![allow(dead_code)]
     pub fn new() -> GcmContext {
-        return GcmContext::new_with_kdf_str(GcmContext::sha256_deriver, KDF_SHA256)
+        return GcmContext::new_with_kdf_id(GcmContext::sha256_deriver, KdfId::Sha256)
     }
 
-    pub fn new_with_kdf_str(derive: KeyDeriver, deriver_name: &str) -> GcmContext {
-        return GcmContext::new_with_kdf(derive, &String::from(deriver_name));
+    pub fn new_with_kdf_id(derive: KeyDeriver, deriver_id: KdfId) -> GcmContext {
+        return GcmContext::new_with_kdf(derive, deriver_id);
     }
 
-    pub fn new_with_kdf(derive: KeyDeriver, deriver_name: &String) -> GcmContext {
+    pub fn new_with_kdf(derive: KeyDeriver, deriver_id: KdfId) -> GcmContext {
         let mut res = GcmContext {
             salt: vec![0; DEFAULT_SALT_SIZE],
             nonce: vec![0; DEFAULT_NONCE_SIZE],
             kdf: derive,
-            kdf_name: deriver_name.clone()
+            kdf_id: deriver_id
         };
 
         res.fill_random();
@@ -164,8 +201,8 @@ impl GcmContext {
     pub fn from_reader<T: Read>(&mut self, reader: T) -> std::io::Result<Vec<u8>> {
         let json_struct: CryptedJson = serde_json::from_reader(reader)?;
 
-        if json_struct.pbkdf != self.kdf_name {
-            return Err(Error::new(ErrorKind::Other, format!("Key derivation function mismatch. {} was used not {}", &json_struct.pbkdf, &self.kdf_name)));
+        if json_struct.pbkdf != self.kdf_id.to_string() {
+            return Err(Error::new(ErrorKind::Other, format!("Key derivation function mismatch. {} was used not {}", &json_struct.pbkdf, &self.kdf_id.to_string())));
         }
 
         let salt = match base64::decode(&json_struct.salt) {
@@ -212,7 +249,7 @@ impl GcmContext {
 
     pub fn to_writer<T: Write>(&self, writer: T, data: &Vec<u8>) -> std::io::Result<()> {
         let j = CryptedJson {
-            pbkdf: self.kdf_name.clone(),
+            pbkdf: self.kdf_id.to_string(),
             salt: base64::encode(&self.salt),
             nonce: base64::encode(&self.nonce),
             data: base64::encode(data)
