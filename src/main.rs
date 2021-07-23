@@ -252,7 +252,6 @@ impl RustPwMan {
     }
 }
 
-
 pub fn add_kdf_param() -> clap::Arg<'static, 'static> {
     let mut arg = Arg::with_name(ARG_KDF);
 
