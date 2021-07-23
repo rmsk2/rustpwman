@@ -73,6 +73,15 @@ impl KdfId {
         return KdfId::from_string(&String::from(name));
     }
 
+    pub fn to_named_func(self) -> (KeyDeriver, KdfId) {
+        match self {
+            KdfId::Scrypt => (GcmContext::scrypt_deriver, self),
+            KdfId::Bcrypt => (GcmContext::bcrypt_deriver, self),
+            KdfId::Argon2 => (GcmContext::argon2id_deriver, self),
+            KdfId::Sha256 => (GcmContext::sha256_deriver, self)            
+        }
+    }
+
     pub fn from_string(name: &String) -> Option<Self> {
         match &name[..] {
             KDF_SHA256 => Some(KdfId::Sha256),

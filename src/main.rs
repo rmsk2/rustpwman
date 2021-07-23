@@ -97,12 +97,7 @@ impl RustPwMan {
 
     fn str_to_deriver(&self, deriver_name: &str) -> (fcrypt::KeyDeriver, fcrypt::KdfId) {
         return match fcrypt::KdfId::from_str(deriver_name) {
-            Some(v) => match v {
-                fcrypt::KdfId::Scrypt => (fcrypt::GcmContext::scrypt_deriver, v),
-                fcrypt::KdfId::Bcrypt => (fcrypt::GcmContext::bcrypt_deriver, v),
-                fcrypt::KdfId::Argon2 => (fcrypt::GcmContext::argon2id_deriver, v),
-                fcrypt::KdfId::Sha256 => (fcrypt::GcmContext::sha256_deriver, v),
-            },
+            Some(v) => v.to_named_func(),
             _ => (self.default_deriver, self.default_deriver_id)
         }       
     }
