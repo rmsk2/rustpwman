@@ -98,9 +98,9 @@ pub fn main_gui(data_file_name: String, default_sec_bits: usize, derive_func: Ke
         let f_name = capture_file_name.clone();
         let mut generators: HashMap<GenerationStrategy, Box<dyn PasswordGenerator>> = HashMap::new();
 
-        generators.insert(GenerationStrategy::Base64, Box::new(pwgen::B64Generator::new()));
-        generators.insert(GenerationStrategy::Hex, Box::new(pwgen::HexGenerator::new()));
-        generators.insert(GenerationStrategy::Special, Box::new(pwgen::SpecialGenerator::new(false)));           
+        for i in pwgen::GenerationStrategy::get_known_ids() {
+            generators.insert(i, i.to_creator()());
+        }
 
         let state = AppState::new(jots_store, &f_name, generators, default_sec_bits, default_pw_gen);
 

@@ -22,6 +22,12 @@ const GEN_BASE64: &str = "base64";
 const GEN_HEX: &str = "hex";
 const GEN_SPECIAL: &str = "special";
 
+pub trait PasswordGenerator {
+    fn gen_password(&mut self, num_bytes: usize) -> Option<String>;
+}
+
+type StrategyCreator = dyn Fn() -> Box<dyn PasswordGenerator>;
+
 #[derive(Debug, Hash, PartialEq, Eq, Copy, Clone)]
 pub enum GenerationStrategy {
     Base64,
@@ -39,6 +45,14 @@ impl GenerationStrategy {
         };  
     }
 
+    pub fn to_creator(self) -> &'static StrategyCreator {
+        return match self {
+            GenerationStrategy::Base64 => &|| { return Box::new(B64Generator::new()) },
+            GenerationStrategy::Hex => &|| { return Box::new(HexGenerator::new()) },
+            GenerationStrategy::Special => &|| { return Box::new(SpecialGenerator::new(false)) }
+        }
+    }
+
     #[allow(dead_code)]
     pub fn to_str(self) -> &'static str {
         match self {
@@ -51,10 +65,6 @@ impl GenerationStrategy {
     pub fn get_known_ids() -> Vec<GenerationStrategy> {
         return vec![GenerationStrategy::Base64, GenerationStrategy::Hex, GenerationStrategy::Special];
     }    
-}
-
-pub trait PasswordGenerator {
-    fn gen_password(&mut self, num_bytes: usize) -> Option<String>;
 }
 
 pub struct GeneratorBase {
