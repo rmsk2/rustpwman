@@ -187,7 +187,7 @@ This section provides information about stuff which is in my view suboptimal and
 - On a MacBook Air 2018 using the touchpad to click elements in the TUI does not work. The problem does not manifest itself when using a mouse. Using the touchpad seems to work though on other models. I do not think that this is a hardware problem on my MacBook and I unfortunately have no idea why this happens.
 - I am developing this under MacOS and Linux. It should work under Windows too, but I have not tested it yet.
 - In non `--release` builds scrypt with the chosen parameters is *extremely* slow
-- Use KDF specifier in encrypted data file to make `--kdf` parameter redundant
+- Implement config dialog
 - https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#scrypt
 
 
