@@ -259,10 +259,11 @@ pub fn add_kdf_param() -> clap::Arg<'static, 'static> {
     arg = arg.long(ARG_KDF);
     arg = arg.takes_value(true);
     arg = arg.help("Use specific PBKDF");
-    arg = arg.possible_value(&fcrypt::KdfId::Scrypt.to_str());
-    arg = arg.possible_value(&fcrypt::KdfId::Bcrypt.to_str());
-    arg = arg.possible_value(&fcrypt::KdfId::Argon2.to_str());
-    arg = arg.possible_value(&fcrypt::KdfId::Sha256.to_str());
+    let ids: Vec<fcrypt::KdfId> = fcrypt::KdfId::get_known_ids();
+
+    for i in ids {
+        arg = arg.possible_value(i.to_str());
+    }
 
     return arg;
 }

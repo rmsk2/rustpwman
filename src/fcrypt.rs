@@ -69,6 +69,10 @@ impl KdfId {
         }
     }
 
+    pub fn get_known_ids() -> Vec<KdfId> {
+        return vec![KdfId::Scrypt, KdfId::Bcrypt, KdfId::Argon2, KdfId::Sha256];
+    }
+
     pub fn from_str(name: &str) -> Option<Self> {
         return KdfId::from_string(&String::from(name));
     }
