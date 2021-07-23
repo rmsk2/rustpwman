@@ -93,13 +93,6 @@ impl KdfId {
     }
 }
 
-#[derive(Debug)]
-pub enum FcryptError {
-    CiphertextTooShort,
-    DecryptionError,
-    EncryptionError
-} 
-
 #[derive(Serialize, Deserialize, Debug)]
 struct CryptedJson {
     #[serde(rename(deserialize = "PbKdf"))]
@@ -296,9 +289,9 @@ impl GcmContext {
         return (self.kdf)(&self.salt, password);
     }
 
-    pub fn decrypt(&self, password: &str, data: &Vec<u8>) -> Result<Vec<u8>, FcryptError> {
+    pub fn decrypt(&self, password: &str, data: &Vec<u8>) -> std::io::Result<Vec<u8>> {
         if data.len() < DEFAULT_TAG_SIZE {
-            return Err(FcryptError::CiphertextTooShort);
+            return Err(Error::new(ErrorKind::Other, "Ciphertext too short"));
         }
 
         let aes_256_key = self.regenerate_key(password);
@@ -318,14 +311,14 @@ impl GcmContext {
         let _ = match cipher.decrypt_in_place_detached(&nonce, &associated_data, &mut dec_buffer[0..], &tag) {
             Ok(_) => (),
             Err(_) => {
-                return Err(FcryptError::DecryptionError);
+                return Err(Error::new(ErrorKind::Other, "Decryption error"));
             }
         };
 
         return Ok(dec_buffer);
     }
 
-    pub fn encrypt(&mut self, password: &str, data: &Vec<u8>) -> Result<Vec<u8>, FcryptError> {
+    pub fn encrypt(&mut self, password: &str, data: &Vec<u8>) -> std::io::Result<Vec<u8>> {
         self.fill_random();
 
         let aes_256_key = self.regenerate_key(password);
@@ -336,7 +329,7 @@ impl GcmContext {
         let cipher: AesGcm<aes::Aes256, typenum::U12> = AesGcm::new(key);
 
         return match cipher.encrypt(&nonce, data.as_slice()) {
-            Err(_) => return Err(FcryptError::EncryptionError),
+            Err(_) => return Err(Error::new(ErrorKind::Other, "Encryption error")),
             Ok(d) => Ok(d)
         };
     }
