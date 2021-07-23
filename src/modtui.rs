@@ -464,6 +464,7 @@ fn generate_password(s: &mut Cursive, state_for_gen_pw: Rc<RefCell<AppState>>) {
     }; 
 
     let sec_bits = state_for_gen_pw.borrow().get_default_bits();
+    let default_strategy = state_for_gen_pw.borrow().default_generator;
 
     let mut strategy_group: RadioGroup<GenerationStrategy> = RadioGroup::new();
     let mut radio_buttons: Vec<(GenerationStrategy, RadioButton<GenerationStrategy>)> = Vec::new();
@@ -480,7 +481,7 @@ fn generate_password(s: &mut Cursive, state_for_gen_pw: Rc<RefCell<AppState>>) {
             selector.insert(i.0, &mut i.1);
         }
     
-        if !select_default_pw_generator_type(s, &mut selector, state_for_gen_pw.borrow().default_generator) {
+        if !select_default_pw_generator_type(s, &mut selector, default_strategy) {
             return;
         }
     }
