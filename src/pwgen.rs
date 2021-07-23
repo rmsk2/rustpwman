@@ -47,6 +47,10 @@ impl GenerationStrategy {
             GenerationStrategy::Special => GEN_SPECIAL
         }
     }
+
+    pub fn get_known_ids() -> Vec<GenerationStrategy> {
+        return vec![GenerationStrategy::Base64, GenerationStrategy::Hex, GenerationStrategy::Special];
+    }    
 }
 
 pub trait PasswordGenerator {

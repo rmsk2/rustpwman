@@ -435,7 +435,7 @@ fn select_default_pw_generator_type(s: &mut Cursive, selector: &mut HashMap<Gene
     let event_result = match selector.get_mut(&def_generator) {
         Some(button) => button.select(),
         None => {
-            show_message(s, "Unable to select default password generator"); 
+            show_message(s, "Default password generator not found"); 
             return false; 
         }
     };
@@ -466,19 +466,31 @@ fn generate_password(s: &mut Cursive, state_for_gen_pw: Rc<RefCell<AppState>>) {
     let sec_bits = state_for_gen_pw.borrow().get_default_bits();
 
     let mut strategy_group: RadioGroup<GenerationStrategy> = RadioGroup::new();
-    let mut radio_base64 = strategy_group.button(GenerationStrategy::Base64, "Base64");
-    let mut radio_hex = strategy_group.button(GenerationStrategy::Hex, "Hex");
-    let mut radio_special = strategy_group.button(GenerationStrategy::Special, "Special");
+    let mut radio_buttons: Vec<(GenerationStrategy, RadioButton<GenerationStrategy>)> = Vec::new();
 
     {
+        for i in &GenerationStrategy::get_known_ids() {
+            let b = strategy_group.button(*i, i.to_str());
+            radio_buttons.push((*i, b));
+        }
+
         let mut selector: HashMap<GenerationStrategy, &mut RadioButton<GenerationStrategy>> = HashMap::new();
-        selector.insert(GenerationStrategy::Base64, &mut radio_base64);
-        selector.insert(GenerationStrategy::Hex, &mut radio_hex);
-        selector.insert(GenerationStrategy::Special, &mut radio_special);
+
+        for i in &mut radio_buttons {
+            selector.insert(i.0, &mut i.1);
+        }
     
         if !select_default_pw_generator_type(s, &mut selector, state_for_gen_pw.borrow().default_generator) {
             return;
         }
+    }
+
+    let mut linear_layout = LinearLayout::horizontal()
+        .child(TextView::new("Contained characters: "));
+
+    for i in radio_buttons {
+        linear_layout.add_child(i.1);
+        linear_layout.add_child(TextView::new(" "));
     }
 
     let res = Dialog::new()
@@ -503,14 +515,7 @@ fn generate_password(s: &mut Cursive, state_for_gen_pw: Rc<RefCell<AppState>>) {
                 .with_name(SLIDER_SEC_NAME))
         )
         .child(TextView::new("\n"))
-        .child(LinearLayout::horizontal()
-            .child(TextView::new("Contained characters: "))
-            .child(radio_base64)
-            .child(TextView::new(" "))
-            .child(radio_hex)
-            .child(TextView::new(" "))
-            .child(radio_special)            
-        )
+        .child(linear_layout)
     )
     .button("OK", move |s| {
         let mut value = match state_for_gen_pw.borrow().store.get(&entry_name) {
