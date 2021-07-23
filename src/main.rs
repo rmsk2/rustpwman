@@ -38,8 +38,7 @@ const ARG_OUTPUT_FILE: &str = "outputfile";
 const ARG_KDF: &str = "kdf";
 pub const CFG_FILE_NAME: &str = ".rustpwman";
 
-const DEFAULT_KDF: fcrypt::KeyDeriver = fcrypt::GcmContext::sha256_deriver;
-const DEFAULT_KDF_ID: fcrypt::KdfId = fcrypt::KdfId::Sha256;
+use fcrypt::DEFAULT_KDF_ID;
 
 struct RustPwMan {
     default_deriver: fcrypt::KeyDeriver,
@@ -50,8 +49,10 @@ struct RustPwMan {
 
 impl RustPwMan {
     fn new() -> Self {
+        let (default_kdf, _) = DEFAULT_KDF_ID.to_named_func();
+        
         return RustPwMan {
-            default_deriver: DEFAULT_KDF,
+            default_deriver: default_kdf,
             default_deriver_id: DEFAULT_KDF_ID,
             default_sec_level: modtui::PW_SEC_LEVEL,
             default_pw_gen: GenerationStrategy::Base64

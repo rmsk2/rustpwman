@@ -47,6 +47,8 @@ const KDF_BCRYPT: &str = "bcrypt";
 const KDF_ARGON2: &str = "argon2";
 const KDF_SHA256: &str = "sha256"; 
 
+pub const DEFAULT_KDF_ID: KdfId = KdfId::Sha256;
+
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
 pub enum KdfId {
     Scrypt,
