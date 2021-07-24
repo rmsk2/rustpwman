@@ -53,13 +53,16 @@ impl GenerationStrategy {
         }
     }
 
-    #[allow(dead_code)]
     pub fn to_str(self) -> &'static str {
         match self {
             GenerationStrategy::Base64 => GEN_BASE64,
             GenerationStrategy::Hex => GEN_HEX,
             GenerationStrategy::Special => GEN_SPECIAL
         }
+    }
+
+    pub fn to_string(self) -> String {
+        return String::from(self.to_str());
     }
 
     pub fn get_known_ids() -> Vec<GenerationStrategy> {

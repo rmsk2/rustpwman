@@ -18,6 +18,7 @@ mod jots;
 mod pwgen;
 mod modtui;
 mod tomlconfig;
+mod tuiconfig;
 
 use std::env;
 use dirs;
@@ -33,8 +34,10 @@ pub const VERSION_STRING: &'static str = env!("CARGO_PKG_VERSION");
 const COMMAND_ENCRYPT: &str = "enc";
 const COMMAND_DECRYPT: &str = "dec";
 const COMMAND_GUI: &str = "gui";
+const COMMAND_CONFIG: &str = "cfg";
 const ARG_INPUT_FILE: &str = "inputfile";
 const ARG_OUTPUT_FILE: &str = "outputfile";
+const ARG_CONFIG_FILE: &str = "cfgfile";
 const ARG_KDF: &str = "kdf";
 pub const CFG_FILE_NAME: &str = ".rustpwman";
 
@@ -50,7 +53,7 @@ struct RustPwMan {
 impl RustPwMan {
     fn new() -> Self {
         let (default_kdf, _) = DEFAULT_KDF_ID.to_named_func();
-        
+
         return RustPwMan {
             default_deriver: default_kdf,
             default_deriver_id: DEFAULT_KDF_ID,
@@ -251,6 +254,43 @@ impl RustPwMan {
     
         modtui::main_gui(data_file_name, self.default_sec_level, self.default_deriver, self.default_deriver_id, self.default_pw_gen);
     }
+
+    fn perform_config_command(&mut self, config_matches: &clap::ArgMatches) {
+        let config_file_name: std::path::PathBuf;
+        
+        if config_matches.is_present(ARG_CONFIG_FILE) {
+            let mut file_names: Vec<String> = Vec::new();
+
+            if let Some(in_files) = config_matches.values_of(ARG_CONFIG_FILE) {
+                in_files.for_each(|x| file_names.push(String::from(x)));
+            }
+
+            config_file_name = std::path::PathBuf::from(file_names[0].clone());
+        } 
+        else 
+        {
+            config_file_name = match RustPwMan::get_cfg_file_name() {
+                Some(p) => p,
+                None => {
+                    println!("Unable to determine config file!");
+                    return;
+                }
+            };
+        }
+
+        let loaded_config = match tomlconfig::load(&config_file_name) {
+            Ok(c) => c,
+            Err(_) => {
+                tomlconfig::RustPwManSerialize {
+                    seclevel: self.default_sec_level,
+                    pbkdf: self.default_deriver_id.to_string(),
+                    pwgen: self.default_pw_gen.to_string()
+                }
+            }
+        };
+
+        tuiconfig::config_main(config_file_name, loaded_config);
+    }    
 }
 
 pub fn add_kdf_param() -> clap::Arg<'static, 'static> {
@@ -314,7 +354,15 @@ fn main() {
                     .required(true)
                     .takes_value(true)
                     .help("Name of encrypted data file"))                   
-                .arg(add_kdf_param()));                    
+                .arg(add_kdf_param()))
+        .subcommand(
+            SubCommand::with_name(COMMAND_CONFIG)
+                .about("Change configuration")        
+                .arg(Arg::with_name(ARG_CONFIG_FILE)
+                    .short("c")
+                    .long(ARG_CONFIG_FILE)
+                    .takes_value(true)
+                    .help("Name of config file. Default ist .rustpwman")));                    
 
     let mut rustpwman = RustPwMan::new();
     rustpwman.load_config();
@@ -331,7 +379,10 @@ fn main() {
         },
         (COMMAND_GUI, Some(gui_matches)) => {
             rustpwman.perform_gui_command(gui_matches);
-        },        
+        },   
+        (COMMAND_CONFIG, Some(cfg_matches)) => {
+            rustpwman.perform_config_command(cfg_matches);
+        },      
         _ => {
             match app.print_long_help() {
                 Err(e) => eprintln!("{}", e),
