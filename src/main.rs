@@ -89,7 +89,7 @@ impl RustPwMan {
         self.default_deriver = k;
         self.default_deriver_id = id;
         self.default_pw_gen = self.str_to_gen_strategy(&loaded_config.pwgen[..]);
-        self.default_sec_level = loaded_config.seclevel;
+        self.default_sec_level = self.verify_sec_level(loaded_config.seclevel);
     }
 
     fn str_to_gen_strategy(&self, strategy_name: &str) -> GenerationStrategy {
@@ -97,6 +97,16 @@ impl RustPwMan {
             Some(v) => v,
             _ => self.default_pw_gen
         };       
+    }
+
+    fn verify_sec_level(&self, loaded_level: usize) -> usize {
+        if loaded_level >= modtui::PW_MAX_SEC_LEVEL {
+            self.default_sec_level
+        } 
+        else
+        {
+            loaded_level
+        }
     }
 
     fn str_to_deriver(&self, deriver_name: &str) -> (fcrypt::KeyDeriver, fcrypt::KdfId) {
@@ -289,7 +299,12 @@ impl RustPwMan {
             }
         };
 
-        tuiconfig::config_main(config_file_name, loaded_config);
+        let sec_level = self.verify_sec_level(loaded_config.seclevel);
+        let pw_gen_strategy = self.str_to_gen_strategy(&loaded_config.pwgen);
+        let (_, pbkdf_id) = self.str_to_deriver(&loaded_config.pbkdf);
+
+
+        tuiconfig::config_main(config_file_name, sec_level, pw_gen_strategy, pbkdf_id);
     }    
 }
 

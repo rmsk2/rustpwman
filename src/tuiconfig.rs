@@ -21,9 +21,11 @@ use cursive::align::HAlign;
 use cursive::event::Key;
 
 use crate::tomlconfig::RustPwManSerialize;
+use crate::pwgen;
+use crate::fcrypt;
 
 
-pub fn config_main(config_file: std::path::PathBuf, current_config: RustPwManSerialize) {
+pub fn config_main(config_file: std::path::PathBuf, sec_level: usize, pw_gen_strategy: pwgen::GenerationStrategy, pbkdf_id: fcrypt::KdfId) {
     let mut siv = cursive::default();
 
     siv.add_layer(
