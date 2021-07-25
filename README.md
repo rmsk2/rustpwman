@@ -163,7 +163,7 @@ A similar problem occurs when importing existing password information into `rust
 
 # Configuration
 
-Rustpwman uses a config file for setting the default security level, the default password generator and the default PBKDF. 
+Rustpwman uses a TOML config file for setting the default security level, the default password generator and the default PBKDF. 
 
 ```
 [defaults]
