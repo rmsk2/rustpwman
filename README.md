@@ -28,7 +28,9 @@ SUBCOMMANDS:
     help    Prints this message or the help of the given subcommand(s)
 ```
 
-The `enc` and `dec` commands can be used to reencrypt an existing data file when one wishes to switch to another password based key derivation function. You may wonder why someone writes a TUI application in 2021. The main reason is portability: `rustpwman` should work on Windows, MacOS and Linux.
+The `enc` and `dec` commands can be used to reencrypt an existing data file when one wishes to switch to another password based key derivation function.
+
+You may wonder why someone writes a TUI application in 2021. The main reason is portability without creating a dependency to any of the usual GUI toolkits. `rustpwman` should work on MacOS and Linux (probably Windows as well, but not yet tested) and it should compile without the necessity to install more or less exotic toolchains.
 
 # Introduction
 
