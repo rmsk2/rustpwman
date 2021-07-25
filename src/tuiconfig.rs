@@ -127,7 +127,7 @@ pub fn config_main(config_file: std::path::PathBuf, sec_level: usize, pw_gen_str
         };
         
         let strategy = &strategy_group.selection();
-        let pbkdf = pbkdf_group.selection();
+        let pbkdf = &pbkdf_group.selection();
 
         let new_config = RustPwManSerialize::new(rand_bytes, pbkdf.to_str(), strategy.to_str());
 
