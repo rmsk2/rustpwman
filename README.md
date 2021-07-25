@@ -35,7 +35,7 @@ The `enc` and `dec` commands can be used to reencrypt an existing data file when
 The basic concept of `rustpwman` is to manage a set of entries which have a value or content. The entries are presented in a flat list and no further structuring is offered at the moment. In order to start the programm use
 
 ```
-./rustpwman gui -i <file_name>
+rustpwman gui -i <file_name>
 ```
 
 or `cargo run --release -- gui -i <file_name>` which will result, after a successful password entry, in a window similar to this one.
@@ -65,7 +65,7 @@ If the referenced file does not exist the user is offered to create an empty enc
 SHA-256( password | salt | password )
 ```
 
-where `salt` is a random value of appropriate length and `|` symbolizes concatenation. It is also possible to select this or another password based key derivation function through the `--kdf` option or by a config file. Currently `scrypt`, `bcrypt`, `argon2` and `sha256` are valid as a parameter for this option and as a config file entry.
+where `salt` is a random value of appropriate length and `|` symbolizes concatenation. It is also possible to select this or another password based key derivation function through the `--kdf` option or by a config file. Currently `scrypt`, `bcrypt`, `argon2` and `sha256` are valid as a parameter for this option and as a [config file](#configuration) entry.
 
 ## Format of payload data
 
