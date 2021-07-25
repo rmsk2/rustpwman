@@ -1,6 +1,6 @@
 # rustpwman
 
-A simple password manager written in Rust using the (cursive TUI library)[https://github.com/gyscos/cursive]. **This is work in progress**.
+A simple password manager written in Rust using the [cursive TUI library](https://github.com/gyscos/cursive). **This is work in progress**.
 
 The password manager offers the following functionality:
 
