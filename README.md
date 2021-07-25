@@ -5,7 +5,7 @@ A simple password manager written in Rust using the cursive TUI library. **This 
 The password manager offers the following functionality:
 
 ```
-rustpwman 0.8.0
+rustpwman 0.9.0
 Martin Grap <rmsk2@gmx.de>
 A password manager for the cursive TUI in Rust
 
@@ -21,6 +21,7 @@ FLAGS:
 
 
 SUBCOMMANDS:
+    cfg     Change configuration
     dec     Decrypt file
     enc     Encrypt file
     gui     Open file in TUI
