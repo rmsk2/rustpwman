@@ -177,7 +177,9 @@ pwgen = "special"
 - `pwgen` is one of the strings `base64`, `hex` or `special`
 
 The config file is stored in the users' home directory in a file named `.rustpwman`. To change these defaults either edit the config
-file by hand or use `rustpwman cfg`.
+file by hand or use `rustpwman cfg` which will open a window similar to this one
+
+![](/scrshot_cfg.png?raw=true "Screenshot of rustpwman cfg")
 
 # Caveats
 
