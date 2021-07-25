@@ -106,7 +106,7 @@ Shows an about dialog containing information about the author and the program ve
 ### Quit and print
 
 Selecting this entry ends the program and prints the value of the currently selected entry to the CLI window after
-the TUI has been closed. About the reasoning behind this idea have a look at the section `A note about the lack of the clipboard`. 
+the TUI has been closed. About the reasoning behind this idea have a look at the section [A note about the lack of the clipboard](#a-note-about-the-lack-of-the-clipboard). 
 
 ### Quit
 
