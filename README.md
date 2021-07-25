@@ -65,7 +65,7 @@ If the referenced file does not exist the user is offered to create an empty enc
 SHA-256( password | salt | password )
 ```
 
-where `salt` is a random value of appropriate length and `|` symbolizes concatenation. It is also possible to select this or another password based key derivation function through the `--kdf` option or by a config file. Currently `scrypt`, `bcrypt`, `argon2` and `sha256` are valid as a parameter for this option and as a [config file](#configuration) entry.
+where `salt` is a random value of appropriate length and `|` symbolizes concatenation. It is also possible to select this or another password based key derivation function through the `--kdf` option or by a [config file](#configuration). Currently `scrypt`, `bcrypt`, `argon2` and `sha256` are valid as a parameter for this option and as a config file entry.
 
 ## Format of payload data
 
