@@ -44,7 +44,6 @@ pub fn load(file_path: &std::path::PathBuf) -> std::io::Result<RustPwManSerializ
     return Ok(value.defaults);
 }
 
-#[allow(dead_code)]
 pub fn save(file_path: &std::path::PathBuf, config: RustPwManSerialize) -> Option<Error> {
     let c = Config {
         defaults: config,

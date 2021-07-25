@@ -13,13 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 use cursive::traits::*;
-use cursive::views::{Dialog, LinearLayout, TextView, EditView, SelectView, TextArea, Panel, SliderView, RadioGroup, RadioButton};
+use cursive::views::{Dialog, LinearLayout, TextView, TextArea, SliderView, RadioGroup};
 use cursive::Cursive;
-use cursive::event::EventResult;
-use cursive::menu::MenuTree;
-use cursive::align::HAlign;
-use cursive::event::Key;
+//use cursive::event::EventResult;
 
+use crate::tomlconfig;
 use crate::tomlconfig::RustPwManSerialize;
 use crate::pwgen;
 use crate::fcrypt;
@@ -27,6 +25,20 @@ use crate::modtui;
 
 const BITS_SEC_VALUE: &str = "cfgseclevel";
 const SLIDER_SEC_NAME: &str = "cfgslider";
+
+fn show_yes_no_decision(siv: &mut Cursive, msg: &str) {
+    siv.add_layer(
+        Dialog::text(msg)
+            .title("Rustpwman")
+            .button("Yes", move |s: &mut Cursive| {
+                s.pop_layer();
+                s.quit();
+            })
+            .button("No", |s| {
+                s.pop_layer();
+            })           
+    );    
+}
 
 fn show_message(siv: &mut Cursive, msg: &str) {
     siv.add_layer(
@@ -106,7 +118,27 @@ pub fn config_main(config_file: std::path::PathBuf, sec_level: usize, pw_gen_str
         .child(linear_layout_pbkdf)
     )
     .button("OK", move |s| {  
-        s.quit();    
+        let rand_bytes = match s.call_on_name(SLIDER_SEC_NAME, |view: &mut SliderView| { view.get_value() }) {
+            Some(v) => v,
+            None => { 
+                show_message(s, "Unable to determine security level"); 
+                return; 
+            }
+        };
+        
+        let strategy = &strategy_group.selection();
+        let pbkdf = pbkdf_group.selection();
+
+        let new_config = RustPwManSerialize::new(rand_bytes, pbkdf.to_str(), strategy.to_str());
+
+        match tomlconfig::save(&config_file, new_config) {
+            Some(e) => {
+                show_yes_no_decision(s, &format!("Config could not be saved: {:?}. Leave program?", e));
+            },
+            None => { 
+                show_yes_no_decision(s, "Config successfully saved. Leave program?");
+            }
+        };   
     })
     .button("Cancel", |s| { s.quit(); });
     
