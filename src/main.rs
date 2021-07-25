@@ -377,7 +377,7 @@ fn main() {
                     .short("c")
                     .long(ARG_CONFIG_FILE)
                     .takes_value(true)
-                    .help("Name of config file. Default ist .rustpwman")));                    
+                    .help("Name of config file. Default is .rustpwman")));                    
 
     let mut rustpwman = RustPwMan::new();
     rustpwman.load_config();
