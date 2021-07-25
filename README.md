@@ -176,7 +176,8 @@ pwgen = "special"
 - `pbkdf` is a string that can assume the values `scrypt`, `bcrypt`, `argon2`, `sha256`
 - `pwgen` is one of the strings `base64`, `hex` or `special`
 
-The config file is stored in the users' home directory in a file named `.rustpwman`.
+The config file is stored in the users' home directory in a file named `.rustpwman`. To change these defaults either edit the config
+file by hand or use `rustpwman cfg`.
 
 # Caveats
 
