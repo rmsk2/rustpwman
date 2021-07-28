@@ -30,7 +30,7 @@ SUBCOMMANDS:
 
 The `enc` and `dec` commands can be used to reencrypt an existing data file when one wishes to switch to another password based key derivation function.
 
-You may wonder why someone writes a TUI application in 2021. The main reason is portability without creating a dependency to any of the usual GUI toolkits. `rustpwman` should work on MacOS and Linux (probably Windows as well, but not yet tested) and it should compile without the necessity to install more or less exotic toolchains.
+You may wonder why someone writes a TUI application in 2021. The main reason is portability without creating a dependency to any of the usual GUI toolkits. `rustpwman` should work on MacOS, Linux and Windows and it should compile without the necessity to install more or less exotic toolchains.
 
 # Introduction
 
@@ -183,6 +183,22 @@ file by hand or use `rustpwman cfg` which will open a window similar to this one
 
 ![](/scrshot_cfg.png?raw=true "Screenshot of rustpwman cfg")
 
+# Rustpwman under Windows
+
+The good news is that it works and it even works well. I have tested the `crossterm` and the `pancurses` backend of `cursive` under Windows. The [`crossterm`](https://github.com/crossterm-rs/crossterm) backend is pure Rust but the resulting program runs so slow that it is borderline unusable. The [`pancurses`](https://github.com/ihalila/pancurses) backend is a binding to a C library and requires an [installed C compiler](https://github.com/ihalila/pdcurses-sys) in order to build. When building `rustpwman` for Windows the `Cargo.toml` file has to be modified. The line `cursive = "0.16.3"` has to be removed and the following lines have to be appended to the file:
+
+```
+pancurses = "0.16.1"
+pdcurses-sys = "0.7.1"
+
+[dependencies.cursive]
+version = "0.16.3"
+default-features = false
+features = ["pancurses-backend"]
+```
+
+I have tested `rustpwman` with the `pancurses` backend in the normal `cmd.exe` console and the new [Windows Terminal](https://www.microsoft.com/en-us/p/windows-terminal/9n0dx20hk701#activetab=pivot:overviewtab). Both work well and the only oddity is the fact that when closing the TUI in a `cmd.exe` an escape sequence `[?1002l` is printed. This does not happen when using the Windows Terminal.
+
 # Caveats
 
 This section provides information about stuff which is in my view suboptimal and should be (and possibly will be) improved in the future.
@@ -192,9 +208,6 @@ This section provides information about stuff which is in my view suboptimal and
 - When the list of entries changes (after an add or delete) it may be possible that the entry selected after the change is not visible in the `ScrollView` on the left. I was not successfull in forcing cursive to scroll to the newly selected entry. This is most probably my fault and meanwhile an appropriate warning dialog is displayed.
 - I am fairly new to Rust. I guess it shows in the code.
 - On a MacBook Air 2018 using the touchpad to click elements in the TUI does not work. The problem does not manifest itself when using a mouse. Using the touchpad seems to work though on other models. I do not think that this is a hardware problem on my MacBook and I unfortunately have no idea why this happens.
-- I am developing this under MacOS and Linux. It should work under Windows too, but I have not tested it yet.
 - In non `--release` builds scrypt with the chosen parameters is *extremely* slow
 - Source for PBKDF parameter choices https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
-
-
 
