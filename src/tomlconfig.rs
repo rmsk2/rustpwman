@@ -14,7 +14,6 @@ pub struct RustPwManSerialize {
 }
 
 impl RustPwManSerialize {
-    #[allow(dead_code)]
     pub fn new(seclevel: usize, pbkdf: &str, pwgen: &str) -> Self {
         return RustPwManSerialize {
             seclevel: seclevel,
