@@ -40,9 +40,12 @@ The basic concept of `rustpwman` is to manage a set of entries which have a valu
 rustpwman gui -i <file_name>
 ```
 
-or `cargo run --release -- gui -i <file_name>` which will result, after a successful password entry, in a window similar to this one.
+or `cargo run --release -- gui -i <file_name>` which will result, after a successful password entry, in a window similar to this one.  
 
 ![](/screenshot.png?raw=true "Screenshot of rustpwman")
+
+If the file specified through the `-i` parameter does not exist `rustpwman` will create a new data file using that name 
+after you have supplied a suitable password.
 
 ## About the crypto
 
