@@ -30,7 +30,7 @@ use aes_gcm::{Key, Nonce, AesGcm, Tag};
 use aes_gcm::aead::{Aead, AeadInPlace, NewAead};
 use crypto::scrypt::scrypt;
 use crypto::scrypt::ScryptParams;
-use bcrypt_pbkdf::bcrypt_pbkdf;
+//use bcrypt_pbkdf::bcrypt_pbkdf;
 use argon2;
 
 const DEFAULT_TAG_SIZE: usize = 16;
@@ -43,7 +43,7 @@ const DEFAULT_SALT_SIZE: usize = 16;
 const MAX_PW_SIZE_IN_BYTES: usize = 50;  
 
 const KDF_SCRYPT: &str = "scrypt";
-const KDF_BCRYPT: &str = "bcrypt";
+//const KDF_BCRYPT: &str = "bcrypt";
 const KDF_ARGON2: &str = "argon2";
 const KDF_SHA256: &str = "sha256"; 
 
@@ -52,7 +52,7 @@ pub const DEFAULT_KDF_ID: KdfId = KdfId::Sha256;
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
 pub enum KdfId {
     Scrypt,
-    Bcrypt,
+    //Bcrypt,
     Argon2,
     Sha256
 }
@@ -65,14 +65,14 @@ impl KdfId {
     pub fn to_str(self) -> &'static str {
         match self {
             KdfId::Scrypt => KDF_SCRYPT,
-            KdfId::Bcrypt => KDF_BCRYPT,
+            //KdfId::Bcrypt => KDF_BCRYPT,
             KdfId::Argon2 => KDF_ARGON2,
             KdfId::Sha256 => KDF_SHA256
         }
     }
 
     pub fn get_known_ids() -> Vec<KdfId> {
-        return vec![KdfId::Scrypt, KdfId::Bcrypt, KdfId::Argon2, KdfId::Sha256];
+        return vec![KdfId::Scrypt, /*KdfId::Bcrypt,*/ KdfId::Argon2, KdfId::Sha256];
     }
 
     pub fn from_str(name: &str) -> Option<Self> {
@@ -82,7 +82,7 @@ impl KdfId {
     pub fn to_named_func(self) -> (KeyDeriver, KdfId) {
         match self {
             KdfId::Scrypt => (GcmContext::scrypt_deriver, self),
-            KdfId::Bcrypt => (GcmContext::bcrypt_deriver, self),
+            //KdfId::Bcrypt => (GcmContext::bcrypt_deriver, self),
             KdfId::Argon2 => (GcmContext::argon2id_deriver, self),
             KdfId::Sha256 => (GcmContext::sha256_deriver, self)            
         }
@@ -92,7 +92,7 @@ impl KdfId {
         match &name[..] {
             KDF_SHA256 => Some(KdfId::Sha256),
             KDF_SCRYPT => Some(KdfId::Scrypt),
-            KDF_BCRYPT => Some(KdfId::Bcrypt),
+            //KDF_BCRYPT => Some(KdfId::Bcrypt),
             KDF_ARGON2 => Some(KdfId::Argon2),
             _ => None
         }
@@ -169,17 +169,17 @@ impl GcmContext {
         return res;        
     }
 
-    pub fn bcrypt_deriver(salt: &Vec<u8>, password: &str) -> Vec<u8> {
-        let mut aes_key: [u8; 32] = [0; 32];
+    // pub fn bcrypt_deriver(salt: &Vec<u8>, password: &str) -> Vec<u8> {
+    //     let mut aes_key: [u8; 32] = [0; 32];
 
-        // work factor 10 = 2^10 = 1024
-        bcrypt_pbkdf(password, &salt[..], 1024, &mut aes_key).unwrap();
+    //     // work factor 10 = 2^10 = 1024
+    //     bcrypt_pbkdf(password, &salt[..], 1024, &mut aes_key).unwrap();
     
-        let mut res:Vec<u8> = Vec::new();
-        aes_key.iter().for_each(|i| { res.push(*i) });
+    //     let mut res:Vec<u8> = Vec::new();
+    //     aes_key.iter().for_each(|i| { res.push(*i) });
     
-        return res;
-    }
+    //     return res;
+    // }
 
     pub fn scrypt_deriver(salt: &Vec<u8>, password: &str) -> Vec<u8> {
         // N = 32768 = 2^15, r=8, p=2
