@@ -70,7 +70,7 @@ If the referenced file does not exist the user is offered to create an empty enc
 SHA-256( password | salt | password )
 ```
 
-where `salt` is a random value of appropriate length and `|` symbolizes concatenation. It is also possible to select this or another password based key derivation function through the `--kdf` option or by a [config file](#configuration). Currently `scrypt`, `bcrypt`, `argon2` and `sha256` are valid as a parameter for this option and as a config file entry.
+where `salt` is a random value of appropriate length and `|` symbolizes concatenation. It is also possible to select this or another password based key derivation function through the `--kdf` option or by a [config file](#configuration). Currently `scrypt`, `argon2` and `sha256` are valid as a parameter for this option and as a config file entry.
 
 ## Format of payload data
 
@@ -219,4 +219,6 @@ This section provides information about stuff which is in my view suboptimal and
 - On a MacBook Air 2018 using the touchpad to click elements in the TUI does not work. The problem does not manifest itself when using a mouse. Using the touchpad seems to work though on other models. I do not think that this is a hardware problem on my MacBook and I unfortunately have no idea why this happens.
 - In non `--release` builds scrypt with the chosen parameters is *extremely* slow
 - Source for PBKDF parameter choices https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
+- Removed `bcrypt` due to a lack of testability. After looking at the crate `bcrypt-pbkdf`, which I originally used, I came to the conclusion that this crate does not implement the 
+"real" `bcrypt`. It only provides a variant of the original. See https://flak.tedunangst.com/post/bcrypt-pbkdf.
 
