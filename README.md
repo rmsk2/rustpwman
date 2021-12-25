@@ -178,7 +178,7 @@ pwgen = "special"
 ```
 
 - `seclevel` has to be an integer between 0 and 23. The security level in bits is calculated as (`seclevel` + 1) * 8. 
-- `pbkdf` is a string that can assume the values `scrypt`, `bcrypt`, `argon2`, `sha256`
+- `pbkdf` is a string that can assume the values `scrypt`, `argon2`, `sha256`
 - `pwgen` is one of the strings `base64`, `hex` or `special`
 
 The config file is stored in the users' home directory in a file named `.rustpwman`. To change these defaults either edit the config
