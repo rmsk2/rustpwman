@@ -249,10 +249,18 @@ pub fn test_argon2id_params() {
     let secret: [u8; 8] = [0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03];
     let ad_data: [u8; 12] = [0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04];
 
-    let mut aes_key: [u8; 32] = [0; 32];
+    let mut params_builder = argon2::ParamsBuilder::new();
+    params_builder
+    .m_cost(32).unwrap()
+    .t_cost(3).unwrap()
+    .p_cost(4).unwrap()
+    .data(&ad_data).unwrap()
+    .output_len(32).unwrap();
 
-    let ctx = argon2::Argon2::new(Some(&secret), 3, 32, 4, argon2::Version::V0x13).unwrap();
-    ctx.hash_password_into(argon2::Algorithm::Argon2id, &password, &salt, &ad_data, &mut aes_key).unwrap();
+    let mut aes_key: [u8; 32] = [0; 32];
+    
+    let ctx = argon2::Argon2::new_with_secret(&secret, argon2::Algorithm::Argon2id, argon2::Version::V0x13, params_builder.params().unwrap()).unwrap();
+    ctx.hash_password_into(&password, &salt, &mut aes_key).unwrap();
 
     let verified: [u8; 32] = [
         0x0d, 0x64, 0x0d, 0xf5, 0x8d, 0x78, 0x76, 0x6c, 0x08, 0xc0, 0x37, 0xa3, 0x4a, 0x8b, 0x53, 0xc9, 0xd0,

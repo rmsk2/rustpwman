@@ -24,10 +24,13 @@ use serde::{Serialize, Deserialize};
 use crypto::sha2::Sha256;
 use crypto::digest::Digest;
 use cipher::generic_array::typenum;
+use cipher::KeyInit;
+use cipher::generic_array::GenericArray;
 use aes;
 use base64;
-use aes_gcm::{Key, Nonce, AesGcm, Tag};
-use aes_gcm::aead::{Aead, AeadInPlace, NewAead};
+use aes_gcm::{Nonce, AesGcm, Tag};
+
+use aes_gcm::aead::{Aead, AeadInPlace};
 use crypto::scrypt::scrypt;
 use crypto::scrypt::ScryptParams;
 //use bcrypt_pbkdf::bcrypt_pbkdf;
@@ -43,7 +46,6 @@ const DEFAULT_SALT_SIZE: usize = 16;
 const MAX_PW_SIZE_IN_BYTES: usize = 50;  
 
 const KDF_SCRYPT: &str = "scrypt";
-//const KDF_BCRYPT: &str = "bcrypt";
 const KDF_ARGON2: &str = "argon2";
 const KDF_SHA256: &str = "sha256"; 
 
@@ -158,28 +160,17 @@ impl GcmContext {
 
     pub fn argon2id_deriver(salt: &Vec<u8>, password: &str) -> Vec<u8> {
         let mut aes_key: [u8; 32] = [0; 32];
-        let no_ad: [u8; 0] = [];
+        //let no_ad: [u8; 0] = [];
 
+        let params = argon2::Params::new(15*1024, 2, 1, Some(32)).unwrap();
         // 15 MiB, t=2, p=1
-        let ctx = argon2::Argon2::new(None, 2, 15*1024, 1, argon2::Version::V0x13).unwrap();
-        ctx.hash_password_into(argon2::Algorithm::Argon2id, password.as_bytes(), &salt[..], &no_ad, &mut aes_key).unwrap();
+        let ctx = argon2::Argon2::new(argon2::Algorithm::Argon2id, argon2::Version::V0x13, params);
+        ctx.hash_password_into(password.as_bytes(), &salt, &mut aes_key).unwrap();
         let mut res:Vec<u8> = Vec::new();
         aes_key.iter().for_each(|i| { res.push(*i) });
     
         return res;        
     }
-
-    // pub fn bcrypt_deriver(salt: &Vec<u8>, password: &str) -> Vec<u8> {
-    //     let mut aes_key: [u8; 32] = [0; 32];
-
-    //     // work factor 10 = 2^10 = 1024
-    //     bcrypt_pbkdf(password, &salt[..], 1024, &mut aes_key).unwrap();
-    
-    //     let mut res:Vec<u8> = Vec::new();
-    //     aes_key.iter().for_each(|i| { res.push(*i) });
-    
-    //     return res;
-    // }
 
     pub fn scrypt_deriver(salt: &Vec<u8>, password: &str) -> Vec<u8> {
         // N = 32768 = 2^15, r=8, p=2
@@ -301,7 +292,7 @@ impl GcmContext {
         }
 
         let aes_256_key = self.regenerate_key(password);
-        let key = Key::from_slice(aes_256_key.as_slice());
+        let key = GenericArray::from_slice(aes_256_key.as_slice());
         let associated_data: [u8; 0] = [];
 
         let data_len = data.len() - DEFAULT_TAG_SIZE;
@@ -328,7 +319,7 @@ impl GcmContext {
         self.fill_random();
 
         let aes_256_key = self.regenerate_key(password);
-        let key = Key::from_slice(aes_256_key.as_slice());
+        let key = GenericArray::from_slice(aes_256_key.as_slice());
 
         let nonce = Nonce::from_slice(self.nonce.as_slice());
 

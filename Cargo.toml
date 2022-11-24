@@ -1,26 +1,26 @@
 [package]
 name = "rustpwman"
-version = "1.0.0"
+version = "1.1.0"
 authors = ["Martin <rmsk2@gmx.de>"]
-edition = "2018"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 rust-crypto = "0.2.36"
-cursive = "0.16.3"
+cursive = "0.20"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-serde_bytes = "0.11.5"
-aes-gcm = "0.9.2"
-cipher = "0.3.0"
-aes = "0.7.4"
-base64 = "0.13.0"
-rand = "0.8.3"
-scrypt = "0.7.0"
-clap = "2.33.3"
-rpassword = "5.0.1"
-# bcrypt-pbkdf = "0.6.1"
-argon2 = "0.2.1"
-toml = "0.5.8"
-dirs = "3.0.2"
+serde_bytes = "0.11.7"
+aes-gcm = "0.10.1"
+cipher = "0.4"
+aes = "0.8"
+aead = "0.5"
+base64 = "0.13"
+rand = "0.8.5"
+scrypt = "0.10.0"
+clap = "4.0"
+rpassword = "7.0"
+argon2 = "0.4.1"
+toml = "0.5.9"
+dirs = "4.0"

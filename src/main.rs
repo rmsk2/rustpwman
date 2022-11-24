@@ -22,8 +22,7 @@ mod tuiconfig;
 
 use std::env;
 use dirs;
-use clap::{Arg, App, SubCommand};
-use rpassword;
+use clap::{Arg, Command};
 use std::fs::File;
 use std::io::BufReader;
 use std::io::BufWriter;
@@ -59,6 +58,17 @@ impl RustPwMan {
             default_deriver_id: DEFAULT_KDF_ID,
             default_sec_level: modtui::PW_SEC_LEVEL,
             default_pw_gen: GenerationStrategy::Base64
+        }
+    }
+
+    fn is_option_present(matches: &clap::ArgMatches, id: &str) -> bool {
+        let test_res = matches.value_source(id);
+    
+        return match test_res {
+            Some(v) => {
+                return v == clap::parser::ValueSource::CommandLine;
+            }
+            None => false
         }
     }
 
@@ -117,36 +127,41 @@ impl RustPwMan {
     }
 
     fn set_pbkdf_from_command_line(&mut self, matches: &clap::ArgMatches) {    
-        if matches.is_present(ARG_KDF) {
-            let mut kdf_names: Vec<String> = Vec::new();
-            if let Some(names) = matches.values_of(ARG_KDF) {
-                names.for_each(|x| kdf_names.push(String::from(x)));
-            }
+        if RustPwMan::is_option_present(matches, ARG_KDF) {
+            let a: Option<&String> = matches.get_one(ARG_KDF);
             
-            let (k, id) = self.str_to_deriver(&kdf_names[0][..]);
+            let kdf_name: String = match a {
+                Some(b) => b.clone(),
+                _ => panic!("Unable to determine KDF") // Should not happen
+            };
+            
+            let (k, id) = self.str_to_deriver(&kdf_name);
 
             self.default_deriver = k;
             self.default_deriver_id = id;
         }
     }
-    
+
     fn determine_in_out_files(matches: &clap::ArgMatches) -> (String, String) {
-        let mut file_names_in: Vec<String> = Vec::new();
-        if let Some(in_files) = matches.values_of(ARG_INPUT_FILE) {
-            in_files.for_each(|x| file_names_in.push(String::from(x)));
-        }
+        let in_f: Option<&String> = matches.get_one(ARG_INPUT_FILE);
+        let out_f: Option<&String> = matches.get_one(ARG_OUTPUT_FILE);
+
+        let file_name_in = match in_f {
+            Some(a) => a.clone(),
+            _ => panic!("Unable to determine input file") // Should not happen
+        };
         
-        let mut file_names_out: Vec<String> = Vec::new();
-        if let Some(out_files) = matches.values_of(ARG_OUTPUT_FILE) {
-            out_files.for_each(|x| file_names_out.push(String::from(x)));
-        }
-    
-        return (file_names_in[0].clone(), file_names_out[0].clone());
+        let file_name_out = match out_f {
+            Some(a) => a.clone(),
+            _ => panic!("Unable to determine output file") // Should not happen
+        };
+
+        return (file_name_in, file_name_out);
     }
     
     fn enter_password_verified() -> std::io::Result<String> {
-        let pw1 = rpassword::read_password_from_tty(Some("Password: "))?;
-        let pw2 = rpassword::read_password_from_tty(Some("Verfication: "))?;
+        let pw1 = rpassword::prompt_password("Password: ")?;
+        let pw2 = rpassword::prompt_password("Verfication: ")?;
     
         if pw1 != pw2 {
             return Err(Error::new(ErrorKind::Other, "Passwords differ"));
@@ -166,7 +181,7 @@ impl RustPwMan {
         
         let pw = match RustPwMan::enter_password_verified() {
             Err(e) => { 
-                println!("Error reading password: {:?}", e);
+                eprintln!("Error reading password: {:?}", e);
                 return;
             },
             Ok(p) => p
@@ -177,7 +192,7 @@ impl RustPwMan {
         let file = match File::open(&file_in) {
             Ok(f) => f,
             Err(e) => {
-                println!("Error opening file. {:?}", e);
+                eprintln!("Error opening file. {:?}", e);
                 return;                    
             }
         };
@@ -186,7 +201,7 @@ impl RustPwMan {
         
         match jots_file.from_reader(reader) {
             Err(e) => {
-                println!("Error reading file. {:?}", e);
+                eprintln!("Error reading file. {:?}", e);
                 return;                    
             },
             Ok(_) => ()                
@@ -195,7 +210,7 @@ impl RustPwMan {
         match jots_file.to_enc_file(&file_out, &pw[..]) {
             Ok(_) => (),
             Err(e) => { 
-                println!("Error creating file. {:?}", e);
+                eprintln!("Error creating file. {:?}", e);
                 return;
             },
         };
@@ -207,9 +222,9 @@ impl RustPwMan {
         
         let mut jots_file = jots::Jots::new(self.default_deriver, self.default_deriver_id);
     
-        let pw = match rpassword::read_password_from_tty(Some("Password: ")) {
+        let pw = match rpassword::prompt_password("Password: ") {
             Err(_) => { 
-                println!("Error reading password");
+                eprintln!("Error reading password");
                 return;
             },
             Ok(p) => p
@@ -217,7 +232,7 @@ impl RustPwMan {
         
         match fcrypt::GcmContext::check_password(&pw) {
             Some(e) => {
-                println!("Password illegal: {:?}", e);
+                eprintln!("Password illegal: {:?}", e);
                 return;
             },
             None => ()
@@ -227,7 +242,7 @@ impl RustPwMan {
     
         match jots_file.from_enc_file(&file_in, &pw[..]) {
             Err(e) => {
-                println!("Error reading file. {:?}", e);
+                eprintln!("Error reading file. {:?}", e);
                 return;                    
             },
             Ok(_) => ()
@@ -235,7 +250,7 @@ impl RustPwMan {
     
         let file = match File::create(&file_out) {
             Err(e) => {
-                println!("Error creating file. {:?}", e);
+                eprintln!("Error creating file. {:?}", e);
                 return;                    
             },
             Ok(f) => f      
@@ -245,7 +260,7 @@ impl RustPwMan {
     
         match jots_file.to_writer(w) {
             Err(e) => {
-                println!("Error writing file. {:?}", e);
+                eprintln!("Error writing file. {:?}", e);
                 return;                    
             },
             Ok(_) => ()
@@ -255,37 +270,37 @@ impl RustPwMan {
     fn perform_gui_command(&mut self, gui_matches: &clap::ArgMatches) {
         self.set_pbkdf_from_command_line(gui_matches);
     
-        let mut file_names: Vec<String> = Vec::new();
-        if let Some(in_files) = gui_matches.values_of(ARG_INPUT_FILE) {
-            in_files.for_each(|x| file_names.push(String::from(x)));
+        let a:Option<&String> = gui_matches.get_one(ARG_INPUT_FILE);
+
+        match a {
+            Some(v) => {
+                let data_file_name : String = v.clone();
+                modtui::main_gui(data_file_name, self.default_sec_level, self.default_deriver, self.default_deriver_id, self.default_pw_gen);
+            },
+            None => {
+                eprintln!("Password file name missing");
+                return;
+            }
         }
-    
-        let data_file_name = file_names[0].clone();
-    
-        modtui::main_gui(data_file_name, self.default_sec_level, self.default_deriver, self.default_deriver_id, self.default_pw_gen);
     }
 
     fn perform_config_command(&mut self, config_matches: &clap::ArgMatches) {
         let config_file_name: std::path::PathBuf;
-        
-        if config_matches.is_present(ARG_CONFIG_FILE) {
-            let mut file_names: Vec<String> = Vec::new();
+        let a: Option<&String> = config_matches.get_one(ARG_CONFIG_FILE);
 
-            if let Some(in_files) = config_matches.values_of(ARG_CONFIG_FILE) {
-                in_files.for_each(|x| file_names.push(String::from(x)));
+        match a {
+            Some(f_name) => {
+                config_file_name = std::path::PathBuf::from(f_name);
+            },
+            None => {
+                config_file_name = match RustPwMan::get_cfg_file_name() {
+                    Some(p) => p,
+                    None => {
+                        eprintln!("Unable to determine config file!");
+                        return;
+                    }
+                };
             }
-
-            config_file_name = std::path::PathBuf::from(file_names[0].clone());
-        } 
-        else 
-        {
-            config_file_name = match RustPwMan::get_cfg_file_name() {
-                Some(p) => p,
-                None => {
-                    println!("Unable to determine config file!");
-                    return;
-                }
-            };
         }
 
         let loaded_config = match tomlconfig::load(&config_file_name) {
@@ -308,75 +323,76 @@ impl RustPwMan {
     }    
 }
 
-pub fn add_kdf_param() -> clap::Arg<'static, 'static> {
-    let mut arg = Arg::with_name(ARG_KDF);
+pub fn add_kdf_param() -> clap::Arg {
+    let mut arg = Arg::new(ARG_KDF);
 
     arg = arg.long(ARG_KDF);
-    arg = arg.takes_value(true);
+    arg = arg.num_args(1);
     arg = arg.help("Use specific PBKDF");
-    let ids: Vec<fcrypt::KdfId> = fcrypt::KdfId::get_known_ids();
+    //let ids: Vec<fcrypt::KdfId> = fcrypt::KdfId::get_known_ids();
+    //let possible_values: Vec<String> = Vec::new();
 
-    for i in ids {
-        arg = arg.possible_value(i.to_str());
-    }
+    //for i in ids {
+    //    possible_values.push(i.to_string());
+    //}
 
-    return arg;
+    return arg.value_parser(["scrypt", "argon2", "sha256"]);
 }
 
 fn main() {
-    let mut app = App::new("rustpwman")
+    let mut app = Command::new("rustpwman")
         .version(VERSION_STRING)
         .author("Martin Grap <rmsk2@gmx.de>")
         .about("A password manager for the cursive TUI in Rust")          
         .subcommand(
-            SubCommand::with_name(COMMAND_ENCRYPT)
+            Command::new(COMMAND_ENCRYPT)
                 .about("Encrypt file")        
-                .arg(Arg::with_name(ARG_INPUT_FILE)
-                    .short("i")
+                .arg(Arg::new(ARG_INPUT_FILE)
+                    .short('i')
                     .long(ARG_INPUT_FILE)
-                    .takes_value(true)
+                    .num_args(1)
                     .required(true)
                     .help("Name of plaintext file to encrypt"))
-                .arg(Arg::with_name(ARG_OUTPUT_FILE)
-                    .short("o")
+                .arg(Arg::new(ARG_OUTPUT_FILE)
+                    .short('o')
                     .long(ARG_OUTPUT_FILE)
                     .required(true)
-                    .takes_value(true)
+                    .num_args(1)
                     .help("Encrypted output file"))                    
                 .arg(add_kdf_param()))
         .subcommand(
-            SubCommand::with_name(COMMAND_DECRYPT)
+            Command::new(COMMAND_DECRYPT)
                 .about("Decrypt file")        
-                .arg(Arg::with_name(ARG_INPUT_FILE)
-                    .short("i")
+                .arg(Arg::new(ARG_INPUT_FILE)
+                    .short('i')
                     .long(ARG_INPUT_FILE)
                     .required(true)
-                    .takes_value(true)
+                    .num_args(1)
                     .help("Name of encrypted file"))
-                .arg(Arg::with_name(ARG_OUTPUT_FILE)
-                    .short("o")
+                .arg(Arg::new(ARG_OUTPUT_FILE)
+                    .short('o')
                     .long(ARG_OUTPUT_FILE)
                     .required(true)
-                    .takes_value(true)
+                    .num_args(1)
                     .help("Name of plaintext file"))                    
                 .arg(add_kdf_param()))
         .subcommand(
-            SubCommand::with_name(COMMAND_GUI)
+            Command::new(COMMAND_GUI)
                 .about("Open file in TUI")        
-                .arg(Arg::with_name(ARG_INPUT_FILE)
-                    .short("i")
+                .arg(Arg::new(ARG_INPUT_FILE)
+                    .short('i')
                     .long(ARG_INPUT_FILE)
                     .required(true)
-                    .takes_value(true)
+                    .num_args(1)
                     .help("Name of encrypted data file"))                   
                 .arg(add_kdf_param()))
         .subcommand(
-            SubCommand::with_name(COMMAND_CONFIG)
+            Command::new(COMMAND_CONFIG)
                 .about("Change configuration")        
-                .arg(Arg::with_name(ARG_CONFIG_FILE)
-                    .short("c")
+                .arg(Arg::new(ARG_CONFIG_FILE)
+                    .short('c')
                     .long(ARG_CONFIG_FILE)
-                    .takes_value(true)
+                    .num_args(1)
                     .help("Name of config file. Default is .rustpwman")));                    
 
     let mut rustpwman = RustPwMan::new();
@@ -386,23 +402,28 @@ fn main() {
     let subcommand = matches.subcommand();
 
     match subcommand {
-        (COMMAND_ENCRYPT, Some(encrypt_matches)) => {
-            rustpwman.perform_encrypt_command(encrypt_matches);
+        Some(m) => {
+            match m {
+                (COMMAND_ENCRYPT, encrypt_matches) => {
+                    rustpwman.perform_encrypt_command(encrypt_matches);
+                },
+                (COMMAND_DECRYPT, decrypt_matches) => {
+                    rustpwman.perform_decrypt_command(decrypt_matches);
+                },
+                (COMMAND_GUI, gui_matches) => {
+                    rustpwman.perform_gui_command(gui_matches);
+                },   
+                (COMMAND_CONFIG, cfg_matches) => {
+                    rustpwman.perform_config_command(cfg_matches);
+                },
+                (&_, _) => panic!("Can not happen")           
+            }
         },
-        (COMMAND_DECRYPT, Some(decrypt_matches)) => {
-            rustpwman.perform_decrypt_command(decrypt_matches);
-        },
-        (COMMAND_GUI, Some(gui_matches)) => {
-            rustpwman.perform_gui_command(gui_matches);
-        },   
-        (COMMAND_CONFIG, Some(cfg_matches)) => {
-            rustpwman.perform_config_command(cfg_matches);
-        },      
         _ => {
             match app.print_long_help() {
                 Err(e) => eprintln!("{}", e),
                 _ => eprintln!("")
             }
-        }
-    };
+        }        
+    }
 }

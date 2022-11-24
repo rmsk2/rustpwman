@@ -35,12 +35,13 @@ use cursive::traits::*;
 use cursive::views::{Dialog, LinearLayout, TextView, EditView, SelectView, TextArea, Panel, SliderView, RadioGroup, RadioButton};
 use cursive::Cursive;
 use cursive::event::EventResult;
-use cursive::menu::MenuTree;
+use cursive::menu::Tree;
 use cursive::align::HAlign;
 use cursive::event::Key;
 
 use std::rc::Rc;
 use std::cell::RefCell;
+//use std::str::FromStr;
 use std::sync::mpsc::{Sender, Receiver};
 use std::sync::mpsc;
 use std::fs;
@@ -365,8 +366,9 @@ fn add_entry(s: &mut Cursive, state_for_add_entry: Rc<RefCell<AppState>>) {
                 state_for_add_entry.borrow_mut().dirty = true;
                 fill_tui(s, state_for_add_entry.clone());
                 s.pop_layer();
-                display_entry(s, state_for_add_entry.clone(), &entry_name, true);
-                show_message(s, "Entry created successfully. It has been selected\n but you may need to scroll to it manually.");
+
+                display_entry(s, state_for_add_entry.clone(), &String::from(entry_name.as_str()), true);
+                edit_entry(s, state_for_add_entry.clone(), Some(entry_name));
             }
         }
     })
@@ -562,16 +564,26 @@ fn generate_password(s: &mut Cursive, state_for_gen_pw: Rc<RefCell<AppState>>) {
     show_sec_bits(s, sec_bits);
 }
 
-fn edit_entry(s: &mut Cursive, state_for_edit_entry: Rc<RefCell<AppState>>) {
-    let entry_name = match get_selected_entry_name(s) {
-        Some(name) => name,
+fn edit_entry(s: &mut Cursive, state_for_edit_entry: Rc<RefCell<AppState>>, entry_name_external: Option<Rc<String>>) {
+    let entry_to_edit: String;
+    let mut show_scroll_message = false;
+    
+    match entry_name_external {
+        Some(e) => {entry_to_edit = String::from(e.as_str()); show_scroll_message = true;},
         None => {
-            show_message(s, "Unable to determine selected entry"); 
-            return; 
+            match get_selected_entry_name(s) {
+                Some(name) => {entry_to_edit = name},
+                None => {
+                    show_message(s, "Unable to determine selected entry"); 
+                    return; 
+                }
+            };
         }
-    }; 
+    }
 
-    let content = match state_for_edit_entry.borrow().store.get(&entry_name) {
+    let show_scroll_message_2 = show_scroll_message.clone();
+
+    let content = match state_for_edit_entry.borrow().store.get(&entry_to_edit) {
         Some(c) => c,
         None => { show_message(s, "Unable to read value of entry"); return }
     };
@@ -606,13 +618,22 @@ fn edit_entry(s: &mut Cursive, state_for_edit_entry: Rc<RefCell<AppState>>) {
             None => { show_message(s, "Unable to read entry text"); return }
         }; 
 
-        state_for_edit_entry.borrow_mut().store.insert(&entry_name, &entry_text);
+        state_for_edit_entry.borrow_mut().store.insert(&entry_to_edit, &entry_text);
         state_for_edit_entry.borrow_mut().dirty = true;
-        display_entry(s, state_for_edit_entry.clone(), &entry_name, true);
+        display_entry(s, state_for_edit_entry.clone(), &entry_to_edit, true);
 
         s.pop_layer();
+
+        if show_scroll_message {
+            show_message(s, "Entry created successfully. It has been selected\n but you may need to scroll to it manually.");            
+        }
     })
-    .button("Cancel", |s| { s.pop_layer(); });                
+    .button("Cancel", move |s| { 
+        s.pop_layer(); 
+        if show_scroll_message_2 {
+            show_message(s, "Entry created successfully. It has been selected\n but you may need to scroll to it manually.");            
+        }  
+    });                
     
     s.add_layer(res);
 }
@@ -758,7 +779,7 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
 
     s.menubar()    
     .add_subtree(
-        "File", MenuTree::new()
+        "File", Tree::new()
             .leaf("Save File", move |s| { 
                 process_save_command(s, state_temp_save.clone()); 
             })
@@ -767,7 +788,7 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
             })
             .delimiter()
             .leaf("About ...", |s| {
-                let msg_str = format!("\n   A basic password manager\n\nWritten by Martin Grap in 2021\n\n        Version {}", VERSION_STRING);
+                let msg_str = format!("\n   A basic password manager\n\nWritten by Martin Grap in 2021/2022\n\n        Version {}", VERSION_STRING);
                 show_message(s, &msg_str[..]);
             })            
             .delimiter()
@@ -789,9 +810,9 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
             .leaf("Quit", move |s| pwman_quit(s, sender.clone(), String::from(""), shared_state.borrow().dirty ))
         )
         .add_subtree(
-            "Entry", MenuTree::new()
+            "Entry", Tree::new()
             .leaf("Edit Entry ...", move |s| {
-                edit_entry(s, state_temp_edit.clone())
+                edit_entry(s, state_temp_edit.clone(), None)
             })        
             .leaf("Add Entry ...", move |s| {
                 add_entry(s, state_temp_add.clone());
