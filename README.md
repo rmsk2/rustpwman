@@ -126,7 +126,7 @@ This menu entry allows to manually edit the value or contents of the currently s
 
 ### Add entry
 
-Select this menu entry to create a new empty password entry. Use then `Edit entry`, `Load entry` or `Generate password` to add information to the newly created password entry.
+Select this menu item to create a new password entry and edit its contents.
 
 ### Delete entry 
 
