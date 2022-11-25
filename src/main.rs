@@ -329,14 +329,14 @@ pub fn add_kdf_param() -> clap::Arg {
     arg = arg.long(ARG_KDF);
     arg = arg.num_args(1);
     arg = arg.help("Use specific PBKDF");
-    //let ids: Vec<fcrypt::KdfId> = fcrypt::KdfId::get_known_ids();
-    //let possible_values: Vec<String> = Vec::new();
+    let ids: Vec<fcrypt::KdfId> = fcrypt::KdfId::get_known_ids();
+    let mut possible_values: Vec<&str> = Vec::new();
 
-    //for i in ids {
-    //    possible_values.push(i.to_string());
-    //}
+    for i in ids {
+        possible_values.push(i.to_str());
+    }
 
-    return arg.value_parser(["scrypt", "argon2", "sha256"]);
+    return arg.value_parser(possible_values);
 }
 
 fn main() {
