@@ -8,6 +8,7 @@ edition = "2021"
 
 [dependencies]
 rust-crypto = "0.2.36"
+# Comment this line for Windows build
 cursive = "0.20"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
@@ -24,3 +25,12 @@ rpassword = "7.0"
 argon2 = "0.4.1"
 toml = "0.5.9"
 dirs = "4.0"
+
+# Uncomment the following lines for Windows build
+#pancurses = "0.17.0"
+#pdcurses-sys = "0.7.1"
+
+#[dependencies.cursive]
+#version = "0.20"
+#default-features = false
+#features = ["pancurses-backend"]

@@ -190,23 +190,28 @@ file by hand or use `rustpwman cfg` which will open a window similar to this one
 
 ## Native
 
-The good news is that it works and it even works well. I have tested the `crossterm` and the `pancurses` backend of `cursive` under Windows. The [`crossterm`](https://github.com/crossterm-rs/crossterm) backend is pure Rust but the resulting program runs so slow that it is borderline unusable. The [`pancurses`](https://github.com/ihalila/pancurses) backend is a binding to a C library and requires an [installed C compiler](https://github.com/ihalila/pdcurses-sys) in order to build. When building `rustpwman` for Windows the `Cargo.toml` file has to be modified. The line `cursive = "0.16.3"` has to be removed and the following lines have to be appended to the file:
+The good news is that it works and it even works well. I have tested the `pancurses` backend of `cursive` under Windows. The [`pancurses`](https://github.com/ihalila/pancurses) backend 
+uses a binding to a C library and requires an [installed C compiler](https://github.com/ihalila/pdcurses-sys) in order to build. On the other hand Rust itself is dependent on a C 
+compiler when used under Windows. When building `rustpwman` for Windows the `Cargo.toml` file has to be modified. The line `cursive = "0.20""` has to be removed or commencted out
+and the following lines have to be appended to the file:
 
 ```
-pancurses = "0.16.1"
+pancurses = "0.17.0"
 pdcurses-sys = "0.7.1"
 
 [dependencies.cursive]
-version = "0.16.3"
+version = "0.20"
 default-features = false
 features = ["pancurses-backend"]
 ```
 
-I have tested `rustpwman` with the `pancurses` backend in the normal `cmd.exe` console and the new [Windows Terminal](https://www.microsoft.com/en-us/p/windows-terminal/9n0dx20hk701#activetab=pivot:overviewtab). Both work well and the only oddity is the fact that when closing the TUI in a `cmd.exe` an escape sequence `[?1002l` is printed. This does not happen when using the Windows Terminal.
+I have tested `rustpwman` with the `pancurses` backend in the normal `cmd.exe` console and the new [Windows Terminal](https://www.microsoft.com/en-us/p/windows-terminal/9n0dx20hk701#activetab=pivot:overviewtab). Both work well.
 
 ## Windows Subsystem for Linux (WSL)
 
-As expected, building `rustpwman` for WSL works without problems after installing all dependencies like `git`, `gcc` and `libncurses5`. The resulting application also works but there is a perceptible decrease in performance when compared to the native version which uses the `pancurses` backend.  
+Version 1.0.0: As expected, building `rustpwman` for WSL works without problems after installing all dependencies like `git`, `gcc` and `libncurses5`. The resulting application also works but there is a perceptible decrease in performance when compared to the native version which uses the `pancurses` backend. 
+
+Version 1.1.0: I have not tested `rustpwman ` 1.1.0 under WSL yet but I do not expect any problems.
 
 # Caveats
 
