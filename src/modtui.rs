@@ -106,6 +106,7 @@ pub fn main_gui(data_file_name: String, default_sec_bits: usize, derive_func: Ke
         let state = AppState::new(jots_store, &f_name, generators, default_sec_bits, default_pw_gen);
 
         if let Some(state_after_open) = open_file(s, password, state) {
+            s.pop_layer(); // Close password or file init dialog
             main_window(s, state_after_open, sender_main.clone());
         }
     });
@@ -902,7 +903,6 @@ fn open_file(s: &mut Cursive, password: &String, state: AppState) -> Option<AppS
         }
     }
 
-    s.pop_layer();
     state.password = Some(password.clone());
 
     return Some(state);
