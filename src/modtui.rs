@@ -61,6 +61,14 @@ pub fn path_exists(path: &str) -> bool {
     fs::metadata(path).is_ok()
 }
 
+#[cfg(feature = "pwmanclient")]
+fn make_pwman_client(file_name: String) -> std::io::Result<Box<dyn PWManClient>>{
+    match pwman_client::UDSClient::new(file_name) {
+        Ok(c) => return Ok(Box::new(c)),
+        Err(e) => return Err(e)
+    }
+}
+
 pub struct AppState {
     store: jots::Jots,
     password: Option<String>,
@@ -109,7 +117,7 @@ pub fn main_gui(data_file_name: String, default_sec_bits: usize, derive_func: Ke
         let state = AppState::new(jots_store, &f_name, generators, default_sec_bits, default_pw_gen);
 
         if let Some(state_after_open) = open_file(s, password, state) {
-            s.pop_layer(); // Close password or file init dialog
+            s.pop_layer(); // Close password, file init or confirmation dialog
             main_window(s, state_after_open, sender_main.clone());
         }
     });
@@ -118,11 +126,11 @@ pub fn main_gui(data_file_name: String, default_sec_bits: usize, derive_func: Ke
     if path_exists(&data_file_name) {
         let file_name_for_uds_client = data_file_name.clone();
 
-        match pwman_client::UDSClient::new(file_name_for_uds_client) {
+        match make_pwman_client(file_name_for_uds_client.clone()) {
             Ok(c) => {
                 match c.get_password() {
                     Ok(password) => {
-                        let d = password_read_from_pwman_dialog(sender.clone(), password.clone(), pw_callback);
+                        let d = password_read_from_pwman_dialog(sender.clone(), password.clone(), c, pw_callback);
                         siv.add_layer(d);
                     },
                     Err(_) => {                        
@@ -789,6 +797,45 @@ fn change_password(s: &mut Cursive, state_for_pw_change: Rc<RefCell<AppState>>) 
     s.add_layer(res);
 }
 
+#[cfg(feature = "pwmanclient")]
+fn cache_password(s: &mut Cursive, state_for_write_cache: Rc<RefCell<AppState>>) {
+    let pw_option = state_for_write_cache.borrow().password.clone();
+    let file_name = state_for_write_cache.borrow().file_name.clone();
+    let password : String;
+    let client: Box<dyn PWManClient>;
+
+    if let Some(p) = pw_option {
+        password = p;
+    } else {
+        show_message(s, "No password found in application state");
+        return;
+    }
+
+    let c = make_pwman_client(file_name);
+    if let Ok(cl) = c {
+        client = cl;
+    } else {
+        show_message(s, "Unable to construct PWMAN client");
+        return;
+    }
+
+    match client.set_password(&password) {
+        Ok(_) => {
+            show_message(s, "Password successfully cached");
+            return;
+        },
+        Err(e) => {
+            show_message(s, format!("Could not cache password: {}", e).as_str());
+            return;
+        }
+    }
+}
+
+#[cfg(not(feature = "pwmanclient"))]
+fn cache_password(s: &mut Cursive, _state_for_write_cache: Rc<RefCell<AppState>>) {
+    show_message(s, "Sorry this feature is not available in this build") 
+}
+
 fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
     let select_view = SelectView::new();
     let shared_state: Rc<RefCell<AppState>> = Rc::new(RefCell::new(state));
@@ -802,7 +849,8 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
     let state_temp_load = shared_state.clone();
     let state_temp_pw_gen = shared_state.clone();
     let state_temp_clear = shared_state.clone();
-    let state_temp_rename = shared_state.clone();      
+    let state_temp_rename = shared_state.clone();
+    let state_temp_write_chache = shared_state.clone();      
     let sender = sndr.clone();
     let sender2 = sndr.clone();
 
@@ -817,6 +865,9 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
             })
             .leaf("Change password ...", move |s| {
                 change_password(s, state_temp_pw.clone())
+            })            
+            .leaf("Cache password", move |s| { 
+                cache_password(s, state_temp_write_chache.clone())  
             })
             .delimiter()
             .leaf("About ...", |s| {
@@ -978,8 +1029,9 @@ fn password_entry_dialog(sndr: Rc<Sender<String>>, ok_cb_with_state: Box<dyn Fn(
 }
 
 #[cfg(feature = "pwmanclient")]
-fn password_read_from_pwman_dialog(sndr: Rc<Sender<String>>, password: String, ok_cb_with_state: Box<dyn Fn(&mut Cursive, &String)>) -> Dialog {
+fn password_read_from_pwman_dialog(sndr: Rc<Sender<String>>, password: String, client: Box<dyn PWManClient>, ok_cb_with_state: Box<dyn Fn(&mut Cursive, &String)>) -> Dialog {
     let sender = sndr.clone();
+    let sender2 = sndr.clone();
 
     let ok_cb = move |s: &mut Cursive| {
         ok_cb_with_state(s, &password);
@@ -993,6 +1045,14 @@ fn password_read_from_pwman_dialog(sndr: Rc<Sender<String>>, password: String, o
                 .child(TextView::new("Password has been read from PWMAN.\n\n             Continue?\n"))                        
         )
         .button("OK", ok_cb)
+        .button("Clear PW", move |s| {
+            match client.reset_password() {
+                Ok(_) => pwman_quit(s, sender2.clone(), String::from(""), false),
+                Err(e) => {
+                    show_message(s, format!("{}", e).as_str());
+                }
+            }            
+        })
         .button("Cancel", move |s| pwman_quit(s, sender.clone(), String::from(""), false));
 
     return res;

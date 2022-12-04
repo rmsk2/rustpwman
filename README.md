@@ -102,6 +102,12 @@ Selecting this entry saves the encrypted data file using the password that was s
 
 Using this entry allows to select a new password. After a new password has been selected the encrypted data file is saved automatically. The new password is also used in subsequent save operations.
 
+### Cache password
+
+Via this entry the password of the container can be cached in PWMAN. This only works if `rustpwman` is compiled with the `pwmanclient` feature. If this feature was
+not included during the build a message is shown that informs the user of this fact. As soon as I have a good idea about how to exclude the whole menu 
+entry based on a Rust feature it will not be present when the feature is not built.
+
 ### About
 
 Shows an about dialog containing information about the author and the program version.
@@ -185,6 +191,18 @@ The config file is stored in the users' home directory in a file named `.rustpwm
 file by hand or use `rustpwman cfg` which will open a window similar to this one
 
 ![](/scrshot_cfg.png?raw=true "Screenshot of rustpwman cfg")
+
+# Optional features
+
+Beginning with version 1.2.0 `rustpwman` can be built with support for the password cache implemented in [`pwman`](https://github.com/rmsk2/pwman). In case this feature is
+activated by using `cargo build --release --features pwmanclient` `rustpwan` attempts to read the password for the data file specified by the `-i` option from the cache
+provided by `pwserv`.
+
+If this does not succeed, the user is requested to enter a password as was the case in Version 1.1.0 and before. If on the other hand the password was successfully read the 
+user is asked to confirm that it should be used. Through the correspondig dialog the user is also able to clear the password from the cache. 
+
+This feature is currently not supported under Windows as the implementation assumes the availability of UNIX domain sockets but as of december 2022 Rust does not allow
+to use UNIX domain sockets under Windows.
 
 # Rustpwman under Windows
 
