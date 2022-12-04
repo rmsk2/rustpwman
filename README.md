@@ -104,7 +104,7 @@ Using this entry allows to select a new password. After a new password has been 
 
 ### Cache password
 
-Via this entry the password of the container can be cached in PWMAN. This item is only present if `rustpwman` is compiled with the `pwmanclient` feature (see below).
+Via this entry the password of the container can be cached in [`pwman`](https://github.com/rmsk2/pwman). This item is only present if `rustpwman` is compiled with the `pwmanclient` feature (see 'Optional Features' below).
 
 ### About
 
@@ -193,10 +193,10 @@ file by hand or use `rustpwman cfg` which will open a window similar to this one
 # Optional features
 
 Beginning with version 1.2.0 `rustpwman` can be built with support for the password cache implemented in [`pwman`](https://github.com/rmsk2/pwman). In case this feature is
-activated by using `cargo build --release --features pwmanclient` `rustpwan` attempts to read the password for the data file specified by the `-i` option from the cache
+activated by issuing the command `cargo build --release --features pwmanclient` `rustpwan` attempts to read the password for the data file specified by the `-i` option from the cache
 provided by `pwserv`.
 
-If this does not succeed, the user is requested to enter a password as was the case in Version 1.1.0 and before. If on the other hand the password was successfully read the 
+If this does not succeed, the user is requested to enter a password as was the case in Version 1.1.0 and below. If on the other hand the password was successfully read, the 
 user is asked to confirm that it should be used. Through the correspondig dialog the user is also able to clear the password from the cache. 
 
 This feature is currently not supported under Windows as the implementation assumes the availability of UNIX domain sockets but as of december 2022 Rust does not allow
