@@ -831,20 +831,10 @@ fn cache_password(s: &mut Cursive, state_for_write_cache: Rc<RefCell<AppState>>)
     }
 }
 
-#[cfg(feature = "pwmanclient")]
-fn remove_cache_item_when_not_needed(_t : &mut Tree) {
-    
-}
-
 
 #[cfg(not(feature = "pwmanclient"))]
 fn cache_password(s: &mut Cursive, _state_for_write_cache: Rc<RefCell<AppState>>) {
     show_message(s, "Sorry this feature is not available in this build") 
-}
-
-#[cfg(not(feature = "pwmanclient"))]
-fn remove_cache_item_when_not_needed(t : &mut Tree) {
-    t.remove(2);
 }
 
 fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
@@ -870,7 +860,13 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
 
     let menu_bar = s.menubar();
 
-    let mut file_tree = Tree::new()
+    #[cfg(not(feature = "pwmanclient"))]
+    let mut file_tree : Tree;
+
+    #[cfg(feature = "pwmanclient")]
+    let file_tree : Tree;
+
+    file_tree = Tree::new()
         .leaf("Save File", move |s| { 
             process_save_command(s, state_temp_save.clone()); 
         })
@@ -905,9 +901,10 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
     );
 
     // Ok this is really, really hacky but it works. I would have preferred to be able to simply exclude some lines from
-    // comilation but I cam eto the opinion that in Rust concditional compilation is tied to attributes which in turn are
-    // tied to syntactic objects and not to lines.
-    remove_cache_item_when_not_needed(&mut file_tree);
+    // compilation when constructing the file_tree but I came to the opinion that in Rust conditional compilation is tied to 
+    // attributes which in turn does not seem to work when chaining values together as is done above.    
+    #[cfg(not(feature = "pwmanclient"))]
+    file_tree.remove(2);  // remove chache items when building without the pwmanclient feature
 
     menu_bar.add_subtree(
         "File", file_tree
