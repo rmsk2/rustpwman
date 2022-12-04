@@ -104,9 +104,7 @@ Using this entry allows to select a new password. After a new password has been 
 
 ### Cache password
 
-Via this entry the password of the container can be cached in PWMAN. This only works if `rustpwman` is compiled with the `pwmanclient` feature. If this feature was
-not included during the build a message is shown that informs the user of this fact. As soon as I have a good idea about how to exclude the whole menu 
-entry based on a Rust feature it will not be present when the feature is not built.
+Via this entry the password of the container can be cached in PWMAN. This item is only present if `rustpwman` is compiled with the `pwmanclient` feature (see below).
 
 ### About
 

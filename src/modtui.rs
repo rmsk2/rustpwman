@@ -831,9 +831,20 @@ fn cache_password(s: &mut Cursive, state_for_write_cache: Rc<RefCell<AppState>>)
     }
 }
 
+#[cfg(feature = "pwmanclient")]
+fn remove_cache_item_when_not_needed(_t : &mut Tree) {
+    
+}
+
+
 #[cfg(not(feature = "pwmanclient"))]
 fn cache_password(s: &mut Cursive, _state_for_write_cache: Rc<RefCell<AppState>>) {
     show_message(s, "Sorry this feature is not available in this build") 
+}
+
+#[cfg(not(feature = "pwmanclient"))]
+fn remove_cache_item_when_not_needed(t : &mut Tree) {
+    t.remove(2);
 }
 
 fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
@@ -857,40 +868,49 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
     let state_for_callback = shared_state.clone();
     let state_for_fill_tui = shared_state.clone();
 
-    s.menubar()    
-    .add_subtree(
-        "File", Tree::new()
-            .leaf("Save File", move |s| { 
-                process_save_command(s, state_temp_save.clone()); 
-            })
-            .leaf("Change password ...", move |s| {
-                change_password(s, state_temp_pw.clone())
-            })            
-            .leaf("Cache password", move |s| { 
-                cache_password(s, state_temp_write_chache.clone())  
-            })
-            .delimiter()
-            .leaf("About ...", |s| {
-                let msg_str = format!("\n   A basic password manager\n\nWritten by Martin Grap in 2021/2022\n\n        Version {}", VERSION_STRING);
-                show_message(s, &msg_str[..]);
-            })            
-            .delimiter()
-            .leaf("Quit and print", move |s| {
-                let key = match get_selected_entry_name(s) {
-                    Some(k) => k,
-                    None => { show_message(s, "Unable to read entry name"); return }
-                };
+    let menu_bar = s.menubar();
 
-                let value = match state_temp_print.borrow().store.get(&key) {
-                    Some(v) => v,
-                    None => { show_message(s, "Unable to read entry value"); return } 
-                };
+    let mut file_tree = Tree::new()
+        .leaf("Save File", move |s| { 
+            process_save_command(s, state_temp_save.clone()); 
+        })
+        .leaf("Change password ...", move |s| {
+            change_password(s, state_temp_pw.clone())
+        })            
+        .leaf("Cache password", move |s| { 
+            cache_password(s, state_temp_write_chache.clone())  
+        })
+        .delimiter()
+        .leaf("About ...", |s| {
+            let msg_str = format!("\n   A basic password manager\n\nWritten by Martin Grap in 2021/2022\n\n        Version {}", VERSION_STRING);
+            show_message(s, &msg_str[..]);
+        })            
+        .delimiter()
+        .leaf("Quit and print", move |s| {
+            let key = match get_selected_entry_name(s) {
+                Some(k) => k,
+                None => { show_message(s, "Unable to read entry name"); return }
+            };
 
-                let out_str = format!("-------- {} --------\n{}", key, value);
+            let value = match state_temp_print.borrow().store.get(&key) {
+                Some(v) => v,
+                None => { show_message(s, "Unable to read entry value"); return } 
+            };
 
-                pwman_quit(s, sender2.clone(), out_str, state_temp_print.borrow().dirty) 
-            })            
-            .leaf("Quit", move |s| pwman_quit(s, sender.clone(), String::from(""), shared_state.borrow().dirty ))
+            let out_str = format!("-------- {} --------\n{}", key, value);
+
+            pwman_quit(s, sender2.clone(), out_str, state_temp_print.borrow().dirty) 
+        })            
+        .leaf("Quit", move |s| pwman_quit(s, sender.clone(), String::from(""), shared_state.borrow().dirty )
+    );
+
+    // Ok this is really, really hacky but it works. I would have preferred to be able to simply exclude some lines from
+    // comilation but I cam eto the opinion that in Rust concditional compilation is tied to attributes which in turn are
+    // tied to syntactic objects and not to lines.
+    remove_cache_item_when_not_needed(&mut file_tree);
+
+    menu_bar.add_subtree(
+        "File", file_tree
         )
         .add_subtree(
             "Entry", Tree::new()
