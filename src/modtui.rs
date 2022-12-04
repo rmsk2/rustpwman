@@ -998,7 +998,6 @@ fn password_read_from_pwman_dialog(sndr: Rc<Sender<String>>, password: String, o
     return res;
 }
 
-
 fn verify_passwords(s: &mut Cursive, ok_cb: &Box<dyn Fn(&mut Cursive, &String)>) {
     verify_passwords_with_names(s, ok_cb, "pwedit1", "pwedit2");
 }
