@@ -41,7 +41,6 @@ use cursive::event::Key;
 
 use std::rc::Rc;
 use std::cell::RefCell;
-//use std::str::FromStr;
 use std::sync::mpsc::{Sender, Receiver};
 use std::sync::mpsc;
 use std::fs;
@@ -53,6 +52,10 @@ use crate::pwgen::PasswordGenerator;
 use crate::fcrypt::KeyDeriver;
 use crate::fcrypt;
 use crate::jots;
+#[cfg(feature = "pwmanclient")]
+use crate::pwman_client;
+#[cfg(feature = "pwmanclient")]
+use crate::pwman_client::PWManClient;
 
 pub fn path_exists(path: &str) -> bool {
     fs::metadata(path).is_ok()
@@ -111,6 +114,34 @@ pub fn main_gui(data_file_name: String, default_sec_bits: usize, derive_func: Ke
         }
     });
 
+    #[cfg(feature = "pwmanclient")]
+    if path_exists(&data_file_name) {
+        let file_name_for_uds_client = data_file_name.clone();
+
+        match pwman_client::UDSClient::new(file_name_for_uds_client) {
+            Ok(c) => {
+                match c.get_password() {
+                    Ok(password) => {
+                        let d = password_read_from_pwman_dialog(sender.clone(), password.clone(), pw_callback);
+                        siv.add_layer(d);
+                    },
+                    Err(_) => {                        
+                        let d = password_entry_dialog(sender.clone(), pw_callback);
+                        siv.add_layer(d);        
+                    }
+                }
+            }
+            Err(_) => {                
+                let d = password_entry_dialog(sender.clone(), pw_callback);
+                siv.add_layer(d);
+            }
+        };
+    } else {
+        let d = file_init_dialog(sender.clone(), pw_callback);
+        siv.add_layer(d);
+    }
+
+    #[cfg(not(feature = "pwmanclient"))]
     if path_exists(&data_file_name) {
         let d = password_entry_dialog(sender.clone(), pw_callback);
         siv.add_layer(d);
@@ -945,6 +976,28 @@ fn password_entry_dialog(sndr: Rc<Sender<String>>, ok_cb_with_state: Box<dyn Fn(
 
     return res;
 }
+
+#[cfg(feature = "pwmanclient")]
+fn password_read_from_pwman_dialog(sndr: Rc<Sender<String>>, password: String, ok_cb_with_state: Box<dyn Fn(&mut Cursive, &String)>) -> Dialog {
+    let sender = sndr.clone();
+
+    let ok_cb = move |s: &mut Cursive| {
+        ok_cb_with_state(s, &password);
+    };
+
+    let res = Dialog::new()
+        .title("Rustpwman confirm password")
+        .padding_lrtb(2, 2, 1, 1)
+        .content(
+            LinearLayout::horizontal()
+                .child(TextView::new("Password has been read from PWMAN.\n\n             Continue?\n"))                        
+        )
+        .button("OK", ok_cb)
+        .button("Cancel", move |s| pwman_quit(s, sender.clone(), String::from(""), false));
+
+    return res;
+}
+
 
 fn verify_passwords(s: &mut Cursive, ok_cb: &Box<dyn Fn(&mut Cursive, &String)>) {
     verify_passwords_with_names(s, ok_cb, "pwedit1", "pwedit2");

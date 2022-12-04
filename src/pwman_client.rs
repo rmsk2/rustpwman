@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#![allow(dead_code)]
+
 use users;
 use std::{path::PathBuf};
 use std::io::{Error, ErrorKind};
@@ -151,7 +153,7 @@ pub trait PWManClient {
             Ok(_) => Ok(())
         }
     }    
-
+    
     fn set_password(self: &Self, password: &String) -> std::io::Result<()> {
         let request = PWRequest::new_set_pw_request(self.get_pw_file_id(), password);
         return match self.transact(&request) {
