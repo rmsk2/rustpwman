@@ -63,11 +63,17 @@ impl PWRequest {
     }    
 
     pub fn send(self: &Self, w: &mut dyn std::io::Write) -> std::io::Result<()> {
-        let uds_request_bytes = serde_json::to_string(self)?;
+        let uds_request_text = serde_json::to_string(self)?;
+        let uds_request_bytes = uds_request_text.as_bytes();
+
+        if uds_request_bytes.len() > 65535 {
+            return Err(Error::new(ErrorKind::Other, "PWMAN Request data is too large"));
+        }
+
         let len = uds_request_bytes.len() % 65536;
         let len_buffer = [(len / 256) as u8, (len % 256) as u8];
         w.write_all(&len_buffer)?;
-        w.write_all(uds_request_bytes.as_bytes())?;
+        w.write_all(uds_request_bytes)?;
 
         return Ok(());
     }

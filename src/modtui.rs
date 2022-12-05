@@ -1064,7 +1064,17 @@ fn password_read_from_pwman_dialog(sndr: Rc<Sender<String>>, password: String, c
         .button("OK", ok_cb)
         .button("Clear PW", move |s| {
             match client.reset_password() {
-                Ok(_) => pwman_quit(s, sender2.clone(), String::from(""), false),
+                Ok(_) => {
+                    let sender3 = sender2.clone();
+                    s.add_layer(
+                        Dialog::text("Cached password has been cleared. Quitting now ...")
+                            .title("Rustpwman")
+                            .button("Ok", move |s| {
+                                s.pop_layer();
+                                pwman_quit(s, sender3.clone(), String::from(""), false)
+                            }),
+                    );                    
+                },
                 Err(e) => {
                     show_message(s, format!("{}", e).as_str());
                 }
