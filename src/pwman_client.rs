@@ -70,7 +70,7 @@ impl PWRequest {
             return Err(Error::new(ErrorKind::Other, "PWMAN Request data is too large"));
         }
 
-        let len = uds_request_bytes.len() % 65536;
+        let len = uds_request_bytes.len();
         let len_buffer = [(len / 256) as u8, (len % 256) as u8];
         w.write_all(&len_buffer)?;
         w.write_all(uds_request_bytes)?;
