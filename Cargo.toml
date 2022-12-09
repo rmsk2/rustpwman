@@ -30,7 +30,7 @@ hex = {version = "0.4.3", optional = true}
 
 [features]
 default = []
-pwmanclient = ["dep:hex", "dep:users"]
+pwmanclient = ["dep:users"]
 
 # Uncomment the following lines for Windows build
 #pancurses = "0.17.0"

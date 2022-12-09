@@ -112,6 +112,16 @@ impl PWResponse {
 pub trait ReaderWriter: std::io::Read + std::io::Write {}
 impl<T> ReaderWriter for T where T: std::io::Read + std::io::Write {}
 
+fn hex_string(buf: &[u8]) -> String {
+    let mut result = String::from("");
+    
+    for i in buf {
+        result.push_str(format!("{:02x}", i).as_str());
+    }
+    
+    return result;
+}
+
 fn hash_password_file_name(password_file: &String) -> std::io::Result<String> {
     let pw_file = PathBuf::from(password_file);
     let abs_file = fs::canonicalize(pw_file)?;
@@ -125,7 +135,9 @@ fn hash_password_file_name(password_file: &String) -> std::io::Result<String> {
 
     md5.input_str(&path_as_string);
     md5.result(&mut res_buffer);
-    let name: String = format!("PWMAN:{}", hex::encode(res_buffer));
+    let name: String = format!("PWMAN:{}", hex_string(&res_buffer));
+
+    println!("{}", name);
 
     return Ok(name);
 }
