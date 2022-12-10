@@ -137,8 +137,6 @@ fn hash_password_file_name(password_file: &String) -> std::io::Result<String> {
     md5.result(&mut res_buffer);
     let name: String = format!("PWMAN:{}", hex_string(&res_buffer));
 
-    println!("{}", name);
-
     return Ok(name);
 }
 
