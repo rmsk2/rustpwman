@@ -1113,8 +1113,8 @@ fn verify_passwords_with_names(s: &mut Cursive, ok_cb: &Box<dyn Fn(&mut Cursive,
 
     if pw1_text != pw2_text {
         show_message(s, "Passwords not equal!");
-        s.call_on_name("pwedit1", |view: &mut EditView| {view.set_content(String::from(""))}).unwrap()(s);
-        s.call_on_name("pwedit2", |view: &mut EditView| {view.set_content(String::from(""))}).unwrap()(s);        
+        s.call_on_name(edit1, |view: &mut EditView| {view.set_content(String::from(""))}).unwrap()(s);
+        s.call_on_name(edit2, |view: &mut EditView| {view.set_content(String::from(""))}).unwrap()(s);        
         return;
     }
 
