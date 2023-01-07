@@ -783,6 +783,13 @@ fn change_password(s: &mut Cursive, state_for_pw_change: Rc<RefCell<AppState>>) 
             
             if pw1_text != pw2_text {
                 show_message(s, "Passwords not equal!");
+                s.call_on_name("pwchedit1", |view: &mut EditView| {view.set_content(String::from(""))}).unwrap()(s);
+                s.call_on_name("pwchedit2", |view: &mut EditView| {view.set_content(String::from(""))}).unwrap()(s);                  
+                return;
+            }
+
+            if pw1_text.len() == 0 {
+                show_message(s, "New password is empty");
                 return;
             }
 
@@ -998,6 +1005,10 @@ fn open_file(s: &mut Cursive, password: &String, state: AppState) -> Option<AppS
         Ok(_) => { },
         Err(e) => {
             show_message(s, &format!("Unable to read file '{}'\n\nError: '{:?}'", file_name, e));
+            match s.call_on_name("pwedit", |view: &mut EditView| {view.set_content(String::from(""))}) {
+                Some(cb) => cb(s),
+                None => ()
+            }
             return None;                
         }
     }
@@ -1099,9 +1110,16 @@ fn verify_passwords_with_names(s: &mut Cursive, ok_cb: &Box<dyn Fn(&mut Cursive,
         Some(s) => s,
         None => { show_message(s, "Unable to read password"); return }
     };
-    
+
     if pw1_text != pw2_text {
         show_message(s, "Passwords not equal!");
+        s.call_on_name("pwedit1", |view: &mut EditView| {view.set_content(String::from(""))}).unwrap()(s);
+        s.call_on_name("pwedit2", |view: &mut EditView| {view.set_content(String::from(""))}).unwrap()(s);        
+        return;
+    }
+
+    if pw1_text.len() == 0 {
+        show_message(s, "Password is empty!");
         return;
     }
 
