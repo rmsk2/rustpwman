@@ -628,6 +628,8 @@ fn edit_entry(s: &mut Cursive, state_for_edit_entry: Rc<RefCell<AppState>>, entr
         None => { show_message(s, "Unable to read value of entry"); return }
     };
 
+    let state_for_gen_pw = state_for_edit_entry.clone();
+
     let res = Dialog::new()
     .title("Rustpwman enter new text")
     .padding_lrtb(2, 2, 1, 1)
@@ -667,6 +669,42 @@ fn edit_entry(s: &mut Cursive, state_for_edit_entry: Rc<RefCell<AppState>>, entr
         if show_scroll_message {
             show_message(s, "Entry created successfully. It has been selected\n but you may need to scroll to it manually.");            
         }
+    })
+    .button("Generate Password", move |s: &mut Cursive| {
+        let new_pw: String;
+
+        {
+            let app_state = &mut state_for_gen_pw.borrow_mut();
+            let strategy = app_state.default_generator;
+            let sec_level = app_state.default_security_level + 1;
+
+            let generator_map: &mut HashMap<GenerationStrategy, Box<dyn PasswordGenerator>> = &mut app_state.pw_gens;
+            
+            let generator: &mut Box<dyn PasswordGenerator> = match generator_map.get_mut(&strategy) {
+                None => { show_message(s, "Unable create generator"); return },
+                Some(g) => g
+            };
+    
+            new_pw = match generator.gen_password(sec_level) {
+                Some(pw) => pw,
+                None => {
+                    show_message(s, "Unable to generate password"); 
+                    return;
+                }
+            };
+        }
+
+        let entry_text = match s.call_on_name(TEXT_AREA_NAME, |view: &mut TextArea| { String::from(view.get_content()) }) {
+            Some(text_val) => {
+                text_val
+            },
+            None => { show_message(s, "Unable to read entry text"); return }
+        };
+
+        let new_content = entry_text + &new_pw;
+
+        s.call_on_name(TEXT_AREA_NAME, |view: &mut TextArea| { view.set_content(new_content) });
+
     })
     .button("Cancel", move |s| { 
         s.pop_layer(); 
