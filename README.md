@@ -193,14 +193,11 @@ file by hand or use `rustpwman cfg` which will open a window similar to this one
 # Optional features
 
 Beginning with version 1.2.0 `rustpwman` can be built with support for the password cache implemented in [`pwman`](https://github.com/rmsk2/pwman). In case this feature is
-activated by issuing the command `cargo build --release --features pwmanclient` `rustpwan` attempts to read the password for the data file specified by the `-i` option from the cache
-provided by `pwserv`.
+activated by issuing the command `cargo build --release --features pwmanclientux` (under Linux and MacOS) or `cargo build --release --features pwmanclientwin` (under Windows) 
+`rustpwan` attempts to read the password for the data file specified by the `-i` option from the cache provided by `pwserv`.
 
 If this does not succeed, the user is requested to enter a password as was the case in Version 1.1.0 and below. If on the other hand the password was successfully read, the 
 user is asked to confirm that it should be used. Through the correspondig dialog the user is also able to clear the password from the cache. 
-
-This feature is currently not supported under Windows as the implementation assumes the availability of UNIX domain sockets but as of december 2022 Rust does not allow
-to use UNIX domain sockets under Windows.
 
 # Rustpwman under Windows
 
@@ -227,7 +224,7 @@ I have tested `rustpwman` with the `pancurses` backend in the normal `cmd.exe` c
 
 Version 1.0.0: As expected, building `rustpwman` for WSL works without problems after installing all dependencies like `git`, `gcc` and `libncurses5`. The resulting application also works but there is a perceptible decrease in performance when compared to the native version which uses the `pancurses` backend. 
 
-Version 1.1.0: I have not tested `rustpwman ` 1.1.0 under WSL yet but I do not expect any problems.
+Version 1.1.0 and higher: I have not tested `rustpwman ` under WSL yet, but I do not expect any problems.
 
 # Caveats
 
