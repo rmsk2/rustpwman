@@ -39,6 +39,7 @@ directories = {version ="4.0.1", optional = true}
 #features = ["pancurses-backend"]
 
 [features]
+# Use "pwmanclientwin" for Windowsbuild
 default = ["pwmanclientux"]
 pwmanclient = []
 pwmanclientux = ["dep:users", "pwmanclient"]
