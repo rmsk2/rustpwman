@@ -1,6 +1,6 @@
 # rustpwman
 
-A simple password manager written in Rust using the [cursive TUI library](https://github.com/gyscos/cursive). **This is work in progress**.
+A simple password manager written in Rust using the [cursive TUI library](https://github.com/gyscos/cursive).
 
 The password manager offers the following functionality:
 
@@ -233,13 +233,10 @@ Version 1.1.0: I have not tested `rustpwman ` 1.1.0 under WSL yet but I do not e
 
 This section provides information about stuff which is in my view suboptimal and should be (and possibly will be) improved in the future.
 
-- Beginning with version 0.8 the name of the key derivation function is stored in the encrypted data file and checked upon decryption. You may have to manually add the line `"PbKdf": "sha256",` (or similar if an alternative PBKDF was used) to existing JSON files.
 - At the moment I do not attempt to overwrite memory that holds sensitive information when `rustpwman` is closed. This may be a problem when `rustpwman` is used in an environment where an attacker can gain access to memory previously used by `rustpwman`, i.e. when sharing a machine with an attacker.
 - When the list of entries changes (after an add or delete) it may be possible that the entry selected after the change is not visible in the `ScrollView` on the left. I was not successfull in forcing cursive to scroll to the newly selected entry. This is most probably my fault and meanwhile an appropriate warning dialog is displayed.
 - I am fairly new to Rust. I guess it shows in the code.
 - On a MacBook Air 2018 using the touchpad to click elements in the TUI does not work. The problem does not manifest itself when using a mouse. Using the touchpad seems to work though on other models. I do not think that this is a hardware problem on my MacBook and I unfortunately have no idea why this happens.
 - In non `--release` builds scrypt with the chosen parameters is *extremely* slow
 - Source for PBKDF parameter choices https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
-- Removed `bcrypt` due to a lack of testability. After looking at the crate `bcrypt-pbkdf`, which I originally used, I came to the conclusion that this crate does not implement the 
-"real" `bcrypt`. It only provides a variant of the original. See https://flak.tedunangst.com/post/bcrypt-pbkdf.
 
