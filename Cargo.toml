@@ -25,7 +25,9 @@ rpassword = "7.0"
 argon2 = "0.4.1"
 toml = "0.5.9"
 dirs = "4.0"
+uds_windows =  {version ="1.0.2", optional = true}
 users = {version = "0.11.0", optional = true}
+directories = {version ="4.0.1", optional = true} 
 
 # Uncomment the following lines for Windows build
 #pancurses = "0.17.0"
@@ -37,5 +39,7 @@ users = {version = "0.11.0", optional = true}
 #features = ["pancurses-backend"]
 
 [features]
-default = []
-pwmanclient = ["dep:users"]
+default = ["pwmanclientux"]
+pwmanclient = []
+pwmanclientux = ["dep:users", "pwmanclient"]
+pwmanclientwin = ["dep:uds_windows", "dep:directories", "pwmanclient"]

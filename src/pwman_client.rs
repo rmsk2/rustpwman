@@ -14,14 +14,14 @@ limitations under the License. */
 
 #![allow(dead_code)]
 
-use users;
+//use users;
 use std::{path::PathBuf};
 use std::io::{Error, ErrorKind};
 use crypto::md5::Md5;
 use crypto::digest::Digest;
 use serde::{Serialize, Deserialize};
 use std::fs;
-use std::os::unix::net::UnixStream;
+//use std::os::unix::net::UnixStream;
 
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -122,7 +122,7 @@ fn hex_string(buf: &[u8]) -> String {
     return result;
 }
 
-fn hash_password_file_name(password_file: &String) -> std::io::Result<String> {
+pub fn hash_password_file_name(password_file: &String) -> std::io::Result<String> {
     let pw_file = PathBuf::from(password_file);
     let abs_file = fs::canonicalize(pw_file)?;
     let path_as_string = match abs_file.to_str() {
@@ -179,50 +179,3 @@ pub trait PWManClient {
     }    
 }
 
-pub struct UDSClient {
-    socket_file: PathBuf,
-    password_file_id: String
-}
-
-impl UDSClient {
-    fn calc_socket_name() -> std::io::Result<PathBuf> {
-        let mut p = PathBuf::from("/tmp");
-    
-        let user_name = match users::get_current_username() {
-            Some(u) => u,
-            None => return Err(Error::new(ErrorKind::Other, "Unable to determine user name"))
-        };
-    
-        p.push(user_name);
-        p.set_extension("pwman");
-    
-        return Ok(p);
-    }    
-
-    pub fn new(pwman_file_name: String) -> std::io::Result<UDSClient> {
-        let p = UDSClient::calc_socket_name()?;
-        let pw_hash_name = hash_password_file_name(&pwman_file_name)?;
-
-        let res = UDSClient { 
-            socket_file: p, 
-            password_file_id: pw_hash_name 
-        };
-
-        return Ok(res);
-    }  
-}
-
-impl PWManClient for UDSClient {
-    fn connect(self :&Self) -> std::io::Result<Box<dyn ReaderWriter>> {
-        let s = match UnixStream::connect(&self.socket_file) {
-            Err(e) => return Err(e),
-            Ok(s) => s
-        };
-
-        return Ok(Box::new(s));
-    }
-
-    fn get_pw_file_id(self: &Self) -> &String {
-        return &self.password_file_id;
-    }
-}

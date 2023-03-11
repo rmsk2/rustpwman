@@ -21,6 +21,10 @@ mod tomlconfig;
 mod tuiconfig;
 #[cfg(feature = "pwmanclient")]
 mod pwman_client;
+#[cfg(feature = "pwmanclientux")]
+mod pwman_client_ux;
+#[cfg(feature = "pwmanclientwin")]
+mod pwman_client_win;
 
 use std::env;
 use dirs;

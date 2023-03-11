@@ -53,17 +53,27 @@ use crate::fcrypt::KeyDeriver;
 use crate::fcrypt;
 use crate::jots;
 #[cfg(feature = "pwmanclient")]
-use crate::pwman_client;
-#[cfg(feature = "pwmanclient")]
 use crate::pwman_client::PWManClient;
+#[cfg(feature = "pwmanclientux")]
+use crate::pwman_client_ux::UDSClien;
+#[cfg(feature = "pwmanclientwin")]
+use crate::pwman_client_win::UDSClientWin;
 
 pub fn path_exists(path: &str) -> bool {
     fs::metadata(path).is_ok()
 }
 
-#[cfg(feature = "pwmanclient")]
+#[cfg(feature = "pwmanclientux")]
 fn make_pwman_client(file_name: String) -> std::io::Result<Box<dyn PWManClient>>{
     match pwman_client::UDSClient::new(file_name) {
+        Ok(c) => return Ok(Box::new(c)),
+        Err(e) => return Err(e)
+    }
+}
+
+#[cfg(feature = "pwmanclientwin")]
+fn make_pwman_client(file_name: String) -> std::io::Result<Box<dyn PWManClient>>{
+    match UDSClientWin::new(file_name) {
         Ok(c) => return Ok(Box::new(c)),
         Err(e) => return Err(e)
     }
