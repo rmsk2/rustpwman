@@ -55,7 +55,7 @@ use crate::jots;
 #[cfg(feature = "pwmanclient")]
 use crate::pwman_client::PWManClient;
 #[cfg(feature = "pwmanclientux")]
-use crate::pwman_client_ux::UDSClien;
+use crate::pwman_client_ux::UDSClient;
 #[cfg(feature = "pwmanclientwin")]
 use crate::pwman_client_win::UDSClientWin;
 
@@ -65,7 +65,7 @@ pub fn path_exists(path: &str) -> bool {
 
 #[cfg(feature = "pwmanclientux")]
 fn make_pwman_client(file_name: String) -> std::io::Result<Box<dyn PWManClient>>{
-    match pwman_client::UDSClient::new(file_name) {
+    match UDSClient::new(file_name) {
         Ok(c) => return Ok(Box::new(c)),
         Err(e) => return Err(e)
     }

@@ -16,10 +16,8 @@ limitations under the License. */
 
 use std::{path::PathBuf};
 use std::io::{Error, ErrorKind};
-use crypto::md5::Md5;
-use crypto::digest::Digest;
-use serde::{Serialize, Deserialize};
-use std::fs;
+use std::os::unix::net::UnixStream;
+
 use crate::pwman_client::PWManClient;
 use crate::pwman_client::ReaderWriter;
 use crate::pwman_client::hash_password_file_name;
