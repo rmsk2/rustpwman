@@ -47,7 +47,7 @@ impl UDSClientWin {
 
     pub fn new(pwman_file_name: String) -> std::io::Result<UDSClientWin> {
         let p = UDSClientWin::calc_socket_name()?;
-       let pw_hash_name = hash_password_file_name(&pwman_file_name)?;
+        let pw_hash_name = hash_password_file_name(&pwman_file_name)?;
 
         let res = UDSClientWin { 
             socket_file: p, 
