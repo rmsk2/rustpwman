@@ -18,7 +18,7 @@ limitations under the License. */
 use crate::pwman_client::PWManClient;
 use crate::pwman_client::ReaderWriter;
 use crate::pwman_client::hash_password_file_name;
-use directories;
+use dirs;
 
 use std::{path::PathBuf};
 use std::io::{Error, ErrorKind};
@@ -35,8 +35,8 @@ pub struct UDSClientWin {
 #[cfg(feature = "pwmanclientwin")]
 impl UDSClientWin {
     fn calc_socket_name() -> std::io::Result<PathBuf> {    
-        let mut p = match  directories::UserDirs::new() {
-            Some(u) => u.home_dir().to_path_buf(),
+        let mut p = match  dirs::home_dir() {
+            Some(u) => u,
             None => return Err(Error::new(ErrorKind::Other, "Unable to determine home directory"))
         };
     
