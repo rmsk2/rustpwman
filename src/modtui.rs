@@ -31,8 +31,9 @@ const BITS_SEC_VALUE: &str = "securitybits";
 
 
 use crate::VERSION_STRING;
+//use cursive::direction::Direction;
 use cursive::traits::*;
-use cursive::views::{Dialog, LinearLayout, TextView, EditView, SelectView, TextArea, Panel, SliderView, RadioGroup, RadioButton};
+use cursive::views::{Dialog, LinearLayout, TextView, EditView, SelectView, TextArea, Panel, SliderView, RadioGroup, RadioButton, DialogFocus};
 use cursive::Cursive;
 use cursive::event::EventResult;
 use cursive::menu::Tree;
@@ -45,6 +46,7 @@ use std::sync::mpsc::{Sender, Receiver};
 use std::sync::mpsc;
 use std::fs;
 use std::collections::HashMap;
+use cursive::view::Selector::Name;
 
 use crate::pwgen;
 use crate::pwgen::GenerationStrategy;
@@ -793,6 +795,10 @@ fn rename_entry(s: &mut Cursive, state_for_rename_entry: Rc<RefCell<AppState>>) 
 
 }
 
+static PW_EDIT1_CH: &str = "pwchedit1";
+static PW_EDIT2_CH: &str = "pwchedit2";
+static DLG_PW_CH: &str = "pwchangedlg";
+
 fn change_password(s: &mut Cursive, state_for_pw_change: Rc<RefCell<AppState>>) {
     let res = Dialog::new()
         .title("Rustpwman change password")
@@ -805,7 +811,7 @@ fn change_password(s: &mut Cursive, state_for_pw_change: Rc<RefCell<AppState>>) 
                     .child(TextView::new("New Password   : "))
                     .child(EditView::new()
                         .secret()
-                        .with_name("pwchedit1")
+                        .with_name(PW_EDIT1_CH)
                         .fixed_width(PW_WIDTH))
             )
             .child(TextView::new("\n"))
@@ -814,7 +820,7 @@ fn change_password(s: &mut Cursive, state_for_pw_change: Rc<RefCell<AppState>>) 
                     .child(TextView::new("Verify Password: "))
                     .child(EditView::new()
                         .secret()
-                        .with_name("pwchedit2")
+                        .with_name(PW_EDIT2_CH)
                         .fixed_width(PW_WIDTH))
             )
         )
@@ -830,14 +836,12 @@ fn change_password(s: &mut Cursive, state_for_pw_change: Rc<RefCell<AppState>>) 
             };
             
             if pw1_text != pw2_text {
-                show_message(s, "Passwords not equal!");
-                s.call_on_name("pwchedit1", |view: &mut EditView| {view.set_content(String::from(""))}).unwrap()(s);
-                s.call_on_name("pwchedit2", |view: &mut EditView| {view.set_content(String::from(""))}).unwrap()(s);                  
+                show_pw_select_error(s, "Passwords not equal!", PW_EDIT1_CH, PW_EDIT2_CH, DLG_PW_CH);
                 return;
             }
 
             if pw1_text.len() == 0 {
-                show_message(s, "New password is empty");
+                show_pw_select_error(s, "New password is empty", PW_EDIT1_CH, PW_EDIT2_CH, DLG_PW_CH);
                 return;
             }
 
@@ -847,7 +851,8 @@ fn change_password(s: &mut Cursive, state_for_pw_change: Rc<RefCell<AppState>>) 
             process_save_command(s, state_for_pw_change.clone());
             s.pop_layer();
         })
-        .button("Cancel", |s| { s.pop_layer(); });
+        .button("Cancel", |s| { s.pop_layer(); })
+        .with_name(DLG_PW_CH);
 
     s.add_layer(res);
 }
@@ -1035,6 +1040,20 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
     fill_tui(s, state_for_fill_tui.clone());
 }
 
+
+fn show_pw_error(siv: &mut Cursive, msg: &str) {
+    siv.add_layer(
+        Dialog::text(msg)
+            .title("Rustpwman")
+            .button("Ok", |s| {
+                s.pop_layer();
+
+                s.call_on_name("pwedit", |view: &mut EditView| {view.set_content(String::from(""))}).unwrap()(s);
+                s.call_on_name("pwdialog", |view: &mut Dialog| {view.set_focus(DialogFocus::Content)});
+            }),
+    );
+}
+
 fn open_file(s: &mut Cursive, password: &String, state: AppState) -> Option<AppState> {
     let file_name = state.file_name.clone();
     let mut state = state;
@@ -1052,11 +1071,7 @@ fn open_file(s: &mut Cursive, password: &String, state: AppState) -> Option<AppS
     match state.store.from_enc_file(&file_name, password) {
         Ok(_) => { },
         Err(e) => {
-            show_message(s, &format!("Unable to read file '{}'\n\nError: '{:?}'", file_name, e));
-            match s.call_on_name("pwedit", |view: &mut EditView| {view.set_content(String::from(""))}) {
-                Some(cb) => cb(s),
-                None => ()
-            }
+            show_pw_error(s, &format!("Unable to read file '{}'\n\nError: '{:?}'", file_name, e));
             return None;                
         }
     }
@@ -1066,7 +1081,7 @@ fn open_file(s: &mut Cursive, password: &String, state: AppState) -> Option<AppS
     return Some(state);
 }
 
-fn password_entry_dialog(sndr: Rc<Sender<String>>, ok_cb_with_state: Box<dyn Fn(&mut Cursive, &String)>) -> Dialog {
+fn password_entry_dialog(sndr: Rc<Sender<String>>, ok_cb_with_state: Box<dyn Fn(&mut Cursive, &String)>) -> impl View {
     let sender = sndr.clone();
 
     let ok_cb = move |s: &mut Cursive| {
@@ -1096,10 +1111,12 @@ fn password_entry_dialog(sndr: Rc<Sender<String>>, ok_cb_with_state: Box<dyn Fn(
                         .secret()
                         .with_name("pwedit")
                         .fixed_width(PW_WIDTH))
+                    .with_name("pwlinear")
             )
         )
         .button("OK", ok_cb)
-        .button("Cancel", move |s| pwman_quit(s, sender.clone(), String::from(""), false));
+        .button("Cancel", move |s| pwman_quit(s, sender.clone(), String::from(""), false))
+        .with_name("pwdialog");
 
     return res;
 }
@@ -1144,11 +1161,42 @@ fn password_read_from_pwman_dialog(sndr: Rc<Sender<String>>, password: String, c
     return res;
 }
 
+static PW_EDIT1: &str = "pwedit1";
+static PW_EDIT2: &str = "pwedit2";
+static DLG_INIT: &str = "pwinit";
+
 fn verify_passwords(s: &mut Cursive, ok_cb: &Box<dyn Fn(&mut Cursive, &String)>) {
-    verify_passwords_with_names(s, ok_cb, "pwedit1", "pwedit2");
+    verify_passwords_with_names(s, ok_cb, PW_EDIT1, PW_EDIT2, DLG_INIT);
 }
 
-fn verify_passwords_with_names(s: &mut Cursive, ok_cb: &Box<dyn Fn(&mut Cursive, &String)>, edit1: &str, edit2: &str) {
+fn show_pw_select_error(siv: &mut Cursive, msg: &str, edit1: &'static str, edit2: &'static str, dlg: &'static str) {
+    siv.add_layer(
+        Dialog::text(msg)
+            .title("Rustpwman")
+            .button("Ok", |s| {
+                s.pop_layer();
+                s.call_on_name(edit1, |view: &mut EditView| {view.set_content(String::from(""))}).unwrap()(s);
+                s.call_on_name(edit2, |view: &mut EditView| {view.set_content(String::from(""))}).unwrap()(s);
+                s.call_on_name(dlg, |view: &mut Dialog| {view.set_focus(DialogFocus::Content)});
+                match s.call_on_name(dlg, |view: &mut Dialog| {view.focus_view(&Name(edit1))}).unwrap() {
+                    Ok(o) => {
+                        match o {
+                            EventResult::Ignored => (),
+                            EventResult::Consumed(ocb) => {
+                                match ocb {
+                                    None => (),
+                                    Some(cb) => cb(s)
+                                }
+                            }
+                        }
+                    },
+                    Err(_) => ()
+                }
+            }),
+    );
+}
+
+fn verify_passwords_with_names(s: &mut Cursive, ok_cb: &Box<dyn Fn(&mut Cursive, &String)>, edit1: &'static str, edit2: &'static str, dlg: &'static str) {
     let pw1_text = match s.call_on_name(edit1, |view: &mut EditView| {view.get_content()}) {
         Some(s) => s,
         None => { show_message(s, "Unable to read password"); return }
@@ -1160,26 +1208,24 @@ fn verify_passwords_with_names(s: &mut Cursive, ok_cb: &Box<dyn Fn(&mut Cursive,
     };
 
     if pw1_text != pw2_text {
-        show_message(s, "Passwords not equal!");
-        s.call_on_name(edit1, |view: &mut EditView| {view.set_content(String::from(""))}).unwrap()(s);
-        s.call_on_name(edit2, |view: &mut EditView| {view.set_content(String::from(""))}).unwrap()(s);        
+        show_pw_select_error(s, "Passwords not equal!", edit1, edit2, dlg);
         return;
     }
 
     if pw1_text.len() == 0 {
-        show_message(s, "Password is empty!");
+        show_pw_select_error(s, "Password is empty!", edit1, edit2, dlg);
         return;
     }
 
     if let Some(err) = fcrypt::GcmContext::check_password(&pw1_text) {
-        show_message(s, &format!("Password incorrect: {:?}", err));
+        show_pw_select_error(s, &format!("Password incorrect: {:?}", err), edit1, edit2, dlg);
         return;        
     }
 
     ok_cb(s, &pw2_text);
 }
 
-fn file_init_dialog(sndr: Rc<Sender<String>>, ok_cb: Box<dyn Fn(&mut Cursive, &String)>) -> Dialog {
+fn file_init_dialog(sndr: Rc<Sender<String>>, ok_cb: Box<dyn Fn(&mut Cursive, &String)>) -> impl View {
     let sender = sndr.clone();
     
     let verify = move |s: &mut Cursive| {
@@ -1197,8 +1243,9 @@ fn file_init_dialog(sndr: Rc<Sender<String>>, ok_cb: Box<dyn Fn(&mut Cursive, &S
                     .child(TextView::new("New Password   : "))
                     .child(EditView::new()
                         .secret()
-                        .with_name("pwedit1")
+                        .with_name(PW_EDIT1)
                         .fixed_width(PW_WIDTH))
+                    .with_name("firstpw")
             )
             .child(TextView::new("\n"))
             .child(
@@ -1206,12 +1253,13 @@ fn file_init_dialog(sndr: Rc<Sender<String>>, ok_cb: Box<dyn Fn(&mut Cursive, &S
                     .child(TextView::new("Verify Password: "))
                     .child(EditView::new()
                         .secret()
-                        .with_name("pwedit2")
+                        .with_name(PW_EDIT2)
                         .fixed_width(PW_WIDTH))
             )
         )
         .button("OK", verify)
-        .button("Cancel", move |s| pwman_quit(s, sender.clone(), String::from(""), false));
+        .button("Cancel", move |s| pwman_quit(s, sender.clone(), String::from(""), false))
+        .with_name(DLG_INIT);
 
     return res;
 }
