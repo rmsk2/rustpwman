@@ -17,13 +17,16 @@ use crate::fcrypt;
 #[cfg(test)]
 use crate::jots;
 #[cfg(test)]
-use crypto::scrypt::scrypt;
+use scrypt::scrypt;
 #[cfg(test)]
-use crypto::scrypt::ScryptParams;
+use scrypt::Params;
 #[cfg(test)]
 use crate::tomlconfig;
 #[cfg(test)]
 use std::env;
+#[cfg(test)]
+use crate::derivers;
+
 
 #[test]
 pub fn test_fcrypt_enc_dec() {
@@ -139,7 +142,7 @@ pub fn test_jots_serialize_deserialize() {
     let d3 = String::from("data3"); 
     
     {
-        let mut j = jots::Jots::new_id(fcrypt::GcmContext::sha256_deriver, fcrypt::KdfId::Sha256);
+        let mut j = jots::Jots::new_id(derivers::sha256_deriver, fcrypt::KdfId::Sha256);
         j.insert(&t1, &d1);
         j.insert(&t2, &d2);
         j.insert(&t3, &d3);
@@ -154,7 +157,7 @@ pub fn test_jots_serialize_deserialize() {
         };
     }
 
-    let mut j2 = jots::Jots::new_id(fcrypt::GcmContext::sha256_deriver, fcrypt::KdfId::Sha256);
+    let mut j2 = jots::Jots::new_id(derivers::sha256_deriver, fcrypt::KdfId::Sha256);
     match j2.from_reader(serialized.as_slice()) {
         Ok(_) => (),
         Err(e) => { panic!("Deserialization failed {:?}", e); }          
@@ -196,7 +199,7 @@ pub fn test_jots_iter() {
     let d2 = String::from("data2");   
     let d3 = String::from("data3"); 
     
-    let mut j = jots::Jots::new_id(fcrypt::GcmContext::sha256_deriver, fcrypt::KdfId::Sha256);
+    let mut j = jots::Jots::new_id(derivers::sha256_deriver, fcrypt::KdfId::Sha256);
     j.insert(&t1, &d1);
     j.insert(&t2, &d2);
     j.insert(&t3, &d3);
@@ -216,13 +219,36 @@ pub fn test_jots_iter() {
     assert_eq!(count, 6);
 }
 
+#[cfg(test)]
+fn vec_to_hex(buf: &Vec<u8>) -> String {
+    let mut result = String::from("");
+    
+    for i in buf {
+        result.push_str(format!("{:02x}", i).as_str());
+    }
+    
+    return result;
+}
+
+#[test]
+pub fn test_sha256_key_gen() {
+    let salt: &str = "0011223344556677";
+    let password: &str = "Dies ist ein Test";
+
+    let salt_vec: Vec<u8> = salt.as_bytes().to_vec();
+    let key = derivers::sha256_deriver(&salt_vec, password);
+    let res = vec_to_hex(&key);
+
+    assert_eq!(res, "8bbb8e596fdeb564b5ded3d60af1cf790a326309ada0045cc61d07fd982876d2");
+}
+
 #[test]
 pub fn test_scrypt_params() {
-    let parms = ScryptParams::new(14, 8, 1);
+    let parms = Params::new(14, 8, 1, 32).unwrap();
     let mut aes_key: [u8; 64] = [0; 64];
 
     // Test vectors from RFC7914
-    scrypt("pleaseletmein".as_bytes(), "SodiumChloride".as_bytes(), &parms, &mut aes_key);
+    scrypt("pleaseletmein".as_bytes(), "SodiumChloride".as_bytes(), &parms, &mut aes_key).unwrap();
     let mut res:Vec<u8> = Vec::new();
     aes_key.iter().for_each(|i| {res.push(*i)} );
 

@@ -21,20 +21,14 @@ use std::io::{Error, ErrorKind};
 use rand::RngCore;
 
 use serde::{Serialize, Deserialize};
-use crypto::sha2::Sha256;
-use crypto::digest::Digest;
 use cipher::generic_array::typenum;
 use cipher::KeyInit;
 use cipher::generic_array::GenericArray;
-use aes;
 use base64;
-use aes_gcm::{Nonce, AesGcm, Tag};
+use aes_gcm::{Nonce, Tag, AesGcm};
+use crate::derivers;
 
 use aes_gcm::aead::{Aead, AeadInPlace};
-use crypto::scrypt::scrypt;
-use crypto::scrypt::ScryptParams;
-//use bcrypt_pbkdf::bcrypt_pbkdf;
-use argon2;
 
 const DEFAULT_TAG_SIZE: usize = 16;
 const DEFAULT_NONCE_SIZE: usize = 12;
@@ -54,7 +48,6 @@ pub const DEFAULT_KDF_ID: KdfId = KdfId::Sha256;
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
 pub enum KdfId {
     Scrypt,
-    //Bcrypt,
     Argon2,
     Sha256
 }
@@ -67,7 +60,6 @@ impl KdfId {
     pub fn to_str(self) -> &'static str {
         match self {
             KdfId::Scrypt => KDF_SCRYPT,
-            //KdfId::Bcrypt => KDF_BCRYPT,
             KdfId::Argon2 => KDF_ARGON2,
             KdfId::Sha256 => KDF_SHA256
         }
@@ -83,10 +75,9 @@ impl KdfId {
 
     pub fn to_named_func(self) -> (KeyDeriver, KdfId) {
         match self {
-            KdfId::Scrypt => (GcmContext::scrypt_deriver, self),
-            //KdfId::Bcrypt => (GcmContext::bcrypt_deriver, self),
-            KdfId::Argon2 => (GcmContext::argon2id_deriver, self),
-            KdfId::Sha256 => (GcmContext::sha256_deriver, self)            
+            KdfId::Scrypt => (derivers::scrypt_deriver, self),
+            KdfId::Argon2 => (derivers::argon2id_deriver, self),
+            KdfId::Sha256 => (derivers::sha256_deriver, self)            
         }
     }
 
@@ -94,7 +85,6 @@ impl KdfId {
         match &name[..] {
             KDF_SHA256 => Some(KdfId::Sha256),
             KDF_SCRYPT => Some(KdfId::Scrypt),
-            //KDF_BCRYPT => Some(KdfId::Bcrypt),
             KDF_ARGON2 => Some(KdfId::Argon2),
             _ => None
         }
@@ -130,7 +120,7 @@ pub struct GcmContext {
 impl GcmContext {
     #![allow(dead_code)]
     pub fn new() -> GcmContext {
-        return GcmContext::new_with_kdf_id(GcmContext::sha256_deriver, KdfId::Sha256)
+        return GcmContext::new_with_kdf_id(derivers::sha256_deriver, KdfId::Sha256)
     }
 
     pub fn new_with_kdf_id(derive: KeyDeriver, deriver_id: KdfId) -> GcmContext {
@@ -156,45 +146,6 @@ impl GcmContext {
         }
 
         return None;
-    }
-
-    pub fn argon2id_deriver(salt: &Vec<u8>, password: &str) -> Vec<u8> {
-        let mut aes_key: [u8; 32] = [0; 32];
-        //let no_ad: [u8; 0] = [];
-
-        let params = argon2::Params::new(15*1024, 2, 1, Some(32)).unwrap();
-        // 15 MiB, t=2, p=1
-        let ctx = argon2::Argon2::new(argon2::Algorithm::Argon2id, argon2::Version::V0x13, params);
-        ctx.hash_password_into(password.as_bytes(), &salt, &mut aes_key).unwrap();
-        let mut res:Vec<u8> = Vec::new();
-        aes_key.iter().for_each(|i| { res.push(*i) });
-    
-        return res;        
-    }
-
-    pub fn scrypt_deriver(salt: &Vec<u8>, password: &str) -> Vec<u8> {
-        // N = 32768 = 2^15, r=8, p=2
-        let parms = ScryptParams::new(15, 8, 2);
-        let mut aes_key: [u8; 32] = [0; 32];
-    
-        scrypt(password.as_bytes(), salt.as_slice(), &parms, &mut aes_key);
-        let mut res:Vec<u8> = Vec::new();
-        aes_key.iter().for_each(|i| { res.push(*i) });
-    
-        return res;
-    }
-
-    pub fn sha256_deriver(salt: &Vec<u8>, password: &str) -> Vec<u8> {
-        let mut res_buffer: [u8; 32] = [0; 32];
-        let mut sha_256 = Sha256::new();
-
-        sha_256.input_str(password);
-        sha_256.input(salt);
-        sha_256.input_str(password);
-
-        sha_256.result(&mut res_buffer);
-
-        return res_buffer.to_vec();
     }
 
     pub fn from_reader<T: Read>(&mut self, reader: T) -> std::io::Result<Vec<u8>> {
