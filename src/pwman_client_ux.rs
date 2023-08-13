@@ -14,7 +14,7 @@ limitations under the License. */
 
 #![allow(dead_code)]
 
-use std::{path::PathBuf};
+use std::path::PathBuf;
 use std::io::{Error, ErrorKind};
 use std::os::unix::net::UnixStream;
 
