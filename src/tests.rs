@@ -26,6 +26,8 @@ use crate::tomlconfig;
 use std::env;
 #[cfg(test)]
 use crate::derivers;
+#[cfg(test)]
+use std::fs::remove_file;
 
 
 #[test]
@@ -318,4 +320,6 @@ fn test_save_load_config() {
     assert_eq!(res_val.seclevel, 15);
     assert_eq!(res_val.pbkdf, String::from("egal1"));
     assert_eq!(res_val.pwgen, String::from("egal2"));
+
+    remove_file(current_dir.as_os_str().to_str().unwrap()).unwrap();
 }
