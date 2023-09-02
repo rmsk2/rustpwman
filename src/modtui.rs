@@ -682,7 +682,7 @@ fn edit_entry(s: &mut Cursive, state_for_edit_entry: Rc<RefCell<AppState>>, entr
             show_message(s, "Entry created successfully. It has been selected\n but you may need to scroll to it manually.");            
         }
     })
-    .button("Generate Password", move |s: &mut Cursive| {
+    .button("Insert Password", move |s: &mut Cursive| {
         let new_pw: String;
 
         {
@@ -706,16 +706,30 @@ fn edit_entry(s: &mut Cursive, state_for_edit_entry: Rc<RefCell<AppState>>, entr
             };
         }
 
-        let entry_text = match s.call_on_name(TEXT_AREA_NAME, |view: &mut TextArea| { String::from(view.get_content()) }) {
+        let mut entry_text = match s.call_on_name(TEXT_AREA_NAME, |view: &mut TextArea| { String::from(view.get_content()) }) {
             Some(text_val) => {
                 text_val
             },
             None => { show_message(s, "Unable to read entry text"); return }
         };
 
-        let new_content = entry_text + &new_pw;
+        let cursor_pos = match s.call_on_name(TEXT_AREA_NAME, |view: &mut TextArea| { view.cursor() }) {
+            Some(p) => {
+                p
+            },
+            None => { show_message(s, "Unable to read cursor position"); return }
+        };
 
-        s.call_on_name(TEXT_AREA_NAME, |view: &mut TextArea| { view.set_content(new_content) });
+        entry_text.insert_str(cursor_pos, new_pw.as_str());
+
+        s.call_on_name(TEXT_AREA_NAME, |view: &mut TextArea| { view.set_content(entry_text) });
+
+        match s.call_on_name(TEXT_AREA_NAME, |view: &mut TextArea| { view.set_cursor(cursor_pos) }) {
+            Some(_) => {
+                
+            },
+            None => { show_message(s, "Unable to set cursor position"); return }
+        };        
 
     })
     .button("Cancel", move |s| { 
@@ -989,7 +1003,7 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
             .leaf("Load Entry ...", move |s| {
                 load_entry(s, state_temp_load.clone())  
             })        
-            .leaf("Generate password ...", move |s| {
+            .leaf("Append password ...", move |s| {
                 generate_password(s, state_temp_pw_gen.clone())
             }));        
 
