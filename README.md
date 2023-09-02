@@ -149,7 +149,7 @@ Via this menu entry the contents of the currently selected password entry can be
 
 This allows to load the contents of a (text-)file into an entry. The current contents is overwritten without further notice to the user.
 
-### Generate password
+### Append password
 
 This menu entry allows to append a randomly generated password to the currently selected entry. The user has to choose the
 parameters to use while generating the password. One parameter is the security level in bits (of entropy). This describes how large the set of passwords should be from which the generator selects one at random. A security level of `k` bits means that there are `2**k` passwords to choose from. This parameter in essence determines the difficulty for an attacker when performing a brute force password search. The default
