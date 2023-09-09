@@ -227,7 +227,8 @@ I have tested `rustpwman` with the `pancurses` backend in the normal `cmd.exe` c
 
 Version 1.0.0: As expected, building `rustpwman` for WSL works without problems after installing all dependencies like `git`, `gcc` and `libncurses5`. The resulting application also works but there is a perceptible decrease in performance when compared to the native version which uses the `pancurses` backend. 
 
-Version 1.1.0 and higher: I have not tested `rustpwman ` under WSL yet, but I do not expect any problems.
+Version 1.2.8 and higher: Building and running `rustpwman` works. Performance is still not quite on the same level as the native version (TUI flickers a bit when updating the screen) but overall performance 
+has improved with respect to the previous test mentioned above.
 
 # Caveats
 
