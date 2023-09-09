@@ -193,9 +193,9 @@ file by hand or use `rustpwman cfg` which will open a window similar to this one
 
 # Optional features
 
-Beginning with version 1.2.0 `rustpwman` can be built with support for the password cache implemented in [`pwman`](https://github.com/rmsk2/pwman). In case this feature is
-activated by issuing the command `cargo build --release --features pwmanclientux` (under Linux and MacOS) or `cargo build --release --features pwmanclientwin` (under Windows) 
-`rustpwman` attempts to read the password for the data file specified by the `-i` option from the cache provided by `pwserv`.
+Beginning with version 1.2.0 `rustpwman` is being built with support for the password cache implemented in [`pwman`](https://github.com/rmsk2/pwman). This feature can be
+disabled by issuing the command `cargo build --release --no-default-features` on all supported platforms. When the feature is active `rustpwman` attempts to read the 
+password for the data file specified by the `-i` option from the cache provided by `pwserv`.
 
 If this does not succeed, the user is requested to enter a password as was the case in Version 1.1.0 and below. If on the other hand the password was successfully read, the 
 user is asked to confirm that it should be used. Through the correspondig dialog the user is also able to clear the password from the cache. 
@@ -218,6 +218,8 @@ version = "0.20"
 default-features = false
 features = ["pancurses-backend"]
 ```
+
+In order to build `rustpwman` with the password cache feature you then have to use the command `cargo build --release --no-default-features --features pwmanclientwin`.
 
 I have tested `rustpwman` with the `pancurses` backend in the normal `cmd.exe` console and the new [Windows Terminal](https://www.microsoft.com/en-us/p/windows-terminal/9n0dx20hk701#activetab=pivot:overviewtab). Both work well.
 
