@@ -468,12 +468,12 @@ fn load_entry(s: &mut Cursive, state_for_add_entry: Rc<RefCell<AppState>>) {
         .child(TextView::new("\n"))
         .child(
             LinearLayout::horizontal()
-                .child(TextView::new("Entry '"))
+                .child(TextView::new("Entry "))
                 .child(TextView::new(entry_name.as_str())
-                    .style(danger_style))
-                .child(TextView::new("' will be "))
-                .child(TextView::new("OVERWRITTEN")
                     .style(reverse_style))
+                .child(TextView::new(" will be "))
+                .child(TextView::new("OVERWRITTEN")
+                    .style(danger_style))
         )
     )
     .button("OK", move |s| {
