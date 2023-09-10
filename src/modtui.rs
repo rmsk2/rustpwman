@@ -31,6 +31,7 @@ const BITS_SEC_VALUE: &str = "securitybits";
 
 
 use crate::VERSION_STRING;
+use cursive::theme::ColorStyle;
 //use cursive::direction::Direction;
 use cursive::traits::*;
 use cursive::views::{Dialog, LinearLayout, TextView, EditView, SelectView, TextArea, Panel, SliderView, RadioGroup, RadioButton, DialogFocus};
@@ -39,6 +40,9 @@ use cursive::event::EventResult;
 use cursive::menu::Tree;
 use cursive::align::HAlign;
 use cursive::event::Key;
+use cursive::reexports::enumset;
+use cursive::theme;
+use cursive::theme::{ColorType, Effect, Color, PaletteColor};
 
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -438,6 +442,16 @@ fn load_entry(s: &mut Cursive, state_for_add_entry: Rc<RefCell<AppState>>) {
         }
     }; 
 
+    let danger_style = theme::Style {
+        effects: enumset::enum_set!(Effect::Reverse),
+        color: ColorStyle::new(ColorType::Color(Color::Rgb(255,0,0)), ColorType::Color(Color::Rgb(255, 255, 255))),
+    };
+
+    let reverse_style = theme::Style {
+        effects: enumset::enum_set!(Effect::Simple),
+        color: ColorStyle::new(ColorType::Color(Color::Rgb(255, 255, 255)), PaletteColor::Background),
+    };    
+
     let res = Dialog::new()
     .title("Rustpwman load entry from file")
     .padding_lrtb(2, 2, 1, 1)
@@ -449,7 +463,17 @@ fn load_entry(s: &mut Cursive, state_for_add_entry: Rc<RefCell<AppState>>) {
                 .child(TextView::new("Filename: "))
                 .child(EditView::new()
                     .with_name(EDIT_FILE_NAME)
-                    .fixed_width(60))
+                    .fixed_width(60))        
+        )
+        .child(TextView::new("\n"))
+        .child(
+            LinearLayout::horizontal()
+                .child(TextView::new("Entry '"))
+                .child(TextView::new(entry_name.as_str())
+                    .style(danger_style))
+                .child(TextView::new("' will be "))
+                .child(TextView::new("OVERWRITTEN")
+                    .style(reverse_style))
         )
     )
     .button("OK", move |s| {
@@ -864,6 +888,9 @@ fn change_password(s: &mut Cursive, state_for_pw_change: Rc<RefCell<AppState>>) 
             state_for_pw_change.borrow_mut().password = Some(new_pw);
             process_save_command(s, state_for_pw_change.clone());
             s.pop_layer();
+
+            #[cfg(feature = "pwmanclient")]
+            uncache_password(s, state_for_pw_change.clone());
         })
         .button("Cancel", |s| { s.pop_layer(); })
         .with_name(DLG_PW_CH);
@@ -905,9 +932,38 @@ fn cache_password(s: &mut Cursive, state_for_write_cache: Rc<RefCell<AppState>>)
     }
 }
 
+#[cfg(feature = "pwmanclient")]
+fn uncache_password(s: &mut Cursive, state_for_write_cache: Rc<RefCell<AppState>>) {
+    let file_name = state_for_write_cache.borrow().file_name.clone();
+    let client: Box<dyn PWManClient>;
+
+    let c = make_pwman_client(file_name);
+    if let Ok(cl) = c {
+        client = cl;
+    } else {
+        show_message(s, "Unable to construct PWMAN client");
+        return;
+    }
+
+    match client.reset_password() {
+        Ok(_) => {
+            show_message(s, "Cache cleared");
+            return;
+        },
+        Err(e) => {
+            show_message(s, format!("Could not clear cache: {}", e).as_str());
+            return;
+        }
+    }
+}
 
 #[cfg(not(feature = "pwmanclient"))]
 fn cache_password(s: &mut Cursive, _state_for_write_cache: Rc<RefCell<AppState>>) {
+    show_message(s, "Sorry this feature is not available in this build") 
+}
+
+#[cfg(not(feature = "pwmanclient"))]
+fn uncache_password(s: &mut Cursive, _state_for_write_cache: Rc<RefCell<AppState>>) {
     show_message(s, "Sorry this feature is not available in this build") 
 }
 
@@ -925,7 +981,8 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
     let state_temp_pw_gen = shared_state.clone();
     let state_temp_clear = shared_state.clone();
     let state_temp_rename = shared_state.clone();
-    let state_temp_write_chache = shared_state.clone();      
+    let state_temp_write_chache = shared_state.clone();
+    let state_temp_clear_chache = shared_state.clone();      
     let sender = sndr.clone();
     let sender2 = sndr.clone();
 
@@ -944,15 +1001,19 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
         .leaf("Save File", move |s| { 
             process_save_command(s, state_temp_save.clone()); 
         })
+        .delimiter()
         .leaf("Change password ...", move |s| {
             change_password(s, state_temp_pw.clone())
         })            
         .leaf("Cache password", move |s| { 
             cache_password(s, state_temp_write_chache.clone())  
         })
+        .leaf("Clear cached password", move |s| { 
+            uncache_password(s, state_temp_clear_chache.clone())  
+        })
         .delimiter()
         .leaf("About ...", |s| {
-            let msg_str = format!("\n   A basic password manager\n\nWritten by Martin Grap in 2021-2023\n\n        Version {}", VERSION_STRING);
+            let msg_str = format!("\n   A primitive password manager\n\nWritten by Martin Grap in 2021-2023\n\n        Version {}", VERSION_STRING);
             show_message(s, &msg_str[..]);
         })            
         .delimiter()
@@ -978,7 +1039,10 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
     // compilation when constructing the file_tree but I came to the opinion that in Rust conditional compilation is tied to 
     // attributes which in turn does not seem to work when chaining values together as is done above.    
     #[cfg(not(feature = "pwmanclient"))]
-    file_tree.remove(2);  // remove chache items when building without the pwmanclient feature
+    file_tree.remove(3);  // remove chache items when building without the pwmanclient feature
+
+    #[cfg(not(feature = "pwmanclient"))]
+    file_tree.remove(3);  // remove chache items when building without the pwmanclient feature
 
     menu_bar.add_subtree(
         "File", file_tree

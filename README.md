@@ -101,11 +101,16 @@ Selecting this entry saves the encrypted data file using the password that was s
 ### Change password
 
 Using this entry allows to select a new password. After a new password has been selected the encrypted data file is saved automatically. The new password is also used in subsequent save operations.
+If `rustpwman` is compiled with the pwmanclient feature then the password cache is also automatically cleared, as the cached password is now incorrect.
 
 ### Cache password
 
 Via this entry the password of the container can be cached in [`pwman`](https://github.com/rmsk2/pwman). This item is only present if `rustpwman` is compiled with the pwmanclient feature 
 for the correct platform (see 'Optional Features' below).
+
+### Clear cached password
+
+When selecting this entry `rustpwman` attempts to remove a cached password from `pwman`. This item is only present if `rustpwman` is compiled with the pwmanclient feature.
 
 ### About
 
@@ -159,7 +164,7 @@ Additionally the user may select the set of characters which may appear in the r
 
 - Base64, where the potential padding character `=` is removed
 - Hex
-- Special: This password generator aims to create pronouncable passwords which are constructed from the following elements: A sequence of two letter groups which consist of a consonant followed by a vowel. There are 420 such groups. Therefore when selecting one of these groups at random each one contains 8.7 bits of entropy. The final four character group is a consonant followed by a three digit number. There are 26*1000 such four character groups so it has an entropy of 14.6 Bits when one is chosen randomly.
+- Special: This password generator aims to create pronouncable passwords which are constructed from the following elements: A sequence of two letter groups which consist of a consonant followed by a vowel. There are 420 such groups. Therefore when selecting one of these groups at random each one contains 8.7 bits of entropy. The final four character group is a consonant followed by a three digit number. There are 52*1000 such four character groups so it has an entropy of 15.6 Bits when one is chosen randomly.
 
 According to the Rust documentation the random number generator underlying the whole process is a *thread-local CSPRNG with periodic seeding from OsRng. Because this is local, it is typically much faster than OsRng. It should be secure, though the paranoid may prefer OsRng*.
 
