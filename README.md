@@ -132,7 +132,9 @@ This menu contains all operations that are supported with respect to entries.
 
 ### Edit entry
 
-This menu entry allows to manually edit the value or contents of the currently selected password entry. 
+This menu entry allows to manually edit the value or contents of the currently selected password entry. After the edit dialog
+opens you can additionally either generate a random password and insert it at the current cursor position or insert the current contents
+of the clipboard at this position.
 
 ### Add entry
 
@@ -168,28 +170,33 @@ Additionally the user may select the set of characters which may appear in the r
 
 According to the Rust documentation the random number generator underlying the whole process is a *thread-local CSPRNG with periodic seeding from OsRng. Because this is local, it is typically much faster than OsRng. It should be secure, though the paranoid may prefer OsRng*.
 
-# A note about the lack of the clipboard
+# A note about using the clipboard
 
-While using cursive was a largely pleasant experience it has to be noted that copying and pasting text is not possible in a terminal window while the cursive application is running. This in turn is probably an unfixable problem as cursive by definition controls the cursor in the terminal window, which may preclude the OS from "doing its thing". 
+It has to be noted that copying and pasting text in its most basic form is not possible in a terminal window while the cursive application is running. This in turn is probably an unfixable problem as cursive by definition controls the cursor in the terminal window, which may preclude the OS from "doing its thing". 
 
-While a password manager is still useful without copy and paste it is not optimal to first read and then type randomly chosen passwords into password dialogs that also hide what is typed. I therefore came up with the solution `Quit and print`. When using this menu item `rustpwman` is stopped and the contents of the currently selected entry is printed to the terminal window after the TUI has been closed and control of the OS over the terminal has been restored. In other words the necessary information can now be copied from the terminal into the clipboard and pasted where needed.
+`rustpwman` works around this problem in two ways. At first pasting the clipboard is emulated by spawning a new process in which a command is executed that writes the clipboard contents to stdout. `rustpwman` can then read the output of that process and write it into the TUI.
 
-A similar problem occurs when importing existing password information into `rustpwman`. Ideally it would be possible to select the information in the other application and paste it into the terminal in which `rustpwman` is running. As a workaround there is a possibility to load data from a file into an existing entry using the `Load entry` menu entry.
+Copying to the clipboard is possible as soon as `rustpwman` has stopped. When selecting `Quit and print` from the main menu `rustpwman` is stopped and the contents of the currently selected entry is printed to the terminal window. The necessary information can now be copied from the terminal into the clipboard and pasted where needed.
+
+As an additional workaround there is a possibility to load data from a file into an existing entry using the `Load entry` menu entry.
 
 # Configuration
 
-Rustpwman uses a TOML config file for setting the default security level, the default password generator and the default PBKDF. 
+Rustpwman uses a TOML config file for setting the default security level, the default password generator, the default PBKDF and
+a CLI command which can be used retrieve the contents of the clipboard. 
 
 ```
 [defaults]
 seclevel = 18
 pbkdf = "argon2"
 pwgen = "special"
+clip_cmd = "xsel -ob"
 ```
 
 - `seclevel` has to be an integer between 0 and 23. The security level in bits is calculated as (`seclevel` + 1) * 8. 
 - `pbkdf` is a string that can assume the values `scrypt`, `argon2`, `sha256`
 - `pwgen` is one of the strings `base64`, `hex` or `special`
+- `clip_cmd` is a string which specifies a command that can be used to write the current contents of the clipboard to stdout. The default value is `xsel -ob` which works on Linux 
 
 The config file is stored in the users' home directory in a file named `.rustpwman`. To change these defaults either edit the config
 file by hand or use `rustpwman cfg` which will open a window similar to this one

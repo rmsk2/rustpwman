@@ -10,15 +10,17 @@ use std::io::Write;
 pub struct RustPwManSerialize {
     pub seclevel: usize,
     pub pbkdf: String,
-    pub pwgen: String
+    pub pwgen: String,
+    pub clip_cmd: String,
 }
 
 impl RustPwManSerialize {
-    pub fn new(seclevel: usize, pbkdf: &str, pwgen: &str) -> Self {
+    pub fn new(seclevel: usize, pbkdf: &str, pwgen: &str, clip_command: &str) -> Self {
         return RustPwManSerialize {
             seclevel: seclevel,
             pbkdf: String::from(pbkdf),
-            pwgen: String::from(pwgen)
+            pwgen: String::from(pwgen),
+            clip_cmd: String::from(clip_command),
         }
     }
 }

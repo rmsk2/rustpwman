@@ -28,7 +28,7 @@ const RENAME_EDIT_NAME: &str = "renamedit";
 const SLIDER_SEC_NAME: &str = "securityslider";
 const BITS_SEC_VALUE: &str = "securitybits";
 
-
+pub const DEFAULT_PASTE_CMD: &str = "xsel -ob";
 
 use crate::VERSION_STRING;
 use cursive::theme::ColorStyle;
@@ -92,11 +92,12 @@ pub struct AppState {
     dirty: bool,
     pw_gens: HashMap<GenerationStrategy, Box<dyn PasswordGenerator>>,
     default_security_level: usize,
-    default_generator: GenerationStrategy
+    default_generator: GenerationStrategy,
+    paste_command: String
 }
 
 impl AppState {
-    pub fn new(s: jots::Jots, f_name: &String, generators: HashMap<GenerationStrategy, Box<dyn PasswordGenerator>>, default_sec: usize, default_gen: GenerationStrategy) -> Self {
+    pub fn new(s: jots::Jots, f_name: &String, generators: HashMap<GenerationStrategy, Box<dyn PasswordGenerator>>, default_sec: usize, default_gen: GenerationStrategy, paste_cmd: &String) -> Self {
         return AppState {
             store: s,
             password: None,
@@ -104,7 +105,8 @@ impl AppState {
             dirty: false,
             pw_gens: generators,
             default_security_level: default_sec,
-            default_generator: default_gen
+            default_generator: default_gen,
+            paste_command: paste_cmd.clone()
         }
     }
 
@@ -113,7 +115,7 @@ impl AppState {
     }   
 }
 
-pub fn main_gui(data_file_name: String, default_sec_bits: usize, derive_func: KeyDeriver, deriver_id: fcrypt::KdfId, default_pw_gen: GenerationStrategy) {
+pub fn main_gui(data_file_name: String, default_sec_bits: usize, derive_func: KeyDeriver, deriver_id: fcrypt::KdfId, default_pw_gen: GenerationStrategy, paste_cmd: String) {
     let (tx, rx): (Sender<String>, Receiver<String>) = mpsc::channel();
 
     let capture_file_name = data_file_name.clone();
@@ -130,7 +132,7 @@ pub fn main_gui(data_file_name: String, default_sec_bits: usize, derive_func: Ke
             generators.insert(i, i.to_creator()());
         }
 
-        let state = AppState::new(jots_store, &f_name, generators, default_sec_bits, default_pw_gen);
+        let state = AppState::new(jots_store, &f_name, generators, default_sec_bits, default_pw_gen, &paste_cmd);
 
         if let Some(state_after_open) = open_file(s, password, state) {
             s.pop_layer(); // Close password, file init or confirmation dialog
@@ -640,6 +642,34 @@ fn generate_password(s: &mut Cursive, state_for_gen_pw: Rc<RefCell<AppState>>) {
     show_sec_bits(s, sec_bits);
 }
 
+fn insert_into_entry(s: &mut Cursive, new_pw: String) {
+    let mut entry_text = match s.call_on_name(TEXT_AREA_NAME, |view: &mut TextArea| { String::from(view.get_content()) }) {
+        Some(text_val) => {
+            text_val
+        },
+        None => { show_message(s, "Unable to read entry text"); return }
+    };
+
+    let cursor_pos = match s.call_on_name(TEXT_AREA_NAME, |view: &mut TextArea| { view.cursor() }) {
+        Some(p) => {
+            p
+        },
+        None => { show_message(s, "Unable to read cursor position"); return }
+    };
+
+    entry_text.insert_str(cursor_pos, new_pw.as_str());
+
+    s.call_on_name(TEXT_AREA_NAME, |view: &mut TextArea| { view.set_content(entry_text) });
+
+    match s.call_on_name(TEXT_AREA_NAME, |view: &mut TextArea| { view.set_cursor(cursor_pos) }) {
+        Some(_) => {
+            
+        },
+        None => { show_message(s, "Unable to set cursor position"); return }
+    };        
+
+}
+
 fn edit_entry(s: &mut Cursive, state_for_edit_entry: Rc<RefCell<AppState>>, entry_name_external: Option<Rc<String>>) {
     let entry_to_edit: String;
     let mut show_scroll_message = false;
@@ -665,6 +695,7 @@ fn edit_entry(s: &mut Cursive, state_for_edit_entry: Rc<RefCell<AppState>>, entr
     };
 
     let state_for_gen_pw = state_for_edit_entry.clone();
+    let state_for_paste = state_for_edit_entry.clone();
 
     let res = Dialog::new()
     .title("Rustpwman enter new text")
@@ -730,32 +761,27 @@ fn edit_entry(s: &mut Cursive, state_for_edit_entry: Rc<RefCell<AppState>>, entr
             };
         }
 
-        let mut entry_text = match s.call_on_name(TEXT_AREA_NAME, |view: &mut TextArea| { String::from(view.get_content()) }) {
-            Some(text_val) => {
-                text_val
-            },
-            None => { show_message(s, "Unable to read entry text"); return }
-        };
-
-        let cursor_pos = match s.call_on_name(TEXT_AREA_NAME, |view: &mut TextArea| { view.cursor() }) {
-            Some(p) => {
-                p
-            },
-            None => { show_message(s, "Unable to read cursor position"); return }
-        };
-
-        entry_text.insert_str(cursor_pos, new_pw.as_str());
-
-        s.call_on_name(TEXT_AREA_NAME, |view: &mut TextArea| { view.set_content(entry_text) });
-
-        match s.call_on_name(TEXT_AREA_NAME, |view: &mut TextArea| { view.set_cursor(cursor_pos) }) {
-            Some(_) => {
-                
-            },
-            None => { show_message(s, "Unable to set cursor position"); return }
-        };        
-
+        insert_into_entry(s, new_pw);
     })
+    .button("Paste clipboard", move |s: &mut Cursive| {
+        let pasted_txt: String;
+        let paste_cmd: &String;
+
+        {
+            let app_state = &state_for_paste.borrow();
+            paste_cmd = &app_state.paste_command;
+
+            pasted_txt = match crate::clip::get_clipboard(&paste_cmd.as_str()) {
+                Some(t) => t,
+                None => {
+                    show_message(s, "Unable to get clipboard contents");
+                    return;                
+                }
+            };
+        }
+
+        insert_into_entry(s, pasted_txt);
+    })    
     .button("Cancel", move |s| { 
         s.pop_layer(); 
         if show_scroll_message_2 {
