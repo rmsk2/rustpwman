@@ -119,7 +119,7 @@ Shows an about dialog containing information about the author and the program ve
 ### Quit and print
 
 Selecting this entry ends the program and prints the value of the currently selected entry to the CLI window after
-the TUI has been closed. About the reasoning behind this idea have a look at the section [A note about the lack of the clipboard](#a-note-about-the-lack-of-the-clipboard). 
+the TUI has been closed. About the reasoning behind this idea have a look at the section [A note about using the clipboard](#a-note-about-using-the-clipboard). 
 
 ### Quit
 
@@ -174,16 +174,16 @@ According to the Rust documentation the random number generator underlying the w
 
 It has to be noted that copying and pasting text in its most basic form is not possible in a terminal window while the cursive application is running. This in turn is probably an unfixable problem as cursive by definition controls the cursor in the terminal window, which may preclude the OS from "doing its thing". 
 
-`rustpwman` works around this problem in two ways. At first pasting the clipboard is emulated by spawning a new process in which a command is executed that writes the clipboard contents to stdout. `rustpwman` can then read the output of that process and write it into the TUI.
+`rustpwman` works around this problem in two ways. At first pasting from the clipboard is emulated by spawning a new process in which a command is executed that writes the clipboard contents to stdout. `rustpwman` can then read the output of that process and write it into the TUI. `rustpwman` exxpects that the data to be read from stdout is UTF-8 encoded.
 
-Copying to the clipboard is possible as soon as `rustpwman` has stopped. When selecting `Quit and print` from the main menu `rustpwman` is stopped and the contents of the currently selected entry is printed to the terminal window. The necessary information can now be copied from the terminal into the clipboard and pasted where needed.
+Secondly copying to the clipboard is possible as soon as `rustpwman` has stopped. When selecting `Quit and print` from the main menu `rustpwman` is stopped and the contents of the currently selected entry is printed to the terminal window. The necessary information can now be copied from the terminal into the clipboard and pasted where needed.
 
 As an additional workaround there is a possibility to load data from a file into an existing entry using the `Load entry` menu entry.
 
 # Configuration
 
 Rustpwman uses a TOML config file for setting the default security level, the default password generator, the default PBKDF and
-a CLI command which can be used retrieve the contents of the clipboard. 
+a CLI command which can be used to retrieve the contents of the clipboard. 
 
 ```
 [defaults]
@@ -196,7 +196,11 @@ clip_cmd = "xsel -ob"
 - `seclevel` has to be an integer between 0 and 23. The security level in bits is calculated as (`seclevel` + 1) * 8. 
 - `pbkdf` is a string that can assume the values `scrypt`, `argon2`, `sha256`
 - `pwgen` is one of the strings `base64`, `hex` or `special`
-- `clip_cmd` is a string which specifies a command that can be used to write the current contents of the clipboard to stdout. The default value is `xsel -ob` which works on Linux 
+- `clip_cmd` is a string which specifies a command that can be used to write the current contents of the clipboard to stdout. 
+
+The default value for `clip_cmd` is `xsel -ob`, which works on Linux (I had to manually install `xsel` on Ubuntu 22.04). Under MacOS `pbpaste -Prefer txt` can be used.
+For usage under Windows `rustpwman` provides the ("slightly" overengineered ;-)) tool `paste_utf8.exe` which can be built in a Visual Studio developer prompt using the
+`build_paste_utf8.bat` batch file.
 
 The config file is stored in the users' home directory in a file named `.rustpwman`. To change these defaults either edit the config
 file by hand or use `rustpwman cfg` which will open a window similar to this one
