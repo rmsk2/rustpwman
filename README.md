@@ -134,7 +134,8 @@ This menu contains all operations that are supported with respect to entries.
 
 This menu entry allows to manually edit the value or contents of the currently selected password entry. After the edit dialog
 opens you can additionally either generate a random password and insert it at the current cursor position or insert the current contents
-of the clipboard at this position.
+of the clipboard at this position. See the [Configuration](#configuration) section on how to configure the *paste from clipboard* feature on
+your platform.
 
 ### Add entry
 
@@ -174,7 +175,7 @@ According to the Rust documentation the random number generator underlying the w
 
 It has to be noted that copying and pasting text in its most basic form is not possible in a terminal window while the cursive application is running. This in turn is probably an unfixable problem as cursive by definition controls the cursor in the terminal window, which may preclude the OS from "doing its thing". 
 
-`rustpwman` works around this problem in two ways. At first pasting from the clipboard is emulated by spawning a new process in which a command is executed that writes the clipboard contents to stdout. `rustpwman` can then read the output of that process and write it into the TUI. `rustpwman` exxpects that the data to be read from stdout is UTF-8 encoded.
+`rustpwman` works around this problem in two ways. At first pasting from the clipboard is emulated by spawning a new process in which a command is executed that writes the clipboard contents to stdout. `rustpwman` can then read the output of that process and write it into the TUI. `rustpwman` expects that the data to be read from stdout is UTF-8 encoded.
 
 Secondly copying to the clipboard is possible as soon as `rustpwman` has stopped. When selecting `Quit and print` from the main menu `rustpwman` is stopped and the contents of the currently selected entry is printed to the terminal window. The necessary information can now be copied from the terminal into the clipboard and pasted where needed.
 
@@ -235,7 +236,9 @@ default-features = false
 features = ["pancurses-backend"]
 ```
 
-In order to build `rustpwman` with the password cache feature you then have to use the command `cargo build --release --no-default-features --features pwmanclientwin`.
+In order to build `rustpwman` with the password cache feature you then have to use the command `cargo build --release --no-default-features --features pwmanclientwin`. You should
+additionally build the `paste_utf8.exe` tool by running `build_paste_utf8.bat` in a Visual Studio developer prompt which enables you to paste the clipboard contents while editing
+an entry.
 
 I have tested `rustpwman` with the `pancurses` backend in the normal `cmd.exe` console and the new [Windows Terminal](https://www.microsoft.com/en-us/p/windows-terminal/9n0dx20hk701#activetab=pivot:overviewtab). Both work well.
 
