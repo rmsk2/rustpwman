@@ -30,7 +30,7 @@ SUBCOMMANDS:
 
 The `enc` and `dec` commands can be used to reencrypt an existing data file when one wishes to switch to another password based key derivation function.
 
-You may wonder why someone writes a TUI application in 2021. The main reason is portability without creating a dependency to any of the usual GUI toolkits. `rustpwman` should work on MacOS, Linux and Windows and it should compile without the necessity to install more or less exotic toolchains.
+You may wonder why someone writes a TUI application in 2023. The main reason is portability without creating a dependency to any of the usual GUI toolkits. `rustpwman` should work on MacOS, Linux and Windows and it should compile without the necessity to install more or less exotic toolchains.
 
 # Introduction
 
@@ -64,7 +64,7 @@ It is expected that the referenced file contains encrypted password information.
 }
  ```
 
-If the referenced file does not exist the user is offered to create an empty encrypted data file using a new password and the file name specified on the command line. As a default the actual encryption key is derived from the specified password using the following calculation:
+If the referenced file does not exist the user is offered to create an empty encrypted data file using a new password and the file name specified on the command line. As a default the actual encryption key is derived using the Argon2id key derivation function. `rustpwman` also allows to alternatively use `scrypt` or to derive the key from the specified password using the following calculation:
 
 ```
 SHA-256( password | salt | password )
