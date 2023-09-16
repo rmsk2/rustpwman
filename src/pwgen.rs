@@ -112,6 +112,8 @@ impl PasswordGenerator for B64Generator {
 
         let mut help = base64::encode(buf);
         help = help.replace("=", "");
+        help = help.replace("/", "$");
+        help = help.replace("+", "!");
 
         Some(help)
     }

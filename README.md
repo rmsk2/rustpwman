@@ -30,7 +30,9 @@ SUBCOMMANDS:
 
 The `enc` and `dec` commands can be used to reencrypt an existing data file when one wishes to switch to another password based key derivation function.
 
-You may wonder why someone writes a TUI application in 2023. The main reason is portability without creating a dependency to any of the usual GUI toolkits. `rustpwman` should work on MacOS, Linux and Windows and it should compile without the necessity to install more or less exotic toolchains.
+You may wonder why someone writes a TUI application in 2023. The main reason is portability without creating a dependency to any of the usual GUI toolkits. 
+`rustpwman` should work on MacOS, Linux and Windows and it should compile without the necessity to install more or less exotic toolchains. Additionally
+I like the retro appeal of it.
 
 # Introduction
 
@@ -123,8 +125,8 @@ the TUI has been closed. About the reasoning behind this idea have a look at the
 
 ### Quit
 
-Through this menu entry the program can be closed. Before ending the program it is checked if there are unsaved changes. If there are then the user is warned correspondingly and has the possibility to not end the program in order to save the
-changed state. 
+Through this menu entry the program can be closed. Before ending the program it is checked if there are unsaved changes. If there are then the user is warned correspondingly and has the 
+possibility to not end the program in order to save the changed state. 
 
 ## The Entry menu
 
@@ -144,7 +146,7 @@ The default security level is 80 bits but this can be changed by a config file (
 
 Additionally the user is able to select the set of characters which may appear in the randomly generated password. Currently the following alternatives are offered:
 
-- Base64, where the potential padding character `=` is removed
+- Base64, where the potential padding character `=` is removed and the the special characters `/` and `+` are replaced by `$` and `!`
 - Hex
 - Special: This password generator aims to create pronouncable passwords which are constructed from the following elements: A sequence of two letter groups which consist of a consonant followed by a vowel. There are 420 such groups. Therefore when selecting one of these groups at random each one contains 8.7 bits of entropy. The final four character group is a consonant followed by a three digit number. There are 52*1000 such four character groups so it has an entropy of 15.6 Bits when one is chosen randomly.
 
@@ -168,11 +170,12 @@ Via this menu entry the contents of the currently selected password entry can be
 
 ### Load entry
 
-This allows to load the contents of a (text-)file into an entry. The current contents is overwritten without further notice to the user.
+This allows to load the contents of a (text-)file into an entry. The current contents of the entry is overwritten.
 
 # A note about using the clipboard
 
-It has to be noted that copying and pasting text in its most basic form is not possible in a terminal window while the cursive application is running. This in turn is probably an unfixable problem as cursive by definition controls the cursor in the terminal window, which may preclude the OS from "doing its thing". 
+It has to be noted that copying and pasting text in its most basic form is not possible in a terminal window while the cursive application is running. This in turn is probably 
+an unfixable problem as cursive by definition controls the cursor in the terminal window, which most likely precludes the OS from "doing its thing". 
 
 `rustpwman` works around this problem in two ways. At first pasting from the clipboard is emulated by spawning a new process in which a command is executed that writes the clipboard contents to stdout. `rustpwman` can then read the output of that process and write it into the TUI. `rustpwman` expects that the data to be read from stdout is UTF-8 encoded.
 
@@ -198,9 +201,10 @@ clip_cmd = "xsel -ob"
 - `pwgen` is one of the strings `base64`, `hex` or `special`
 - `clip_cmd` is a string which specifies a command that can be used to write the current contents of the clipboard to stdout. 
 
-The default value for `clip_cmd` is `xsel -ob`, which works on Linux (I had to manually install `xsel` on Ubuntu 22.04). Under MacOS `pbpaste -Prefer txt` can be used.
-For usage under Windows `rustpwman` provides the ("slightly" overengineered ;-)) tool `paste_utf8.exe` which can be built in a Visual Studio developer prompt using the
-`build_paste_utf8.bat` batch file.
+The default value for `clip_cmd` is `xsel -ob`, which works on Linux to retrieve the contents of the clipboard, which is filled via `CTRL+C` or after activating the `Copy` 
+item from the context menu. If you want to use the primary selection, where text only has to be selected and not explicitly copied then use `xsel -op`. Remark: I had 
+to manually install `xsel` on Ubuntu 22.04. Under MacOS `pbpaste -Prefer txt` can be used. For usage under Windows `rustpwman` provides the ("slightly" overengineered ;-))
+tool `paste_utf8.exe` which can be built in a Visual Studio developer prompt using the `build_paste_utf8.bat` batch file.
 
 The config file is stored in the users' home directory in a file named `.rustpwman`. To change these defaults either edit the config
 file by hand or use `rustpwman cfg` which will open a window similar to this one
