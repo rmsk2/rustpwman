@@ -328,6 +328,8 @@ fn process_save_command(s: &mut Cursive, state_temp_save: Rc<RefCell<AppState>>)
 }
 
 fn delete_entry(s: &mut Cursive, state_temp_del: Rc<RefCell<AppState>>) { 
+    let (danger_style, reverse_style) = get_special_styles();    
+
     match get_selected_entry_name(s) {
         Some(name) => {
             let res = Dialog::new()
@@ -335,7 +337,16 @@ fn delete_entry(s: &mut Cursive, state_temp_del: Rc<RefCell<AppState>>) {
             .padding_lrtb(2, 2, 1, 1)
             .content(
                 LinearLayout::vertical()
-                .child(TextView::new(format!("Delete entry \"{}\"?", &name)))
+                .child(
+                    LinearLayout::horizontal()
+                    .child(TextView::new("The Entry "))
+                    .child(TextView::new(name.as_str())
+                        .style(reverse_style))
+                        .child(TextView::new(" will be "))
+                        .child(TextView::new("DELETED")
+                            .style(danger_style))    
+                        .child(TextView::new(". Do you want to proceed?"))
+                )
             )
             .button("Cancel", |s| { s.pop_layer(); })            
             .button("OK", move |s| {
@@ -356,6 +367,8 @@ fn delete_entry(s: &mut Cursive, state_temp_del: Rc<RefCell<AppState>>) {
 }
 
 fn clear_entry(s: &mut Cursive, state_temp_clear: Rc<RefCell<AppState>>) { 
+    let (danger_style, reverse_style) = get_special_styles(); 
+
     match get_selected_entry_name(s) {
         Some(name) => {
             let res = Dialog::new()
@@ -363,7 +376,16 @@ fn clear_entry(s: &mut Cursive, state_temp_clear: Rc<RefCell<AppState>>) {
             .padding_lrtb(2, 2, 1, 1)
             .content(
                 LinearLayout::vertical()
-                .child(TextView::new(format!("Clear entry \"{}\"?", &name)))
+                .child(
+                    LinearLayout::horizontal()
+                    .child(TextView::new("The Entry "))
+                    .child(TextView::new(name.as_str())
+                        .style(reverse_style))
+                        .child(TextView::new(" will be "))
+                        .child(TextView::new("CLEARED")
+                            .style(danger_style))    
+                        .child(TextView::new(". Do you want to proceed?"))
+                )
             )
             .button("Cancel", |s| { s.pop_layer(); })            
             .button("OK", move |s| {
@@ -435,6 +457,20 @@ fn add_entry(s: &mut Cursive, state_for_add_entry: Rc<RefCell<AppState>>) {
     s.add_layer(res);
 }
 
+fn get_special_styles() -> (theme::Style, theme::Style) {
+    let danger_style = theme::Style {
+        effects: enumset::enum_set!(Effect::Reverse),
+        color: ColorStyle::new(ColorType::Color(Color::Rgb(255,0,0)), ColorType::Color(Color::Rgb(255, 255, 255))),
+    };
+
+    let reverse_style = theme::Style {
+        effects: enumset::enum_set!(Effect::Simple),
+        color: ColorStyle::new(ColorType::Color(Color::Rgb(255, 255, 255)), PaletteColor::Background),
+    };
+
+    return (danger_style, reverse_style);    
+}
+
 fn load_entry(s: &mut Cursive, state_for_add_entry: Rc<RefCell<AppState>>) {
     let entry_name = match get_selected_entry_name(s) {
         Some(name) => name,
@@ -444,15 +480,7 @@ fn load_entry(s: &mut Cursive, state_for_add_entry: Rc<RefCell<AppState>>) {
         }
     }; 
 
-    let danger_style = theme::Style {
-        effects: enumset::enum_set!(Effect::Reverse),
-        color: ColorStyle::new(ColorType::Color(Color::Rgb(255,0,0)), ColorType::Color(Color::Rgb(255, 255, 255))),
-    };
-
-    let reverse_style = theme::Style {
-        effects: enumset::enum_set!(Effect::Simple),
-        color: ColorStyle::new(ColorType::Color(Color::Rgb(255, 255, 255)), PaletteColor::Background),
-    };    
+    let (danger_style, reverse_style) = get_special_styles();    
 
     let res = Dialog::new()
     .title("Rustpwman load entry from file")
@@ -476,8 +504,10 @@ fn load_entry(s: &mut Cursive, state_for_add_entry: Rc<RefCell<AppState>>) {
                 .child(TextView::new(" will be "))
                 .child(TextView::new("OVERWRITTEN")
                     .style(danger_style))
+                .child(TextView::new(". Do you want to proceed?"))
         )
     )
+    .button("Cancel", |s| { s.pop_layer(); })                
     .button("OK", move |s| {
         let file_name = match s.call_on_name(EDIT_FILE_NAME, |view: &mut EditView| { view.get_content() }) {
             Some(name) => {
@@ -498,8 +528,7 @@ fn load_entry(s: &mut Cursive, state_for_add_entry: Rc<RefCell<AppState>>) {
         state_for_add_entry.borrow_mut().dirty = true;
         s.pop_layer();
         display_entry(s, state_for_add_entry.clone(), &entry_name, true);
-    })
-    .button("Cancel", |s| { s.pop_layer(); });                
+    });
     
     s.add_layer(res);
 }
