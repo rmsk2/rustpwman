@@ -564,14 +564,6 @@ fn select_default_pw_generator_type(s: &mut Cursive, selector: &mut HashMap<Gene
 }
 
 fn generate_password(s: &mut Cursive, state_for_gen_pw: Rc<RefCell<AppState>>) {
-    let entry_name = match get_selected_entry_name(s) {
-        Some(name) => name,
-        None => {
-            show_message(s, "Unable to determine selected entry"); 
-            return; 
-        }
-    }; 
-
     let sec_bits = state_for_gen_pw.borrow().get_default_bits();
     let default_strategy = state_for_gen_pw.borrow().default_generator;
 
@@ -628,11 +620,6 @@ fn generate_password(s: &mut Cursive, state_for_gen_pw: Rc<RefCell<AppState>>) {
         .child(linear_layout)
     )
     .button("OK", move |s| {
-        let mut value = match state_for_gen_pw.borrow().store.get(&entry_name) {
-            Some(c) => c,
-            None => { show_message(s, "Unable to read value of entry"); return }
-        };
-
         let rand_bytes = match s.call_on_name(SLIDER_SEC_NAME, |view: &mut SliderView| { view.get_value() }) {
             Some(v) => v,
             None => { show_message(s, "Unable to determine security level"); return }
@@ -657,13 +644,8 @@ fn generate_password(s: &mut Cursive, state_for_gen_pw: Rc<RefCell<AppState>>) {
             };
         }
 
-        value.push_str(&new_pw);
-        value.push_str("\n");
-
-        state_for_gen_pw.borrow_mut().store.insert(&entry_name, &value);
-        state_for_gen_pw.borrow_mut().dirty = true;
-        s.pop_layer();
-        display_entry(s, state_for_gen_pw.clone(), &entry_name, true);        
+        insert_into_entry(s, new_pw);
+        s.pop_layer();        
     })
     .button("Cancel", |s| { s.pop_layer(); });
     
@@ -767,30 +749,7 @@ fn edit_entry(s: &mut Cursive, state_for_edit_entry: Rc<RefCell<AppState>>, entr
         }
     })
     .button("Insert Password", move |s: &mut Cursive| {
-        let new_pw: String;
-
-        {
-            let app_state = &mut state_for_gen_pw.borrow_mut();
-            let strategy = app_state.default_generator;
-            let sec_level = app_state.default_security_level + 1;
-
-            let generator_map: &mut HashMap<GenerationStrategy, Box<dyn PasswordGenerator>> = &mut app_state.pw_gens;
-            
-            let generator: &mut Box<dyn PasswordGenerator> = match generator_map.get_mut(&strategy) {
-                None => { show_message(s, "Unable create generator"); return },
-                Some(g) => g
-            };
-    
-            new_pw = match generator.gen_password(sec_level) {
-                Some(pw) => pw,
-                None => {
-                    show_message(s, "Unable to generate password"); 
-                    return;
-                }
-            };
-        }
-
-        insert_into_entry(s, new_pw);
+        generate_password(s, state_for_gen_pw.clone());
     })
     .button("Paste clipboard", move |s: &mut Cursive| {
         let pasted_txt: String;
@@ -1033,7 +992,7 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
     let state_temp_pw = shared_state.clone();
     let state_temp_edit = shared_state.clone();
     let state_temp_load = shared_state.clone();
-    let state_temp_pw_gen = shared_state.clone();
+    //let state_temp_pw_gen = shared_state.clone();
     let state_temp_clear = shared_state.clone();
     let state_temp_rename = shared_state.clone();
     let state_temp_write_chache = shared_state.clone();
@@ -1121,9 +1080,6 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
             })                    
             .leaf("Load Entry ...", move |s| {
                 load_entry(s, state_temp_load.clone())  
-            })        
-            .leaf("Append password ...", move |s| {
-                generate_password(s, state_temp_pw_gen.clone())
             }));        
 
     s.set_autohide_menu(false);
