@@ -1,42 +1,13 @@
 # rustpwman
 
-A simple password manager written in Rust using the [cursive TUI library](https://github.com/gyscos/cursive).
-
-The password manager offers the following functionality:
-
-```
-rustpwman 0.9.0
-Martin Grap <rmsk2@gmx.de>
-A password manager for the cursive TUI in Rust
-
-USAGE:
-    rustpwman [SUBCOMMAND]
-
-FLAGS:
-    -h, --help       
-            Prints help information
-
-    -V, --version    
-            Prints version information
-
-
-SUBCOMMANDS:
-    cfg     Change configuration
-    dec     Decrypt file
-    enc     Encrypt file
-    gui     Open file in TUI
-    help    Prints this message or the help of the given subcommand(s)
-```
-
-The `enc` and `dec` commands can be used to reencrypt an existing data file when one wishes to switch to another password based key derivation function.
-
-You may wonder why someone writes a TUI application in 2023. The main reason is portability without creating a dependency to any of the usual GUI toolkits. 
-`rustpwman` should work on MacOS, Linux and Windows and it should compile without the necessity to install more or less exotic toolchains. Additionally
-I like the retro appeal of it.
+A simple password manager written in Rust using the [cursive TUI library](https://github.com/gyscos/cursive). You may wonder why someone writes a TUI application in 2023. 
+The main reason is portability without creating a dependency to any of the usual GUI toolkits. `rustpwman` should work on MacOS, Linux and Windows and it should compile
+without the necessity to install more or less exotic (or maybe even toxic) toolchains. Additionally I like the retro appeal of it.
 
 # Introduction
 
-The basic concept of `rustpwman` is to manage a set of entries which have a value or content. The entries are presented in a flat list and no further structuring is offered at the moment. In order to start the programm use
+The basic concept of `rustpwman` is to manage a set of entries which have a value or content. The entries are presented in a flat list and no further structuring is offered at 
+the moment. In order to start the programm use
 
 ```
 rustpwman gui -i <file_name>
@@ -46,12 +17,12 @@ or `cargo run --release -- gui -i <file_name>` which will result, after a succes
 
 ![](/screenshot.png?raw=true "Screenshot of rustpwman")
 
-If the file specified through the `-i` parameter does not exist `rustpwman` will create a new data file using that name 
-after you have supplied a suitable password.
+If the file specified through the `-i` parameter does not exist `rustpwman` will create a new data file using that name after you have supplied a suitable password.
 
 ## About the crypto
 
-It is expected that the referenced file contains encrypted password information. `rustpwman` encrypts its data at rest using AES-256 in GCM mode with a 128 bit tag length and a 96 bit nonce. The encrypted data file is a simple JSON data structure. This may serve as an example:
+`rustpwman` encrypts its data at rest using AES-256 in GCM mode with a 128 bit tag length and a 96 bit nonce. The encrypted data file is a simple JSON data structure. 
+This may serve as an example:
 
 ```
 {
@@ -66,13 +37,17 @@ It is expected that the referenced file contains encrypted password information.
 }
  ```
 
-If the referenced file does not exist the user is offered to create an empty encrypted data file using a new password and the file name specified on the command line. As a default the actual encryption key is derived using the Argon2id key derivation function. `rustpwman` also allows to alternatively use `scrypt` or to derive the key from the specified password using the following calculation:
+As a default the actual encryption key is derived from the entered password using the Argon2id key derivation function. `rustpwman` also allows to alternatively use `scrypt` 
+or to derive the key from the specified password using the following calculation:
 
 ```
 SHA-256( password | salt | password )
 ```
 
-where `salt` is a random value of appropriate length and `|` symbolizes concatenation. It is also possible to select this or another password based key derivation function through the `--kdf` option or by a [config file](#configuration). Currently `scrypt`, `argon2` and `sha256` are valid as a parameter for this option and as a config file entry.
+where `salt` is a random value of appropriate length and `|` symbolizes concatenation. It is also possible to select this or another password based key derivation function 
+(PBKDF) through the `--kdf` option or by a [config file](#configuration). Currently `scrypt`, `argon2` and `sha256` are valid as a parameter for this option and as a config 
+file entry.
+
 
 ## Format of payload data
 
@@ -91,7 +66,34 @@ The plaintext password data is simply stored as key value pairs in an obvious wa
 ]
 ```
 
-# Functionality
+# Getting help
+
+Calling `rustpwman help` prints information about all available commands and produces the following output 
+
+```
+A password manager for the cursive TUI in Rust
+
+Usage: rustpwman [COMMAND]
+
+Commands:
+  enc   Encrypt file
+  dec   Decrypt file
+  gui   Open file in TUI
+  cfg   Change configuration
+  gen   Generate passwords
+  help  Print this message or the help of the given subcommand(s)
+
+Options:
+  -h, --help     Print help information
+  -V, --version  Print version information
+
+```
+
+Use `rustpwman <command> -h` to get additional help for each command.
+
+# Functionality of the `gui` command
+
+This is the command you will use the most. It asks for a password and then presents the text user interface which allows you to manage the password data.
 
 ## The File menu
 The `File` menu contains the following entries.
@@ -102,13 +104,14 @@ Selecting this entry saves the encrypted data file using the password that was s
 
 ### Change password
 
-Using this entry allows to select a new password. After a new password has been selected the encrypted data file is saved automatically. The new password is also used in subsequent save operations.
-If `rustpwman` is compiled with the pwmanclient feature then the password cache is also automatically cleared, as the cached password is now incorrect.
+Using this entry allows to select a new password. After a new password has been selected the encrypted data file is saved automatically. The new password is also used in 
+subsequent save operations. If `rustpwman` is compiled with the pwmanclient feature then the password cache is also automatically cleared, as the cached password is now 
+incorrect.
 
 ### Cache password
 
-Via this entry the password of the container can be cached in [`pwman`](https://github.com/rmsk2/pwman). This item is only present if `rustpwman` is compiled with the pwmanclient feature 
-for the correct platform (see 'Optional Features' below).
+Via this entry the password of the container can be cached in [`pwman`](https://github.com/rmsk2/pwman). This item is only present if `rustpwman` is compiled with the 
+pwmanclient feature for the correct platform (see 'Optional Features' below).
 
 ### Clear cached password
 
@@ -120,8 +123,9 @@ Shows an about dialog containing information about the author and the program ve
 
 ### Quit and print
 
-Selecting this entry ends the program and prints the value of the currently selected entry to the CLI window after
-the TUI has been closed. About the reasoning behind this idea have a look at the section [A note about using the clipboard](#a-note-about-using-the-clipboard). 
+Selecting this entry ends the program and prints the value of the currently selected entry to the CLI window after the TUI has been closed. About the reasoning behind this idea have 
+a look at the section [A note about using the clipboard](#a-note-about-using-the-clipboard). Tip: You can pipe the output of `rustpwman` to a program that places the data it reads via 
+stdin in the clipboard. This works even under Windows which offers the `clip` command for this purpose. Under Linux `xsel` can be used and MacOS provieds the `pbcopy` command.
 
 ### Quit
 
@@ -134,10 +138,8 @@ This menu contains all operations that are supported with respect to entries.
 
 ### Edit entry
 
-This menu entry allows to manually edit the value or contents of the currently selected password entry. After the edit dialog
-opens you can additionally either generate a random password and insert it at the current cursor position or insert the current contents
-of the clipboard at that position. See the [Configuration](#configuration) section on how to configure the "paste from clipboard" feature on
-your platform.
+This menu entry allows to manually edit the value or contents of the currently selected password entry. After the edit dialog opens you can additionally either generate a random 
+password and insert it at the current cursor position or insert the current contents of the clipboard at that position.
 
 When inserting a random password into the current entry the user has to specify some parameters which will influence the password generation process. One parameter is the 
 security level in bits (of entropy). This describes how large the set of passwords should be from which the generator selects one at random. A security level of `k` bits 
@@ -183,10 +185,14 @@ Secondly copying to the clipboard is possible as soon as `rustpwman` has stopped
 
 As an additional workaround there is a possibility to load data from a file into an existing entry using the `Load entry` menu entry.
 
-# Configuration
+# Configuration or the functionality of the `cfg` command
 
-Rustpwman uses a TOML config file for setting the default security level, the default password generator, the default PBKDF and
-a CLI command which can be used to retrieve the contents of the clipboard. 
+Rustpwman uses a TOML config file for setting the default security level for newly generated passwords, the default password generator, the default PBKDF 
+and a CLI command which can be used to retrieve the contents of the clipboard. The most convenient way to edit the config file is to use the `rustpwman cfg` 
+command which will open a window similar to this one
+
+![](/scrshot_cfg.png?raw=true "Screenshot of rustpwman cfg")
+
 
 ```
 [defaults]
@@ -206,10 +212,20 @@ item from the context menu. If you want to use the primary selection, where text
 to manually install `xsel` on Ubuntu 22.04. Under MacOS `pbpaste -Prefer txt` can be used. For usage under Windows `rustpwman` provides the ("slightly" overengineered ;-))
 tool `paste_utf8.exe` which can be built in a Visual Studio developer prompt using the `build_paste_utf8.bat` batch file.
 
-The config file is stored in the users' home directory in a file named `.rustpwman`. To change these defaults either edit the config
-file by hand or use `rustpwman cfg` which will open a window similar to this one
+The config file is stored in the users' home directory in a file named `.rustpwman` and you can alternatively edit it by hand instead of calling `rustpwman cfg`. 
 
-![](/scrshot_cfg.png?raw=true "Screenshot of rustpwman cfg")
+# Using `rustpwan` to generate passwords or the `gen` command
+
+When you run the `rustpwman gen` command you can generate one or more passwords without opening a password file. Here a screenshot of the TUI:
+
+![](/gen_command.png?raw=true "Screenshot of rustpwman gen")
+
+Tip: You can pipe the output of `rustpwman gen` into a program that copies the data it receives via stdin into the clipboard.
+
+# Using `rustpwan` to en- decrypt file or the `enc` and `dec` commands
+
+`rustpwman enc` and `rustpwman dec` can be used to en- and decrypt arbitrary files even though their main purpose is to allow you to decrypt your password data under
+one PBKDF and reencrypt that data using another key derivation function in case you want to migrate from one PBKDF to another.
 
 # Optional features
 
