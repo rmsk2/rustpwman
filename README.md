@@ -124,8 +124,11 @@ Shows an about dialog containing information about the author and the program ve
 ### Quit and print
 
 Selecting this entry ends the program and prints the value of the currently selected entry to the CLI window after the TUI has been closed. About the reasoning behind this idea have 
-a look at the section [A note about using the clipboard](#a-note-about-using-the-clipboard). Tip: You can pipe the output of `rustpwman` to a program that places the data it reads via 
-stdin in the clipboard. This works even under Windows which offers the `clip` command for this purpose. Under Linux `xsel` can be used and MacOS provieds the `pbcopy` command.
+a look at the section [A note about using the clipboard](#a-note-about-using-the-clipboard). 
+
+Tip: You can pipe the output of `rustpwman` to a program that places the data it reads via stdin in the clipboard. This works even under Windows which offers the `clip` 
+command for this purpose. Under Linux `xsel` can be used and MacOS provieds the `pbcopy` command. When you use `clip` under Windows you have to be aware that non ASCII
+characters may not be displayed correctly when pasting the data copied by `clip`.
 
 ### Quit
 
@@ -278,6 +281,7 @@ This section provides information about stuff which is in my view suboptimal and
 - I am fairly new to Rust. I guess it shows in the code.
 - On a MacBook Air 2018 using the touchpad to click elements in the TUI does not work. The problem does not manifest itself when using a mouse. Using the touchpad seems to work though on other models. I do not think that this is a hardware problem on my MacBook and I unfortunately have no idea why this happens.
 - On MacOS using the mouse scroll wheel or the Page Up/Down keys confuses cursive. This does not happen on Linux or Windows.
+- On Windows a spurious Escape sequence is the first character which is printed when using quit and print. This does not happen on Linux or MacOS.
 - In non `--release` builds scrypt with the chosen parameters is *extremely* slow
 - Source for PBKDF parameter choices https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
 
