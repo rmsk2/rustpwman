@@ -26,7 +26,7 @@ const BITS_SEC_VALUE: &str = "cfgseclevel";
 const SLIDER_SEC_NAME: &str = "cfgslider";
 const EDIT_PASTE_COMMAND: &str = "pastecmd";
 
-fn show_yes_no_decision(siv: &mut Cursive, msg: &str) {
+pub fn show_yes_no_decision(siv: &mut Cursive, msg: &str) {
     siv.add_layer(
         Dialog::text(msg)
             .title("Rustpwman")
@@ -40,7 +40,7 @@ fn show_yes_no_decision(siv: &mut Cursive, msg: &str) {
     );    
 }
 
-fn show_message(siv: &mut Cursive, msg: &str) {
+pub fn show_message(siv: &mut Cursive, msg: &str) {
     siv.add_layer(
         Dialog::text(msg)
             .title("Rustpwman")

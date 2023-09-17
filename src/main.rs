@@ -20,6 +20,7 @@ mod pwgen;
 mod modtui;
 mod tomlconfig;
 mod tuiconfig;
+mod tuigen;
 mod clip;
 #[cfg(feature = "pwmanclient")]
 mod pwman_client;
@@ -43,6 +44,7 @@ const COMMAND_ENCRYPT: &str = "enc";
 const COMMAND_DECRYPT: &str = "dec";
 const COMMAND_GUI: &str = "gui";
 const COMMAND_CONFIG: &str = "cfg";
+const COMMAND_GENERATE: &str = "gen";
 const ARG_INPUT_FILE: &str = "inputfile";
 const ARG_OUTPUT_FILE: &str = "outputfile";
 const ARG_CONFIG_FILE: &str = "cfgfile";
@@ -333,7 +335,11 @@ impl RustPwMan {
 
 
         tuiconfig::config_main(config_file_name, sec_level, pw_gen_strategy, pbkdf_id, &loaded_config.clip_cmd);
-    }    
+    }   
+
+    fn perform_generate_command(&mut self) {
+        tuigen::generate_main(self.default_sec_level, self.default_pw_gen);
+    } 
 }
 
 pub fn add_kdf_param() -> clap::Arg {
@@ -406,7 +412,11 @@ fn main() {
                     .short('c')
                     .long(ARG_CONFIG_FILE)
                     .num_args(1)
-                    .help("Name of config file. Default is .rustpwman")));                    
+                    .help("Name of config file. Default is .rustpwman")))
+        .subcommand(
+            Command::new(COMMAND_GENERATE)
+                .about("Generate passwords")
+        );                    
 
     let mut rustpwman = RustPwMan::new();
     rustpwman.load_config();
@@ -428,6 +438,9 @@ fn main() {
                 },   
                 (COMMAND_CONFIG, cfg_matches) => {
                     rustpwman.perform_config_command(cfg_matches);
+                },
+                (COMMAND_GENERATE, _) => {
+                    rustpwman.perform_generate_command();
                 },
                 (&_, _) => panic!("Can not happen")           
             }
