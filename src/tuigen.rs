@@ -26,7 +26,7 @@ use crate::tuiconfig;
 const GEN_BITS_SEC_VALUE: &str = "genseclevel";
 const GEN_SLIDER_SEC_NAME: &str = "genslider";
 const GEN_SLIDER_NUM_PW_NAME: &str = "genslidernumpw";
-const GEN_NUM_PW_VALUE: &str = "genpwlen";
+const GEN_NUM_PW_VALUE: &str = "gennumpwval";
 const GEN_DIALOG: &str = "pwgendialog";
 const MAX_NUM_PASSWORDS: usize = 16;
 const NUM_PW_DEFAULT: usize = 0;
