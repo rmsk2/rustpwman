@@ -32,7 +32,6 @@ pub const DEFAULT_PASTE_CMD: &str = "xsel -ob";
 
 use crate::VERSION_STRING;
 use cursive::theme::ColorStyle;
-//use cursive::direction::Direction;
 use cursive::traits::*;
 use cursive::views::{Dialog, LinearLayout, TextView, EditView, SelectView, TextArea, Panel, SliderView, RadioGroup, RadioButton, DialogFocus};
 use cursive::Cursive;
@@ -992,7 +991,6 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
     let state_temp_pw = shared_state.clone();
     let state_temp_edit = shared_state.clone();
     let state_temp_load = shared_state.clone();
-    //let state_temp_pw_gen = shared_state.clone();
     let state_temp_clear = shared_state.clone();
     let state_temp_rename = shared_state.clone();
     let state_temp_write_chache = shared_state.clone();
