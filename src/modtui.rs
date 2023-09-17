@@ -186,12 +186,12 @@ pub fn main_gui(data_file_name: String, default_sec_bits: usize, derive_func: Ke
 }
 
 fn do_quit(s: &mut Cursive, sender: Rc<Sender<String>>, message: String) {
-    s.quit();
-
     match sender.send(message) {
         Ok(_) => (),
         Err(_) => ()
     };
+    
+    s.quit();
 }
 
 fn pwman_quit(s: &mut Cursive, sender: Rc<Sender<String>>, message: String, dirty_bit: bool)
