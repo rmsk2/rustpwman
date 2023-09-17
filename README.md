@@ -37,7 +37,7 @@ This may serve as an example:
 }
  ```
 
-As a default the actual encryption key is derived from the entered password using the Argon2id key derivation function. `rustpwman` also allows to alternatively use `scrypt` 
+As a default the actual encryption key is derived from the entered password using the `Argon2id` key derivation function. `rustpwman` also allows to alternatively use `scrypt` 
 or to derive the key from the specified password using the following calculation:
 
 ```
@@ -45,7 +45,7 @@ SHA-256( password | salt | password )
 ```
 
 where `salt` is a random value of appropriate length and `|` symbolizes concatenation. It is also possible to select this or another password based key derivation function 
-(PBKDF) through the `--kdf` option or by a [config file](#configuration). Currently `scrypt`, `argon2` and `sha256` are valid as a parameter for this option and as a config 
+(PBKDF) through the `--kdf` option or by a config file. Currently `scrypt`, `argon2` and `sha256` are valid as a parameter for this option and as a config 
 file entry.
 
 
@@ -193,6 +193,7 @@ command which will open a window similar to this one
 
 ![](/scrshot_cfg.png?raw=true "Screenshot of rustpwman cfg")
 
+Here is an example for `rustpwman` configuration file.
 
 ```
 [defaults]
@@ -214,7 +215,7 @@ tool `paste_utf8.exe` which can be built in a Visual Studio developer prompt usi
 
 The config file is stored in the users' home directory in a file named `.rustpwman` and you can alternatively edit it by hand instead of calling `rustpwman cfg`. 
 
-# Using `rustpwan` to generate passwords or the `gen` command
+# Using `rustpwman` to generate passwords or the `gen` command
 
 When you run the `rustpwman gen` command you can generate one or more passwords without opening a password file. Here a screenshot of the TUI:
 
