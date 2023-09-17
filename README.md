@@ -1,8 +1,8 @@
 # rustpwman
 
-A simple password manager written in Rust using the [cursive TUI library](https://github.com/gyscos/cursive). You may wonder why someone writes a TUI application in 2023. 
-The main reason is portability without creating a dependency to any of the usual GUI toolkits. `rustpwman` should work on MacOS, Linux and Windows and it should compile
-without the necessity to install more or less exotic (or maybe even toxic) toolchains. Additionally I like the retro appeal of it.
+`rustpwman` is a simple password manager written in Rust using the [cursive TUI library](https://github.com/gyscos/cursive). You may wonder why someone writes a TUI 
+application in 2023. The main reason is portability without creating a dependency to any of the usual GUI toolkits. `rustpwman` should work on MacOS, Linux and Windows and 
+it should compile without the necessity to install more or less exotic (or maybe even toxic) toolchains. Additionally I like the retro appeal of it.
 
 # Introduction
 
@@ -48,7 +48,6 @@ where `salt` is a random value of appropriate length and `|` symbolizes concaten
 (PBKDF) through the `--kdf` option or by a config file. Currently `scrypt`, `argon2` and `sha256` are valid as a parameter for this option and as a config 
 file entry.
 
-
 ## Format of payload data
 
 The plaintext password data is simply stored as key value pairs in an obvious way using JSON. There is not much more to know than shown in this example: 
@@ -65,6 +64,9 @@ The plaintext password data is simply stored as key value pairs in an obvious wa
   }
 ]
 ```
+
+Due to this extreme simplicity the password files created by `rustpwman` are really compact. The file which holds my passwords (having about 50 entries) is less than 16 KB in 
+size.
 
 # Getting help
 
@@ -127,7 +129,7 @@ Selecting this entry ends the program and prints the value of the currently sele
 a look at the section [A note about using the clipboard](#a-note-about-using-the-clipboard). 
 
 Tip: You can pipe the output of `rustpwman` to a program that places the data it reads via stdin in the clipboard. This works even under Windows which offers the `clip` 
-command for this purpose. Under Linux `xsel` can be used and MacOS provieds the `pbcopy` command. When you use `clip` under Windows you have to be aware that non ASCII
+command for this purpose. Under Linux `xsel` can be used and MacOS provides the `pbcopy` command. When you use `clip` under Windows you have to be aware that non ASCII
 characters may not be displayed correctly when pasting the data copied by `clip`.
 
 ### Quit
@@ -196,7 +198,7 @@ command which will open a window similar to this one
 
 ![](/scrshot_cfg.png?raw=true "Screenshot of rustpwman cfg")
 
-Here is an example for `rustpwman` configuration file.
+Here is an example for `rustpwman` configuration file:
 
 ```
 [defaults]
@@ -226,7 +228,7 @@ When you run the `rustpwman gen` command you can generate one or more passwords 
 
 Tip: You can pipe the output of `rustpwman gen` into a program that copies the data it receives via stdin into the clipboard.
 
-# Using `rustpwan` to en- decrypt file or the `enc` and `dec` commands
+# Using `rustpwan` to en- decrypt files or the `enc` and `dec` commands
 
 `rustpwman enc` and `rustpwman dec` can be used to en- and decrypt arbitrary files even though their main purpose is to allow you to decrypt your password data under
 one PBKDF and reencrypt that data using another key derivation function in case you want to migrate from one PBKDF to another.
