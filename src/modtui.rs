@@ -1025,7 +1025,7 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
         })
         .delimiter()
         .leaf("About ...", |s| {
-            let msg_str = format!("\n   A primitive password manager\n\nWritten by Martin Grap in 2021-2023\n\n        Version {}", VERSION_STRING);
+            let msg_str = format!("\n   A primitive password manager\n\nWritten by Martin Grap in 2021-2023\n\n           Version {}", VERSION_STRING);
             show_message(s, &msg_str[..]);
         })            
         .delimiter()

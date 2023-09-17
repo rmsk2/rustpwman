@@ -15,7 +15,6 @@ limitations under the License. */
 use cursive::traits::*;
 use cursive::views::{Dialog, LinearLayout, TextView, TextArea, SliderView, RadioGroup, EditView};
 use cursive::Cursive;
-//use cursive::event::EventResult;
 
 use crate::tomlconfig;
 use crate::tomlconfig::RustPwManSerialize;
