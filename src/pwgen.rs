@@ -171,7 +171,7 @@ impl SpecialGenerator {
             vowels: Vec::new(),
             consonants: Vec::new(),
             entropy_per_group: 8.7,
-            entropy_in_last_group: 14.6
+            entropy_in_last_group: 15.6
         };        
         
         let hc = String::from(ALL_CONSONANTS);
