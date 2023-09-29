@@ -287,6 +287,6 @@ This section provides information about stuff which is in my view suboptimal and
 - I am fairly new to Rust. I guess it shows in the code.
 - On a MacBook Air 2018 using the touchpad to click elements in the TUI does not work. The problem does not manifest itself when using a mouse. Using the touchpad seems to work though on other models. I do not think that this is a hardware problem on my MacBook and I unfortunately have no idea why this happens.
 - On MacOS using the mouse scroll wheel or the Page Up/Down keys confuses cursive. This does not happen on Linux or Windows.
-- On Windows a spurious Escape sequence `ESC[?1002l` is printed to stdout when the TUI application stops. This does not happen on Linux or MacOS. It happens less frequently when using the Windows terminal. By piping the output of `rustpwan` to `winfilter.exe` you can remove this unwanted data from the output.
+- On Windows a spurious Escape sequence `ESC[?1002l` is printed to stdout when the TUI application stops. This does not happen on Linux or MacOS. It happens less frequently when using the Windows terminal. By piping the output of `rustpwman` to `winfilter.exe` you can remove this unwanted data from the output.
 - In non `--release` builds scrypt with the chosen parameters is *extremely* slow
 
