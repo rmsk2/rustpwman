@@ -46,7 +46,7 @@ SHA-256( password | salt | password )
 
 where `salt` is a random value of appropriate length and `|` symbolizes concatenation. It is also possible to select this or another password based key derivation function 
 (PBKDF) through the `--kdf` option or by a config file. Currently `scrypt`, `argon2` and `sha256` are valid as a parameter for this option and as a config 
-file entry. As source for PBKDF parameter choices https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html has been used.
+file entry. As a source for the PBKDF parameter choices https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html has been used.
 
 ## Format of payload data
 
