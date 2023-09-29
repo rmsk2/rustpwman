@@ -228,7 +228,7 @@ When you run the `rustpwman gen` command you can generate one or more passwords 
 
 Tip: You can pipe the output of `rustpwman gen` into a program that copies the data it receives via stdin into the clipboard.
 
-# Using `rustpwan` to en- decrypt files or the `enc` and `dec` commands
+# Using `rustpwman` to en- decrypt files or the `enc` and `dec` commands
 
 `rustpwman enc` and `rustpwman dec` can be used to en- and decrypt arbitrary files even though their main purpose is to allow you to decrypt your password data under
 one PBKDF and reencrypt that data using another key derivation function in case you want to migrate from one PBKDF to another.
