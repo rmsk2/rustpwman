@@ -248,7 +248,7 @@ user is asked to confirm that it should be used. Through the correspondig dialog
 
 The good news is that it works and it even works well. I have tested the `pancurses` backend of `cursive` under Windows. The [`pancurses`](https://github.com/ihalila/pancurses) backend 
 uses a binding to a C library and requires an [installed C compiler](https://github.com/ihalila/pdcurses-sys) in order to build. On the other hand Rust itself is dependent on a C 
-compiler when used under Windows. When building `rustpwman` for Windows the `Cargo.toml` file has to be modified. The line `cursive = "0.20""` has to be removed or commencted out
+compiler when used under Windows. When building `rustpwman` for Windows the `Cargo.toml` file has to be modified. The line `cursive = "0.20"` has to be removed or commencted out
 and the following lines have to be appended to the file:
 
 ```
