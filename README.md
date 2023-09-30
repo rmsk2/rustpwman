@@ -125,7 +125,7 @@ Shows an about dialog containing information about the author and the program ve
 
 ### Count entries
 
-Shows how many entries are contained in this data file.
+Shows how many entries are present in this data file.
 
 ### Quit and print
 
