@@ -707,12 +707,23 @@ fn edit_entry(s: &mut Cursive, state_for_edit_entry: Rc<RefCell<AppState>>, entr
     let state_for_gen_pw = state_for_edit_entry.clone();
     let state_for_paste = state_for_edit_entry.clone();
 
+    let name_style = theme::Style {
+        effects: enumset::enum_set!(Effect::Simple),
+        color: ColorStyle::new(PaletteColor::View, PaletteColor::TitleSecondary),
+    };
+
     let res = Dialog::new()
     .title("Rustpwman enter new text")
     .padding_lrtb(2, 2, 1, 1)
     .content(
         LinearLayout::vertical()
-        .child(TextView::new("Please enter new text for entry.\n\n"))
+        .child(
+            LinearLayout::horizontal()
+            .child(TextView::new("Please enter new text for entry "))
+            .child(TextView::new(entry_to_edit.as_str())
+                .style(name_style))
+        )
+        .child(TextView::new("\n"))
         .child(
             LinearLayout::horizontal()
                 .child(
@@ -994,7 +1005,8 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
     let state_temp_clear = shared_state.clone();
     let state_temp_rename = shared_state.clone();
     let state_temp_write_chache = shared_state.clone();
-    let state_temp_clear_chache = shared_state.clone();      
+    let state_temp_clear_chache = shared_state.clone();
+    let state_temp_count = shared_state.clone();
     let sender = sndr.clone();
     let sender2 = sndr.clone();
 
@@ -1026,6 +1038,11 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
         .delimiter()
         .leaf("About ...", |s| {
             let msg_str = format!("\n   A primitive password manager\n\nWritten by Martin Grap in 2021-2023\n\n           Version {}", VERSION_STRING);
+            show_message(s, &msg_str[..]);
+        })
+        .leaf("Count entries ...", move |s| {
+            let num_entries = state_temp_count.borrow().store.len();
+            let msg_str = format!("\nThere are {} entries", num_entries);
             show_message(s, &msg_str[..]);
         })            
         .delimiter()

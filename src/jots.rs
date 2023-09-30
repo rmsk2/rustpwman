@@ -91,6 +91,10 @@ impl Jots {
         return Jots::new(d, kdf_id);
     }
 
+    pub fn len(&self) -> usize {
+        return self.contents.len();
+    }
+
     pub fn from_reader<T: Read>(&mut self, r: T) -> std::io::Result<()> {
         let reader = BufReader::new(r);
         let raw_struct: Vec<KvEntry> = serde_json::from_reader(reader)?;

@@ -123,6 +123,10 @@ When selecting this entry `rustpwman` attempts to remove a cached password from 
 
 Shows an about dialog containing information about the author and the program version.
 
+### Count entries
+
+Shows how many entries are contained in this data file.
+
 ### Quit and print
 
 Selecting this entry ends the program and prints the value of the currently selected entry to the CLI window after the TUI has been closed. About the reasoning behind this idea have 
