@@ -700,8 +700,6 @@ fn edit_entry(s: &mut Cursive, state_for_edit_entry: Rc<RefCell<AppState>>, entr
         }
     }
 
-    let show_scroll_message_2 = show_scroll_message.clone();
-
     let content = match state_for_edit_entry.borrow().store.get(&entry_to_edit) {
         Some(c) => c,
         None => { show_message(s, "Unable to read value of entry"); return }
@@ -785,7 +783,7 @@ fn edit_entry(s: &mut Cursive, state_for_edit_entry: Rc<RefCell<AppState>>, entr
     })    
     .button("Cancel", move |s| { 
         s.pop_layer(); 
-        if show_scroll_message_2 {
+        if show_scroll_message {
             show_message(s, "Entry created successfully. It has been selected\n but you may need to scroll to it manually.");            
         }  
     });                
