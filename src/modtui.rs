@@ -171,6 +171,33 @@ pub fn main_gui(data_file_name: String, default_sec_bits: usize, derive_func: Ke
     
 }
 
+fn open_file(s: &mut Cursive, password: &String, state: AppState) -> Option<AppState> {
+    let file_name = state.file_name.clone();
+    let mut state = state;
+    
+    if !path_exists(&file_name) {
+        match state.store.to_enc_file(&file_name, password) {
+            Ok(_) => (),
+            Err(_) => {
+                show_message(s, &format!("Unable to initialize file\n\n{}", &file_name));
+                return None;
+            }
+        }
+    }
+
+    match state.store.from_enc_file(&file_name, password) {
+        Ok(_) => { },
+        Err(e) => {
+            show_pw_error(s, &format!("Unable to read file '{}'\n\nError: '{:?}'", file_name, e));
+            return None;                
+        }
+    }
+
+    state.password = Some(password.clone());
+
+    return Some(state);
+}
+
 fn do_quit(s: &mut Cursive, sender: Rc<Sender<String>>, message: String) {
     match sender.send(message) {
         Ok(_) => (),
@@ -471,33 +498,6 @@ fn show_pw_error(siv: &mut Cursive, msg: &str) {
                 s.call_on_name("pwdialog", |view: &mut Dialog| {view.set_focus(DialogFocus::Content)});
             }),
     );
-}
-
-fn open_file(s: &mut Cursive, password: &String, state: AppState) -> Option<AppState> {
-    let file_name = state.file_name.clone();
-    let mut state = state;
-    
-    if !path_exists(&file_name) {
-        match state.store.to_enc_file(&file_name, password) {
-            Ok(_) => (),
-            Err(_) => {
-                show_message(s, &format!("Unable to initialize file\n\n{}", &file_name));
-                return None;
-            }
-        }
-    }
-
-    match state.store.from_enc_file(&file_name, password) {
-        Ok(_) => { },
-        Err(e) => {
-            show_pw_error(s, &format!("Unable to read file '{}'\n\nError: '{:?}'", file_name, e));
-            return None;                
-        }
-    }
-
-    state.password = Some(password.clone());
-
-    return Some(state);
 }
 
 
