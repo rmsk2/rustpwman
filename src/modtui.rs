@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+mod cache;
+
 pub const PW_MAX_SEC_LEVEL: usize = 24;
 
 const PW_WIDTH: usize = 35;
@@ -59,29 +61,9 @@ use crate::fcrypt;
 use crate::jots;
 #[cfg(feature = "pwmanclient")]
 use crate::pwman_client::PWManClient;
-#[cfg(feature = "pwmanclientux")]
-use crate::pwman_client_ux::UDSClient;
-#[cfg(feature = "pwmanclientwin")]
-use crate::pwman_client_win::UDSClientWin;
 
 pub fn path_exists(path: &str) -> bool {
     fs::metadata(path).is_ok()
-}
-
-#[cfg(feature = "pwmanclientux")]
-fn make_pwman_client(file_name: String) -> std::io::Result<Box<dyn PWManClient>>{
-    match UDSClient::new(file_name) {
-        Ok(c) => return Ok(Box::new(c)),
-        Err(e) => return Err(e)
-    }
-}
-
-#[cfg(feature = "pwmanclientwin")]
-fn make_pwman_client(file_name: String) -> std::io::Result<Box<dyn PWManClient>>{
-    match UDSClientWin::new(file_name) {
-        Ok(c) => return Ok(Box::new(c)),
-        Err(e) => return Err(e)
-    }
 }
 
 pub struct AppState {
@@ -143,7 +125,7 @@ pub fn main_gui(data_file_name: String, default_sec_bits: usize, derive_func: Ke
     if path_exists(&data_file_name) {
         let file_name_for_uds_client = data_file_name.clone();
 
-        match make_pwman_client(file_name_for_uds_client.clone()) {
+        match cache::make_pwman_client(file_name_for_uds_client.clone()) {
             Ok(c) => {
                 match c.get_password() {
                     Ok(password) => {
@@ -915,7 +897,7 @@ fn change_password(s: &mut Cursive, state_for_pw_change: Rc<RefCell<AppState>>) 
             s.pop_layer();
 
             #[cfg(feature = "pwmanclient")]
-            uncache_password(s, state_for_pw_change.clone());
+            cache::uncache_password(s, state_for_pw_change.clone());
         })
         .button("Cancel", |s| { s.pop_layer(); })
         .with_name(DLG_PW_CH);
@@ -923,74 +905,6 @@ fn change_password(s: &mut Cursive, state_for_pw_change: Rc<RefCell<AppState>>) 
     s.add_layer(res);
 }
 
-#[cfg(feature = "pwmanclient")]
-fn cache_password(s: &mut Cursive, state_for_write_cache: Rc<RefCell<AppState>>) {
-    let pw_option = state_for_write_cache.borrow().password.clone();
-    let file_name = state_for_write_cache.borrow().file_name.clone();
-    let password : String;
-    let client: Box<dyn PWManClient>;
-
-    if let Some(p) = pw_option {
-        password = p;
-    } else {
-        show_message(s, "No password found in application state");
-        return;
-    }
-
-    let c = make_pwman_client(file_name);
-    if let Ok(cl) = c {
-        client = cl;
-    } else {
-        show_message(s, "Unable to construct PWMAN client");
-        return;
-    }
-
-    match client.set_password(&password) {
-        Ok(_) => {
-            show_message(s, "Password successfully cached");
-            return;
-        },
-        Err(e) => {
-            show_message(s, format!("Could not cache password: {}", e).as_str());
-            return;
-        }
-    }
-}
-
-#[cfg(feature = "pwmanclient")]
-fn uncache_password(s: &mut Cursive, state_for_write_cache: Rc<RefCell<AppState>>) {
-    let file_name = state_for_write_cache.borrow().file_name.clone();
-    let client: Box<dyn PWManClient>;
-
-    let c = make_pwman_client(file_name);
-    if let Ok(cl) = c {
-        client = cl;
-    } else {
-        show_message(s, "Unable to construct PWMAN client");
-        return;
-    }
-
-    match client.reset_password() {
-        Ok(_) => {
-            show_message(s, "Cache cleared");
-            return;
-        },
-        Err(e) => {
-            show_message(s, format!("Could not clear cache: {}", e).as_str());
-            return;
-        }
-    }
-}
-
-#[cfg(not(feature = "pwmanclient"))]
-fn cache_password(s: &mut Cursive, _state_for_write_cache: Rc<RefCell<AppState>>) {
-    show_message(s, "Sorry this feature is not available in this build") 
-}
-
-#[cfg(not(feature = "pwmanclient"))]
-fn uncache_password(s: &mut Cursive, _state_for_write_cache: Rc<RefCell<AppState>>) {
-    show_message(s, "Sorry this feature is not available in this build") 
-}
 
 fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
     let select_view = SelectView::new();
@@ -1031,10 +945,10 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
             change_password(s, state_temp_pw.clone())
         })            
         .leaf("Cache password", move |s| { 
-            cache_password(s, state_temp_write_chache.clone())  
+            cache::cache_password(s, state_temp_write_chache.clone())  
         })
         .leaf("Clear cached password", move |s| { 
-            uncache_password(s, state_temp_clear_chache.clone())  
+            cache::uncache_password(s, state_temp_clear_chache.clone())  
         })
         .delimiter()
         .leaf("About ...", |s| {
