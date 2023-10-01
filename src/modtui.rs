@@ -151,10 +151,10 @@ pub fn main_gui(data_file_name: String, default_sec_bits: usize, derive_func: Ke
 
     #[cfg(not(feature = "pwmanclient"))]
     if path_exists(&data_file_name) {
-        let d = password_entry_dialog(sender.clone(), pw_callback);
+        let d = pwentry::dialog(sender.clone(), pw_callback);
         siv.add_layer(d);
     } else {
-        let d = file_init_dialog(sender.clone(), pw_callback);
+        let d = init::dialog(sender.clone(), pw_callback);
         siv.add_layer(d);
     }
 
