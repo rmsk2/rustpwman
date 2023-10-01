@@ -182,7 +182,10 @@ pub fn main_gui(data_file_name: String, default_sec_bits: usize, derive_func: Ke
         Err(_) => String::from("Unable to receive message")
     };
 
-    println!("{}", message);
+    if message != "" {
+        println!("{}", message);
+    }
+    
 }
 
 fn do_quit(s: &mut Cursive, sender: Rc<Sender<String>>, message: String) {
