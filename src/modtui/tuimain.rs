@@ -16,6 +16,7 @@ use super::AppState;
 use super::main_window;
 use super::path_exists;
 use super::pwentry;
+#[cfg(feature = "pwmanclient")]
 use super::cache;
 use super::init;
 

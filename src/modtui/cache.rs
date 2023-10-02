@@ -95,7 +95,7 @@ pub fn uncache_password(s: &mut Cursive, state_for_write_cache: Rc<RefCell<AppSt
 }
 
 #[cfg(not(feature = "pwmanclient"))]
-pub fn cache_password(s: &mut Cursive, _state_for_write_cache: Rc<RefCell<AppState>>) {
+pub fn password(s: &mut Cursive, _state_for_write_cache: Rc<RefCell<AppState>>) {
     show_message(s, "Sorry this feature is not available in this build") 
 }
 
