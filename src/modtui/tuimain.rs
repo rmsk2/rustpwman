@@ -46,6 +46,26 @@ pub fn main(data_file_name: String, default_sec_bits: usize, derive_func: KeyDer
     });
 
     #[cfg(feature = "pwmanclient")]
+    handle_password_entry_with_pwman(&mut siv, &data_file_name, sender, pw_callback);
+
+    #[cfg(not(feature = "pwmanclient"))]
+    handle_password_entry_without_pwman(&mut siv, &data_file_name, sender, pw_callback);
+
+    siv.run();
+
+    let message = match rx.recv() {
+        Ok(s) => s,
+        Err(_) => String::from("Unable to receive message")
+    };
+
+    if message != "" {
+        println!("{}", message);
+    }
+    
+}
+
+#[cfg(feature = "pwmanclient")]
+fn handle_password_entry_with_pwman(siv: &mut Cursive, data_file_name: &String, sender: Rc<Sender<String>>, pw_callback: Box<dyn Fn(&mut Cursive, &String)>) {
     if path_exists(&data_file_name) {
         let file_name_for_uds_client = data_file_name.clone();
 
@@ -71,8 +91,11 @@ pub fn main(data_file_name: String, default_sec_bits: usize, derive_func: KeyDer
         let d = init::dialog(sender.clone(), pw_callback);
         siv.add_layer(d);
     }
+}
 
-    #[cfg(not(feature = "pwmanclient"))]
+
+#[cfg(not(feature = "pwmanclient"))]
+fn handle_password_entry_without_pwman(siv: &mut Cursive, data_file_name: &String, sender: Rc<Sender<String>>, pw_callback: Box<dyn Fn(&mut Cursive, &String)>) {
     if path_exists(&data_file_name) {
         let d = pwentry::dialog(sender.clone(), pw_callback);
         siv.add_layer(d);
@@ -80,16 +103,4 @@ pub fn main(data_file_name: String, default_sec_bits: usize, derive_func: KeyDer
         let d = init::dialog(sender.clone(), pw_callback);
         siv.add_layer(d);
     }
-
-    siv.run();
-
-    let message = match rx.recv() {
-        Ok(s) => s,
-        Err(_) => String::from("Unable to receive message")
-    };
-
-    if message != "" {
-        println!("{}", message);
-    }
-    
 }
