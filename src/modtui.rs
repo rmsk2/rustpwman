@@ -24,6 +24,7 @@ mod edit;
 mod pw;
 mod pwentry;
 mod init;
+pub mod tuimain;
 
 pub const PW_MAX_SEC_LEVEL: usize = 24;
 
@@ -40,7 +41,7 @@ pub const DEFAULT_PASTE_CMD: &str = "xsel -ob";
 use crate::VERSION_STRING;
 use cursive::theme::ColorStyle;
 use cursive::traits::*;
-use cursive::views::{Dialog, LinearLayout, EditView, SelectView, TextArea, Panel, DialogFocus};
+use cursive::views::{Dialog, LinearLayout, SelectView, TextArea, Panel};
 use cursive::Cursive;
 use cursive::menu::Tree;
 use cursive::align::HAlign;
@@ -51,16 +52,13 @@ use cursive::theme::{ColorType, Effect, Color, PaletteColor};
 
 use std::rc::Rc;
 use std::cell::RefCell;
-use std::sync::mpsc::{Sender, Receiver};
-use std::sync::mpsc;
+use std::sync::mpsc::Sender;
+
 use std::fs;
 use std::collections::HashMap;
 
-use crate::pwgen;
 use crate::pwgen::GenerationStrategy;
 use crate::pwgen::PasswordGenerator;
-use crate::fcrypt::KeyDeriver;
-use crate::fcrypt;
 use crate::jots;
 
 pub fn path_exists(path: &str) -> bool {
@@ -97,118 +95,17 @@ impl AppState {
     }   
 }
 
-pub fn main_gui(data_file_name: String, default_sec_bits: usize, derive_func: KeyDeriver, deriver_id: fcrypt::KdfId, default_pw_gen: GenerationStrategy, paste_cmd: String) {
-    let (tx, rx): (Sender<String>, Receiver<String>) = mpsc::channel();
-
-    let capture_file_name = data_file_name.clone();
-    let mut siv = cursive::default();
-    let sender = Rc::new(tx);
-    let sender_main = sender.clone();
-
-    let pw_callback = Box::new(move |s: &mut Cursive, password: &String| {
-        let jots_store = jots::Jots::new(derive_func, deriver_id);
-        let f_name = capture_file_name.clone();
-        let mut generators: HashMap<GenerationStrategy, Box<dyn PasswordGenerator>> = HashMap::new();
-
-        for i in pwgen::GenerationStrategy::get_known_ids() {
-            generators.insert(i, i.to_creator()());
-        }
-
-        let state = AppState::new(jots_store, &f_name, generators, default_sec_bits, default_pw_gen, &paste_cmd);
-
-        if let Some(state_after_open) = open_file(s, password, state) {
-            s.pop_layer(); // Close password, file init or confirmation dialog
-            main_window(s, state_after_open, sender_main.clone());
-        }
-    });
-
-    #[cfg(feature = "pwmanclient")]
-    if path_exists(&data_file_name) {
-        let file_name_for_uds_client = data_file_name.clone();
-
-        match cache::make_pwman_client(file_name_for_uds_client.clone()) {
-            Ok(c) => {
-                match c.get_password() {
-                    Ok(password) => {
-                        let d = cache::password_read_from_pwman_dialog(sender.clone(), password.clone(), c, pw_callback);
-                        siv.add_layer(d);
-                    },
-                    Err(_) => {                        
-                        let d = pwentry::dialog(sender.clone(), pw_callback);
-                        siv.add_layer(d);        
-                    }
-                }
-            }
-            Err(_) => {                
-                let d = pwentry::dialog(sender.clone(), pw_callback);
-                siv.add_layer(d);
-            }
-        };
-    } else {
-        let d = init::dialog(sender.clone(), pw_callback);
-        siv.add_layer(d);
-    }
-
-    #[cfg(not(feature = "pwmanclient"))]
-    if path_exists(&data_file_name) {
-        let d = pwentry::dialog(sender.clone(), pw_callback);
-        siv.add_layer(d);
-    } else {
-        let d = init::dialog(sender.clone(), pw_callback);
-        siv.add_layer(d);
-    }
-
-    siv.run();
-
-    let message = match rx.recv() {
-        Ok(s) => s,
-        Err(_) => String::from("Unable to receive message")
-    };
-
-    if message != "" {
-        println!("{}", message);
-    }
-    
-}
-
-fn open_file(s: &mut Cursive, password: &String, state: AppState) -> Option<AppState> {
-    let file_name = state.file_name.clone();
-    let mut state = state;
-    
-    if !path_exists(&file_name) {
-        match state.store.to_enc_file(&file_name, password) {
-            Ok(_) => (),
-            Err(_) => {
-                show_message(s, &format!("Unable to initialize file\n\n{}", &file_name));
-                return None;
-            }
-        }
-    }
-
-    match state.store.from_enc_file(&file_name, password) {
-        Ok(_) => { },
-        Err(e) => {
-            show_pw_error(s, &format!("Unable to read file '{}'\n\nError: '{:?}'", file_name, e));
-            return None;                
-        }
-    }
-
-    state.password = Some(password.clone());
-
-    return Some(state);
-}
-
-fn do_quit(s: &mut Cursive, sender: Rc<Sender<String>>, message: String) {
-    match sender.send(message) {
-        Ok(_) => (),
-        Err(_) => ()
-    };
-    
-    s.quit();
-}
-
 fn pwman_quit(s: &mut Cursive, sender: Rc<Sender<String>>, message: String, dirty_bit: bool)
 {
+    fn do_quit(s: &mut Cursive, sender: Rc<Sender<String>>, message: String) {
+        match sender.send(message) {
+            Ok(_) => (),
+            Err(_) => ()
+        };
+        
+        s.quit();
+    }    
+
     let msg = message.clone();
     let sndr = sender.clone();
 
@@ -271,7 +168,7 @@ fn display_entry(siv: &mut Cursive, state: Rc<RefCell<AppState>>, entry_name: &S
     }
 }
 
-fn fill_tui(siv: &mut Cursive, state: Rc<RefCell<AppState>>) {
+fn redraw_tui(siv: &mut Cursive, state: Rc<RefCell<AppState>>) {
     let mut count = 0;
     let mut initial_entry = String::from("");
 
@@ -483,22 +380,9 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
     );
     
     s.add_layer(tui);
-    fill_tui(s, state_for_fill_tui.clone());
+    redraw_tui(s, state_for_fill_tui.clone());
 }
 
-
-fn show_pw_error(siv: &mut Cursive, msg: &str) {
-    siv.add_layer(
-        Dialog::text(msg)
-            .title("Rustpwman")
-            .button("Ok", |s| {
-                s.pop_layer();
-
-                s.call_on_name("pwedit", |view: &mut EditView| {view.set_content(String::from(""))}).unwrap()(s);
-                s.call_on_name("pwdialog", |view: &mut Dialog| {view.set_focus(DialogFocus::Content)});
-            }),
-    );
-}
 
 
 

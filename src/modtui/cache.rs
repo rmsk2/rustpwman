@@ -105,7 +105,7 @@ pub fn uncache_password(s: &mut Cursive, _state_for_write_cache: Rc<RefCell<AppS
 }
 
 #[cfg(feature = "pwmanclient")]
-pub fn password_read_from_pwman_dialog(sndr: Rc<Sender<String>>, password: String, client: Box<dyn PWManClient>, ok_cb_with_state: Box<dyn Fn(&mut Cursive, &String)>) -> Dialog {
+pub fn confirmation_dialog(sndr: Rc<Sender<String>>, password: String, client: Box<dyn PWManClient>, ok_cb_with_state: Box<dyn Fn(&mut Cursive, &String)>) -> Dialog {
     let sender = sndr.clone();
     let sender2 = sndr.clone();
 

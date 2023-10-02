@@ -9,7 +9,7 @@ use super::AppState;
 use super::show_message;
 use super::get_selected_entry_name;
 use super::display_entry;
-use super::fill_tui;
+use super::redraw_tui;
 
 const RENAME_EDIT_NAME: &str = "renamedit";
 
@@ -66,7 +66,7 @@ pub fn entry(s: &mut Cursive, state_for_rename_entry: Rc<RefCell<AppState>>) {
                 state_for_rename_entry.borrow_mut().store.remove(&old_entry_name);
                 state_for_rename_entry.borrow_mut().store.insert(&new_entry_name, &contents);
                 state_for_rename_entry.borrow_mut().dirty = true;
-                fill_tui(s, state_for_rename_entry.clone());
+                redraw_tui(s, state_for_rename_entry.clone());
                 s.pop_layer();
                 display_entry(s, state_for_rename_entry.clone(), &new_entry_name, true);
                 show_message(s, "Entry renamed successfully. The renamed entry has been selected\n but you may need to scroll to it manually.");

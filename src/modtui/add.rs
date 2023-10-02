@@ -9,7 +9,7 @@ use super::AppState;
 use super::show_message;
 use super::display_entry;
 use super::edit::entry as edit_entry;
-use super::fill_tui;
+use super::redraw_tui;
 
 const EDIT_NAME: &str = "nameedit";
 
@@ -52,7 +52,7 @@ pub fn entry(s: &mut Cursive, state_for_add_entry: Rc<RefCell<AppState>>) {
                 let new_text = String::from("New entry\n");
                 state_for_add_entry.borrow_mut().store.insert(&entry_name, &new_text);
                 state_for_add_entry.borrow_mut().dirty = true;
-                fill_tui(s, state_for_add_entry.clone());
+                redraw_tui(s, state_for_add_entry.clone());
                 s.pop_layer();
 
                 display_entry(s, state_for_add_entry.clone(), &String::from(entry_name.as_str()), true);

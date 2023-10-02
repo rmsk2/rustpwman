@@ -289,7 +289,7 @@ impl RustPwMan {
         match a {
             Some(v) => {
                 let data_file_name : String = v.clone();
-                modtui::main_gui(data_file_name, self.default_sec_level, self.default_deriver, self.default_deriver_id, self.default_pw_gen, self.paste_command.clone());
+                modtui::tuimain::main(data_file_name, self.default_sec_level, self.default_deriver, self.default_deriver_id, self.default_pw_gen, self.paste_command.clone());
             },
             None => {
                 eprintln!("Password file name missing");
