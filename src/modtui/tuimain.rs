@@ -28,6 +28,7 @@ pub fn main(data_file_name: String, default_sec_bits: usize, derive_func: KeyDer
     let sender = Rc::new(tx);
     let sender_main = sender.clone();
 
+    // stuff to run after successfull password entry
     let pw_callback = Box::new(move |s: &mut Cursive, password: &String| {
         let jots_store = jots::Jots::new(derive_func, deriver_id);
         let f_name = capture_file_name.clone();
@@ -46,11 +47,12 @@ pub fn main(data_file_name: String, default_sec_bits: usize, derive_func: KeyDer
     });
 
     #[cfg(feature = "pwmanclient")]
-    handle_password_entry_with_pwman(&mut siv, &data_file_name, sender, pw_callback);
+    setup_password_entry_with_pwman(&mut siv, &data_file_name, sender, pw_callback);
 
     #[cfg(not(feature = "pwmanclient"))]
-    handle_password_entry_without_pwman(&mut siv, &data_file_name, sender, pw_callback);
+    setup_password_entry_without_pwman(&mut siv, &data_file_name, sender, pw_callback);
 
+    // run password entry dialog
     siv.run();
 
     let message = match rx.recv() {
@@ -65,7 +67,7 @@ pub fn main(data_file_name: String, default_sec_bits: usize, derive_func: KeyDer
 }
 
 #[cfg(feature = "pwmanclient")]
-fn handle_password_entry_with_pwman(siv: &mut Cursive, data_file_name: &String, sender: Rc<Sender<String>>, pw_callback: Box<dyn Fn(&mut Cursive, &String)>) {
+fn setup_password_entry_with_pwman(siv: &mut Cursive, data_file_name: &String, sender: Rc<Sender<String>>, pw_callback: Box<dyn Fn(&mut Cursive, &String)>) {
     if path_exists(&data_file_name) {
         let file_name_for_uds_client = data_file_name.clone();
 
@@ -95,7 +97,7 @@ fn handle_password_entry_with_pwman(siv: &mut Cursive, data_file_name: &String, 
 
 
 #[cfg(not(feature = "pwmanclient"))]
-fn handle_password_entry_without_pwman(siv: &mut Cursive, data_file_name: &String, sender: Rc<Sender<String>>, pw_callback: Box<dyn Fn(&mut Cursive, &String)>) {
+fn setup_password_entry_without_pwman(siv: &mut Cursive, data_file_name: &String, sender: Rc<Sender<String>>, pw_callback: Box<dyn Fn(&mut Cursive, &String)>) {
     if path_exists(&data_file_name) {
         let d = pwentry::dialog(sender.clone(), pw_callback);
         siv.add_layer(d);
