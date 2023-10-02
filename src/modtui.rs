@@ -269,7 +269,7 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
             pw::change(s, state_temp_pw.clone())
         })            
         .leaf("Cache password", move |s| { 
-            cache::cache_password(s, state_temp_write_chache.clone())  
+            cache::password(s, state_temp_write_chache.clone())  
         })
         .leaf("Clear cached password", move |s| { 
             cache::uncache_password(s, state_temp_clear_chache.clone())  
@@ -307,10 +307,10 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
     // compilation when constructing the file_tree but I came to the opinion that in Rust conditional compilation is tied to 
     // attributes which in turn does not seem to work when chaining values together as is done above.    
     #[cfg(not(feature = "pwmanclient"))]
-    file_tree.remove(3);  // remove chache items when building without the pwmanclient feature
+    file_tree.remove(3);  // remove cache item when building without the pwmanclient feature
 
     #[cfg(not(feature = "pwmanclient"))]
-    file_tree.remove(3);  // remove chache items when building without the pwmanclient feature
+    file_tree.remove(3);  // remove cache clear item when building without the pwmanclient feature
 
     menu_bar.add_subtree(
         "File", file_tree
