@@ -53,10 +53,12 @@ pub fn generate_main(sec_level: usize, pw_gen_strategy: pwgen::GenerationStrateg
     let selected_sec_level = Rc::new(Cell::new(sec_level));
     let selected_strategy = Rc::new(Cell::new(pw_gen_strategy));
     let selected_num_pws = Rc::new(Cell::new(NUM_PW_DEFAULT));
+    let was_cancelled = Rc::new(Cell::new(true));
 
     let level = selected_sec_level.clone();
     let strategy = selected_strategy.clone();
     let num_pws = selected_num_pws.clone();
+    let wc2 = was_cancelled.clone();
 
     let mut linear_layout_pw_gen = LinearLayout::horizontal()
         .child(TextView::new("Contained characters: "));
@@ -134,6 +136,8 @@ pub fn generate_main(sec_level: usize, pw_gen_strategy: pwgen::GenerationStrateg
 
         let h2 = *(&strategy_group.selection()).clone();
         strategy.replace(h2);
+
+        wc2.replace(false);
         
         s.pop_layer();
         s.quit();
@@ -148,14 +152,17 @@ pub fn generate_main(sec_level: usize, pw_gen_strategy: pwgen::GenerationStrateg
 
     siv.run();
 
-    let mut generator = selected_strategy.get().to_creator()();
 
-    for _n in 0..selected_num_pws.get()+1 {
-        let pw = match generator.gen_password(selected_sec_level.get()) {
-            Some(s) => s,
-            None => {eprintln!("Unable to generate password"); return;}
-        };
-        
-        println!("{}", pw);        
+    if !was_cancelled.get() {
+        let mut generator = selected_strategy.get().to_creator()();
+
+        for _n in 0..selected_num_pws.get()+1 {
+            let pw = match generator.gen_password(selected_sec_level.get()) {
+                Some(s) => s,
+                None => {eprintln!("Unable to generate password"); return;}
+            };
+            
+            println!("{}", pw);        
+        }
     }
 }
