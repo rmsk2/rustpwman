@@ -95,19 +95,20 @@ impl AppState {
     }   
 }
 
-fn pwman_quit(s: &mut Cursive, sender: Rc<Sender<String>>, message: String, dirty_bit: bool)
-{
-    fn do_quit(s: &mut Cursive, sender: Rc<Sender<String>>, message: String) {
-        match sender.send(message) {
-            Ok(_) => (),
-            Err(_) => ()
-        };
-        
-        s.quit();
-    }    
+fn do_quit(s: &mut Cursive, sender: Rc<Sender<String>>, message: String) {
+    match sender.send(message) {
+        Ok(_) => (),
+        Err(_) => ()
+    };
+    
+    s.quit();
+}
 
+fn pwman_quit_with_state(s: &mut Cursive, sender: Rc<Sender<String>>, message: String, dirty_bit: bool, app_state: Option<Rc<RefCell<AppState>>>) {
     let msg = message.clone();
+    let msg2 = message.clone();
     let sndr = sender.clone();
+    let sndr2 = sender.clone();
 
     if dirty_bit {
         s.add_layer(
@@ -117,13 +118,43 @@ fn pwman_quit(s: &mut Cursive, sender: Rc<Sender<String>>, message: String, dirt
                     s.pop_layer();
                     do_quit(s, sndr.clone(), msg.clone());
                 })
-                .button("No", |s| {
+                .button("No", move |s| {
                     s.pop_layer();
+                    
+                    match &app_state {
+                        None => {},
+                        Some(state) => {
+                            ask_for_save(s, sndr2.clone(), msg2.clone(), state.clone());
+                        }
+                    }
                 })           
         );
     } else {
         do_quit(s, sender, message);
     }
+} 
+
+fn ask_for_save(s: &mut Cursive, sender: Rc<Sender<String>>, message: String, app_state: Rc<RefCell<AppState>>) {
+    s.add_layer(
+        Dialog::text("Save file and quit?")
+            .title("Rustpwman")
+            .button("Yes", move |s: &mut Cursive| {
+                s.pop_layer(); 
+                save::file(s, app_state.clone());
+
+                if !app_state.borrow().dirty {
+                    do_quit(s, sender.clone(), message.clone());
+                }
+            })
+            .button("No", |s| {
+                s.pop_layer();
+            })
+        )           
+}
+
+fn pwman_quit(s: &mut Cursive, sender: Rc<Sender<String>>, message: String, dirty_bit: bool)
+{
+    pwman_quit_with_state(s, sender, message, dirty_bit, None);
 }
 
 fn show_message(siv: &mut Cursive, msg: &str) {
@@ -246,6 +277,8 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
     let state_temp_write_chache = shared_state.clone();
     let state_temp_clear_chache = shared_state.clone();
     let state_temp_count = shared_state.clone();
+    let state_temp_quit = shared_state.clone();
+    let state_temp_quit_print = shared_state.clone();
     let sender = sndr.clone();
     let sender2 = sndr.clone();
 
@@ -298,9 +331,9 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
 
             let out_str = format!("-------- {} --------\n{}", key, value);
 
-            pwman_quit(s, sender2.clone(), out_str, state_temp_print.borrow().dirty) 
+            pwman_quit_with_state(s, sender2.clone(), out_str, state_temp_print.borrow().dirty, Some(state_temp_quit_print.clone())) 
         })            
-        .leaf("Quit", move |s| pwman_quit(s, sender.clone(), String::from(""), shared_state.borrow().dirty )
+        .leaf("Quit", move |s| pwman_quit_with_state(s, sender.clone(), String::from(""), shared_state.borrow().dirty,Some(state_temp_quit.clone()) )
     );
 
     // Ok this is really, really hacky but it works. I would have preferred to be able to simply exclude some lines from
