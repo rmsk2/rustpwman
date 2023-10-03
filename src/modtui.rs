@@ -152,9 +152,9 @@ fn ask_for_save(s: &mut Cursive, sender: Rc<Sender<String>>, message: String, ap
         )           
 }
 
-fn pwman_quit(s: &mut Cursive, sender: Rc<Sender<String>>, message: String, dirty_bit: bool)
+fn pwman_quit(s: &mut Cursive, sender: Rc<Sender<String>>, message: String)
 {
-    pwman_quit_with_state(s, sender, message, dirty_bit, None);
+    pwman_quit_with_state(s, sender, message, false, None);
 }
 
 fn show_message(siv: &mut Cursive, msg: &str) {

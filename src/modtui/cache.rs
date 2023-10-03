@@ -130,7 +130,7 @@ pub fn confirmation_dialog(sndr: Rc<Sender<String>>, password: String, client: B
                             .title("Rustpwman")
                             .button("Ok", move |s| {
                                 s.pop_layer();
-                                pwman_quit(s, sender3.clone(), String::from(""), false)
+                                pwman_quit(s, sender3.clone(), String::from(""))
                             }),
                     );                    
                 },
@@ -139,7 +139,7 @@ pub fn confirmation_dialog(sndr: Rc<Sender<String>>, password: String, client: B
                 }
             }            
         })
-        .button("Cancel", move |s| pwman_quit(s, sender.clone(), String::from(""), false));
+        .button("Cancel", move |s| pwman_quit(s, sender.clone(), String::from("")));
 
     return res;
 }

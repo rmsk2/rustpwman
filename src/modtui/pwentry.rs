@@ -49,7 +49,7 @@ pub fn dialog(sndr: Rc<Sender<String>>, ok_cb_with_state: Box<dyn Fn(&mut Cursiv
             )
         )
         .button("OK", ok_cb)
-        .button("Cancel", move |s| pwman_quit(s, sender.clone(), String::from(""), false))
+        .button("Cancel", move |s| pwman_quit(s, sender.clone(), String::from("")))
         .with_name(NAME_PWDIALOG);
 
     return res;

@@ -109,7 +109,7 @@ pub fn dialog(sndr: Rc<Sender<String>>, ok_cb: Box<dyn Fn(&mut Cursive, &String)
             )
         )
         .button("OK", verify)
-        .button("Cancel", move |s| pwman_quit(s, sender.clone(), String::from(""), false))
+        .button("Cancel", move |s| pwman_quit(s, sender.clone(), String::from("")))
         .with_name(DLG_INIT);
 
     return res;
