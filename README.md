@@ -253,18 +253,7 @@ the cached password does not match the current password of the file which is to 
 
 The good news is that it works and it even works well. I have tested the `pancurses` backend of `cursive` under Windows. The [`pancurses`](https://github.com/ihalila/pancurses) backend 
 uses a binding to a C library and requires an [installed C compiler](https://github.com/ihalila/pdcurses-sys) in order to build. On the other hand Rust itself is dependent on a C 
-compiler when used under Windows. When building `rustpwman` for Windows the `Cargo.toml` file has to be modified. The line `cursive = "0.20"` has to be removed or commencted out
-and the following lines have to be appended to the file:
-
-```
-pancurses = "0.17.0"
-pdcurses-sys = "0.7.1"
-
-[dependencies.cursive]
-version = "0.20"
-default-features = false
-features = ["pancurses-backend"]
-```
+compiler when used under Windows. 
 
 In order to build `rustpwman` with the password cache feature you then have to use the command `cargo build --release --no-default-features --features pwmanclientwin`. You should
 additionally build the `paste_utf8.exe` tool by running `build_paste_utf8.bat` in a Visual Studio developer prompt which enables you to paste the clipboard contents while editing
