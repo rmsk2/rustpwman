@@ -10,6 +10,7 @@ use super::show_message;
 use super::init::show_pw_select_error;
 use super::PW_WIDTH;
 use super::save;
+#[cfg(feature = "pwmanclient")]
 use super::cache;
 
 static PW_EDIT1_CH: &str = "pwchedit1";

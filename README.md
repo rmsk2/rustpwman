@@ -255,9 +255,9 @@ The good news is that it works and it even works well. I have tested the `pancur
 uses a binding to a C library and requires an [installed C compiler](https://github.com/ihalila/pdcurses-sys) in order to build. On the other hand Rust itself is dependent on a C 
 compiler when used under Windows. 
 
-In order to build `rustpwman` with the password cache feature you then have to use the command `cargo build --release --no-default-features --features pwmanclientwin`. You should
-additionally build the `paste_utf8.exe` tool by running `build_paste_utf8.bat` in a Visual Studio developer prompt which enables you to paste the clipboard contents while editing
-an entry. 
+In order to build `rustpwman` with the password cache feature you have to use the command `cargo build --release --no-default-features --features pwmanclientwin`. If you do not
+care about the password cache use `cargo build --release --no-default-features`. You should additionally build the `paste_utf8.exe` tool by running `build_paste_utf8.bat` in a Visual 
+Studio developer prompt which enables you to paste the clipboard contents while editing an entry. 
 
 This batch file also builds `winfilter.exe` from the rust source `winfilter.rs`. This tool copies its stdin to stdout while filtering out the Escape sequence `ESC[?1002l` from its 
 input (if it appears at the beginning of the stream). Therefore if you pipe the output of `rustpwman` through `winfilter.exe` you can cleanup `rustpwman`'s output in order to
