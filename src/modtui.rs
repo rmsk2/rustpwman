@@ -333,7 +333,7 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
 
             pwman_quit_with_state(s, sender2.clone(), out_str, state_temp_print.borrow().dirty, Some(state_temp_quit_print.clone())) 
         })            
-        .leaf("Quit", move |s| pwman_quit_with_state(s, sender.clone(), String::from(""), shared_state.borrow().dirty,Some(state_temp_quit.clone()) )
+        .leaf("Quit", move |s| pwman_quit_with_state(s, sender.clone(), String::from(""), shared_state.borrow().dirty, Some(state_temp_quit.clone()) )
     );
 
     // Ok this is really, really hacky but it works. I would have preferred to be able to simply exclude some lines from
