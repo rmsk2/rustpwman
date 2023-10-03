@@ -10,17 +10,21 @@ use super::pwman_quit;
 use super::path_exists;
 use super::AppState;
 use super::PW_WIDTH;
+use crate::fcrypt;
+
+const NAME_PWEDIT : &str = "pwedit";
+const NAME_PWDIALOG: &str = "pwdialog";
 
 pub fn dialog(sndr: Rc<Sender<String>>, ok_cb_with_state: Box<dyn Fn(&mut Cursive, &String)>) -> impl View {
     let sender = sndr.clone();
 
     let ok_cb = move |s: &mut Cursive| {
-        let pw_text = match s.call_on_name("pwedit", |view: &mut EditView| {view.get_content()}) {
+        let pw_text = match s.call_on_name(NAME_PWEDIT, |view: &mut EditView| {view.get_content()}) {
             Some(s) => s,
             None => { show_message(s, "Unable to read password"); return }
         };
 
-        if let Some(err) = crate::fcrypt::GcmContext::check_password(&pw_text) {
+        if let Some(err) = fcrypt::GcmContext::check_password(&pw_text) {
             show_message(s, &format!("Password incorrect: {:?}", err));
             return;        
         }        
@@ -39,14 +43,14 @@ pub fn dialog(sndr: Rc<Sender<String>>, ok_cb_with_state: Box<dyn Fn(&mut Cursiv
                     .child(TextView::new("Password: "))
                     .child(EditView::new()
                         .secret()
-                        .with_name("pwedit")
+                        .with_name(NAME_PWEDIT)
                         .fixed_width(PW_WIDTH))
                     .with_name("pwlinear")
             )
         )
         .button("OK", ok_cb)
         .button("Cancel", move |s| pwman_quit(s, sender.clone(), String::from(""), false))
-        .with_name("pwdialog");
+        .with_name(NAME_PWDIALOG);
 
     return res;
 }
@@ -58,8 +62,8 @@ fn show_pw_error(siv: &mut Cursive, msg: &str) {
             .button("Ok", |s| {
                 s.pop_layer();
 
-                s.call_on_name("pwedit", |view: &mut EditView| {view.set_content(String::from(""))}).unwrap()(s);
-                s.call_on_name("pwdialog", |view: &mut Dialog| {view.set_focus(DialogFocus::Content)});
+                s.call_on_name(NAME_PWEDIT, |view: &mut EditView| {view.set_content(String::from(""))}).unwrap()(s);
+                s.call_on_name(NAME_PWDIALOG, |view: &mut Dialog| {view.set_focus(DialogFocus::Content)});
             }),
     );
 }
