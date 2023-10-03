@@ -13,6 +13,7 @@ use super::AppState;
 use super::show_message;
 use super::get_selected_entry_name;
 use super::display_entry;
+use super::pwgenerate;
 
 const TEXT_AREA_NAME: &str = "textareaedit";
 
@@ -121,7 +122,7 @@ pub fn entry(s: &mut Cursive, state_for_edit_entry: Rc<RefCell<AppState>>, entry
         }
     })
     .button("Insert Password", move |s: &mut Cursive| {
-        super::pwgenerate::generate_password(s, state_for_gen_pw.clone());
+        pwgenerate::generate_password(s, state_for_gen_pw.clone());
     })
     .button("Paste clipboard", move |s: &mut Cursive| {
         let pasted_txt: String;
