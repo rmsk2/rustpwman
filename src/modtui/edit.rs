@@ -14,6 +14,7 @@ use super::show_message;
 use super::get_selected_entry_name;
 use super::display_entry;
 use super::pwgenerate;
+use crate::clip;
 
 const TEXT_AREA_NAME: &str = "textareaedit";
 
@@ -132,7 +133,7 @@ pub fn entry(s: &mut Cursive, state_for_edit_entry: Rc<RefCell<AppState>>, entry
             let app_state = &state_for_paste.borrow();
             paste_cmd = &app_state.paste_command;
 
-            pasted_txt = match crate::clip::get_clipboard(&paste_cmd.as_str()) {
+            pasted_txt = match clip::get_clipboard(&paste_cmd.as_str()) {
                 Some(t) => t,
                 None => {
                     show_message(s, "Unable to get clipboard contents");

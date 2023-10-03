@@ -10,6 +10,7 @@ use cursive::view::Selector::Name;
 use super::show_message;
 use super::pwman_quit;
 use super::PW_WIDTH;
+use crate::fcrypt;
 
 static PW_EDIT1: &str = "pwedit1";
 static PW_EDIT2: &str = "pwedit2";
@@ -67,7 +68,7 @@ fn verify_passwords_with_names(s: &mut Cursive, ok_cb: &Box<dyn Fn(&mut Cursive,
         return;
     }
 
-    if let Some(err) = crate::fcrypt::GcmContext::check_password(&pw1_text) {
+    if let Some(err) = fcrypt::GcmContext::check_password(&pw1_text) {
         show_pw_select_error(s, &format!("Password incorrect: {:?}", err), edit1, edit2, dlg);
         return;        
     }
