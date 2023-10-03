@@ -9,6 +9,8 @@ use super::AppState;
 use super::show_message;
 use super::init::show_pw_select_error;
 use super::PW_WIDTH;
+use super::save;
+use super::cache;
 
 static PW_EDIT1_CH: &str = "pwchedit1";
 static PW_EDIT2_CH: &str = "pwchedit2";
@@ -64,11 +66,11 @@ pub fn change(s: &mut Cursive, state_for_pw_change: Rc<RefCell<AppState>>) {
             let new_pw: String = (&pw1_text).to_string();
 
             state_for_pw_change.borrow_mut().password = Some(new_pw);
-            super::save::file(s, state_for_pw_change.clone());
+            save::file(s, state_for_pw_change.clone());
             s.pop_layer();
 
             #[cfg(feature = "pwmanclient")]
-            super::cache::uncache_password(s, state_for_pw_change.clone());
+            cache::uncache_password(s, state_for_pw_change.clone());
         })
         .button("Cancel", |s| { s.pop_layer(); })
         .with_name(DLG_PW_CH);
