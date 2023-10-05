@@ -47,6 +47,7 @@ pub fn main(data_file_name: String, default_sec_bits: usize, derive_func: KeyDer
         }
     });
 
+    // Add a layer for the password entry dialog
     #[cfg(feature = "pwmanclient")]
     setup_password_entry_with_pwman(&mut siv, &data_file_name, sender, pw_callback);
 
