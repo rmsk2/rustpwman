@@ -40,6 +40,7 @@ pub fn main(data_file_name: String, default_sec_bits: usize, derive_func: KeyDer
 
         let state = AppState::new(jots_store, &f_name, generators, default_sec_bits, default_pw_gen, &paste_cmd);
 
+        // No else branch is neccessary as open_file performs error handling
         if let Some(state_after_open) = pwentry::open_file(s, password, state) {
             s.pop_layer(); // Close password, file init or confirmation dialog
             main_window(s, state_after_open, sender_main.clone());
