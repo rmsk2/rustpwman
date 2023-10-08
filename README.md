@@ -143,7 +143,8 @@ possibility to not end the program in order to save the changed state.
 
 ## The Entry menu
 
-This menu contains all operations that are supported with respect to entries.
+This menu contains all operations that are supported with respect to entries. If any entry is modified then the title of the entry list is changed from `Entries` to `Entries *` until
+the file is saved. I.e. if the header is `Entries *` then there are unsaved changes.
 
 ### Edit entry
 
