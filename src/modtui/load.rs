@@ -11,6 +11,7 @@ use super::show_message;
 use super::get_selected_entry_name;
 use super::display_entry;
 use super::get_special_styles;
+use super::visualize_if_modified;
 
 const EDIT_FILE_NAME: &str = "editfile";
 
@@ -69,6 +70,7 @@ pub fn entry(s: &mut Cursive, state_for_add_entry: Rc<RefCell<AppState>>) {
 
         state_for_add_entry.borrow_mut().store.insert(&entry_name, &value);
         s.pop_layer();
+        visualize_if_modified(s, state_for_add_entry.clone());
         display_entry(s, state_for_add_entry.clone(), &entry_name, true);
     });
     

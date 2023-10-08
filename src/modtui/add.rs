@@ -10,6 +10,7 @@ use super::show_message;
 use super::display_entry;
 use super::edit::entry as edit_entry;
 use super::redraw_tui;
+use super::visualize_if_modified;
 
 const EDIT_NAME: &str = "nameedit";
 
@@ -51,6 +52,7 @@ pub fn entry(s: &mut Cursive, state_for_add_entry: Rc<RefCell<AppState>>) {
             return;
         }
 
+        visualize_if_modified(s, state_for_add_entry.clone());
         redraw_tui(s, state_for_add_entry.clone());
         s.pop_layer();
 

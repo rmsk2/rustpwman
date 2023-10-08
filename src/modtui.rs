@@ -41,7 +41,7 @@ pub const DEFAULT_PASTE_CMD: &str = "xsel -ob";
 use crate::VERSION_STRING;
 use cursive::theme::ColorStyle;
 use cursive::traits::*;
-use cursive::views::{Dialog, LinearLayout, SelectView, TextArea, Panel};
+use cursive::views::{Dialog, LinearLayout, SelectView, TextArea, Panel, NamedView, ScrollView, ResizedView};
 use cursive::Cursive;
 use cursive::menu::Tree;
 use cursive::align::HAlign;
@@ -259,6 +259,14 @@ fn get_special_styles() -> (theme::Style, theme::Style) {
     return (danger_style, reverse_style);    
 }
 
+fn visualize_if_modified(siv: &mut Cursive, state: Rc<RefCell<AppState>>) {
+    if state.borrow().store.is_dirty() {
+        siv.call_on_name("EntrySelectPanel", |view: &mut Panel<NamedView<ScrollView<ResizedView<NamedView<SelectView>>>>>| { view.set_title("Entries *"); } );
+    } else {
+        siv.call_on_name("EntrySelectPanel", |view: &mut Panel<NamedView<ScrollView<ResizedView<NamedView<SelectView>>>>>| { view.set_title("Entries"); } );
+    }
+}
+
 fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
     let select_view = SelectView::new();
     let shared_state: Rc<RefCell<AppState>> = Rc::new(RefCell::new(state));
@@ -381,11 +389,14 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
         .scrollable()
         .with_name(SCROLL_VIEW);
 
+    let entry_select_panel = Panel::new(select_view_attributed)
+        .title("Entries")
+        .with_name("EntrySelectPanel");
+
+
     let tui = LinearLayout::horizontal()
     .child(
-        Panel::new(
-            select_view_attributed)
-        .title("Entries")
+        entry_select_panel
     )
     .child(
         LinearLayout::vertical()

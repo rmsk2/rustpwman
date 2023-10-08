@@ -10,6 +10,7 @@ use super::show_message;
 use super::get_selected_entry_name;
 use super::display_entry;
 use super::redraw_tui;
+use super::visualize_if_modified;
 
 const RENAME_EDIT_NAME: &str = "renamedit";
 
@@ -65,6 +66,7 @@ pub fn entry(s: &mut Cursive, state_for_rename_entry: Rc<RefCell<AppState>>) {
             return;            
         }
 
+        visualize_if_modified(s, state_for_rename_entry.clone());
         redraw_tui(s, state_for_rename_entry.clone());
         s.pop_layer();
         display_entry(s, state_for_rename_entry.clone(), &new_entry_name, true);

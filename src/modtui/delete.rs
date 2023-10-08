@@ -9,6 +9,7 @@ use super::show_message;
 use super::get_selected_entry_name;
 use super::redraw_tui;
 use super::get_special_styles;
+use super::visualize_if_modified;
 
 
 pub fn entry(s: &mut Cursive, state_temp_del: Rc<RefCell<AppState>>) { 
@@ -35,6 +36,7 @@ pub fn entry(s: &mut Cursive, state_temp_del: Rc<RefCell<AppState>>) {
             .button("Cancel", |s| { s.pop_layer(); })            
             .button("OK", move |s| {
                 state_temp_del.borrow_mut().store.remove(&name);
+                visualize_if_modified(s, state_temp_del.clone());
                 redraw_tui(s, state_temp_del.clone());
                 s.pop_layer();
                 show_message(s, "Entry deleted successfully. The first remaning element has been selected\nYou may need to scroll to it manually."); 
