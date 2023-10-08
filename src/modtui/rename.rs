@@ -49,29 +49,26 @@ pub fn entry(s: &mut Cursive, state_for_rename_entry: Rc<RefCell<AppState>>) {
             None => { show_message(s, "Unable to read new entry name"); return }
         }; 
 
-        let old_entry_contents: Option<String>;
-        old_entry_contents = state_for_rename_entry.borrow().store.get(&old_entry_name);
 
-        let contents = match old_entry_contents {
-            None =>  { show_message(s, "Unable to read old entry"); return },
-            Some(s) => s
-        };
-
-        let new_entry_contents: Option<String>;
-        new_entry_contents = state_for_rename_entry.borrow().store.get(&new_entry_name);
-
-        match new_entry_contents {
-            Some(_) => { show_message(s, "An entry with the new name already exists"); return },
-            None => {
-                state_for_rename_entry.borrow_mut().store.remove(&old_entry_name);
-                state_for_rename_entry.borrow_mut().store.insert(&new_entry_name, &contents);
-                state_for_rename_entry.borrow_mut().dirty = true;
-                redraw_tui(s, state_for_rename_entry.clone());
-                s.pop_layer();
-                display_entry(s, state_for_rename_entry.clone(), &new_entry_name, true);
-                show_message(s, "Entry renamed successfully. The renamed entry has been selected\n but you may need to scroll to it manually.");
-            }
+        if !state_for_rename_entry.borrow().store.entry_exists(&old_entry_name) {
+            show_message(s, "Old entry does not exist"); 
+            return;
         }
+
+        if state_for_rename_entry.borrow().store.entry_exists(&new_entry_name) {
+            show_message(s, "An entry with the new name already exists"); 
+            return;
+        }
+
+        if !state_for_rename_entry.borrow_mut().store.rename(&old_entry_name, &new_entry_name) {
+            show_message(s, "Renaming entry failed"); 
+            return;            
+        }
+
+        redraw_tui(s, state_for_rename_entry.clone());
+        s.pop_layer();
+        display_entry(s, state_for_rename_entry.clone(), &new_entry_name, true);
+        show_message(s, "Entry renamed successfully. The renamed entry has been selected\n but you may need to scroll to it manually.");
     })
     .button("Cancel", |s| { s.pop_layer(); });                
     

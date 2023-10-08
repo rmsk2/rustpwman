@@ -113,7 +113,6 @@ pub fn entry(s: &mut Cursive, state_for_edit_entry: Rc<RefCell<AppState>>, entry
         }; 
 
         state_for_edit_entry.borrow_mut().store.insert(&entry_to_edit, &entry_text);
-        state_for_edit_entry.borrow_mut().dirty = true;
         display_entry(s, state_for_edit_entry.clone(), &entry_to_edit, true);
 
         s.pop_layer();

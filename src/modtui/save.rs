@@ -15,13 +15,8 @@ pub fn file(s: &mut Cursive, state_temp_save: Rc<RefCell<AppState>>) {
     let mut mut_state = state_temp_save.borrow_mut();
     let file_name = mut_state.file_name.clone();
 
-    match mut_state.store.to_enc_file(&file_name, &password) {
-        Err(e) => { 
-            show_message(s, &format!("Unable to save: {:?}", e)); 
-            return; 
-        }
-        _ => {
-            mut_state.dirty = false
-        }
-    };
+    if let Err(e) = mut_state.store.to_enc_file(&file_name, &password) {
+        show_message(s, &format!("Unable to save: {:?}", e)); 
+        return; 
+    }
 }

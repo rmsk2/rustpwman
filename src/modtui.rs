@@ -69,7 +69,6 @@ pub struct AppState {
     store: jots::Jots,
     password: Option<String>,
     file_name: String,
-    dirty: bool,
     pw_gens: HashMap<GenerationStrategy, Box<dyn PasswordGenerator>>,
     default_security_level: usize,
     default_generator: GenerationStrategy,
@@ -82,7 +81,6 @@ impl AppState {
             store: s,
             password: None,
             file_name: f_name.clone(),
-            dirty: false,
             pw_gens: generators,
             default_security_level: default_sec,
             default_generator: default_gen,
@@ -142,7 +140,7 @@ fn ask_for_save(s: &mut Cursive, sender: Rc<Sender<String>>, message: String, ap
                 s.pop_layer(); 
                 save::file(s, app_state.clone());
 
-                if !app_state.borrow().dirty {
+                if !app_state.borrow().store.is_dirty() {
                     do_quit(s, sender.clone(), message.clone());
                 }
             })
@@ -331,9 +329,9 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
 
             let out_str = format!("-------- {} --------\n{}", key, value);
 
-            pwman_quit_with_state(s, sender2.clone(), out_str, state_temp_print.borrow().dirty, Some(state_temp_quit_print.clone())) 
+            pwman_quit_with_state(s, sender2.clone(), out_str, state_temp_print.borrow().store.is_dirty(), Some(state_temp_quit_print.clone())) 
         })            
-        .leaf("Quit", move |s| pwman_quit_with_state(s, sender.clone(), String::from(""), shared_state.borrow().dirty, Some(state_temp_quit.clone()) )
+        .leaf("Quit", move |s| pwman_quit_with_state(s, sender.clone(), String::from(""), shared_state.borrow().store.is_dirty(), Some(state_temp_quit.clone()) )
     );
 
     // Ok this is really, really hacky but it works. I would have preferred to be able to simply exclude some lines from

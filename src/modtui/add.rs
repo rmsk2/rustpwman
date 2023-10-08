@@ -32,33 +32,30 @@ pub fn entry(s: &mut Cursive, state_for_add_entry: Rc<RefCell<AppState>>) {
         let entry_name = match s.call_on_name(EDIT_NAME, |view: &mut EditView| {view.get_content()}) {
             Some(entry) => {
                 if entry.len() == 0 {
-                    show_message(s, "Entry is empty"); 
+                    show_message(s, "Entry name is empty"); 
                     return;
                 }
                 entry.clone()
             },
-            None => { show_message(s, "Unable to read new entry"); return }
+            None => { show_message(s, "Unable to read new entry name"); return }
         }; 
 
-        let old_entry: Option<String>;
-
-        {
-            old_entry = state_for_add_entry.borrow().store.get(&entry_name);
+        if state_for_add_entry.borrow().store.entry_exists(&entry_name) {
+            show_message(s, "An entry with that name already exists"); 
+            return;
         }
 
-        match old_entry {
-            Some(_) => { show_message(s, "Entry already exists"); return },
-            None => {
-                let new_text = String::from("New entry\n");
-                state_for_add_entry.borrow_mut().store.insert(&entry_name, &new_text);
-                state_for_add_entry.borrow_mut().dirty = true;
-                redraw_tui(s, state_for_add_entry.clone());
-                s.pop_layer();
-
-                display_entry(s, state_for_add_entry.clone(), &String::from(entry_name.as_str()), true);
-                edit_entry(s, state_for_add_entry.clone(), Some(entry_name));
-            }
+        let new_text = String::from("New entry\n");
+        if !state_for_add_entry.borrow_mut().store.add(&entry_name, &new_text) {
+            show_message(s, "Adding new entry failed"); 
+            return;
         }
+
+        redraw_tui(s, state_for_add_entry.clone());
+        s.pop_layer();
+
+        display_entry(s, state_for_add_entry.clone(), &String::from(entry_name.as_str()), true);
+        edit_entry(s, state_for_add_entry.clone(), Some(entry_name));
     })
     .button("Cancel", |s| { s.pop_layer(); });                
     

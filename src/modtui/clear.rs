@@ -36,7 +36,6 @@ pub fn entry(s: &mut Cursive, state_temp_clear: Rc<RefCell<AppState>>) {
             .button("OK", move |s| {
                 let empty = String::from("Empty entry\n");
                 state_temp_clear.borrow_mut().store.insert(&name, &empty);
-                state_temp_clear.borrow_mut().dirty = true;
                 s.pop_layer();
                 display_entry(s, state_temp_clear.clone(), &name, true);
             });

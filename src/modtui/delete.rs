@@ -35,7 +35,6 @@ pub fn entry(s: &mut Cursive, state_temp_del: Rc<RefCell<AppState>>) {
             .button("Cancel", |s| { s.pop_layer(); })            
             .button("OK", move |s| {
                 state_temp_del.borrow_mut().store.remove(&name);
-                state_temp_del.borrow_mut().dirty = true;
                 redraw_tui(s, state_temp_del.clone());
                 s.pop_layer();
                 show_message(s, "Entry deleted successfully. The first remaning element has been selected\nYou may need to scroll to it manually."); 

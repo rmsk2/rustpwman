@@ -75,7 +75,8 @@ impl<'a> Iterator for JotsIter<'a> {
 pub struct Jots {
     pub contents: HashMap<String, String>,
     pub kdf: KeyDeriver,
-    pub kdf_id: fcrypt::KdfId
+    pub kdf_id: fcrypt::KdfId,
+    pub dirty: bool
 }
 
 impl Jots {
@@ -83,12 +84,21 @@ impl Jots {
         return Jots {
             contents: HashMap::new(),
             kdf: d,
-            kdf_id: kdf_id
+            kdf_id: kdf_id,
+            dirty: false
         };
     }
 
     pub fn new_id(d: KeyDeriver, kdf_id: fcrypt::KdfId) -> Jots {
         return Jots::new(d, kdf_id);
+    }
+
+    pub fn is_dirty(&self) -> bool {
+        return self.dirty;
+    }
+
+    pub fn mark_as_clean(&mut self) {
+        self.dirty = false;
     }
 
     pub fn len(&self) -> usize {
@@ -127,10 +137,12 @@ impl Jots {
 
     pub fn insert(&mut self, k: &String, v: &String) {
         self.contents.insert(k.clone(), v.clone());
+        self.dirty = true;
     }
 
     pub fn remove(&mut self, k: &String) {
         let _ = self.contents.remove(k);
+        self.dirty = true;
     }
 
     pub fn get(&self, k: &String) -> Option<String> {
@@ -142,6 +154,44 @@ impl Jots {
         return Some(v.clone());
     }  
 
+    // false means add has failed
+    pub fn add(&mut self, k: &String, v: &String) -> bool {
+        // Check for entry with the given name. It must not exist.
+        match self.get(k) {
+            None => {
+                self.insert(k, v);
+                return true;
+            },
+            _ => false // Entry already exists
+        }
+    }
+
+    pub fn entry_exists(&self, k: &String) -> bool {
+        match self.get(k) {
+            None => false,
+            Some(_) => true,
+        }
+    }
+
+    // false means rename has failed
+    pub fn rename(&mut self, k_old: &String, k_new: &String) -> bool {
+        // Check if entry k_old exists. It has to exist.
+        let contents = match self.get(k_old) {
+            None => { return false; },
+            Some(c) => c,
+        };
+
+        // Check if entry k_new exists. It must not exist.
+        match self.get(k_new) {
+            None => {
+                self.remove(k_old);
+                self.insert(k_new, &contents);
+                return true;
+            },
+            _ => false
+        }
+    }
+
     pub fn from_enc_file(&mut self, file_name: &str, password: &str) -> std::io::Result<()> {
         let mut ctx = fcrypt::GcmContext::new_with_kdf(self.kdf, self.kdf_id);
 
@@ -152,11 +202,12 @@ impl Jots {
         };
 
         self.from_reader(plain_data.as_slice())?;
+        self.mark_as_clean();
 
         return Ok(());
     }
 
-    pub fn to_enc_file(&self, file_name: &str, password: &str) -> std::io::Result<()> {
+    pub fn to_enc_file(&mut self, file_name: &str, password: &str) -> std::io::Result<()> {
         let mut ctx = fcrypt::GcmContext::new_with_kdf(self.kdf, self.kdf_id);
         let mut serialized: Vec<u8> = Vec::new();
 
@@ -167,6 +218,7 @@ impl Jots {
         };
 
         ctx.to_file(&enc_data, file_name)?;
+        self.mark_as_clean();
 
         return Ok(());
     }
