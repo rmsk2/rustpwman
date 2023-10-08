@@ -395,9 +395,7 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
 
 
     let tui = LinearLayout::horizontal()
-    .child(
-        entry_select_panel
-    )
+    .child(entry_select_panel)
     .child(
         LinearLayout::vertical()
         .child(Panel::new(          
