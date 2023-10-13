@@ -36,7 +36,7 @@ pub fn entry(s: &mut Cursive, state_temp_clear: Rc<RefCell<AppState>>) {
             .button("Cancel", |s| { s.pop_layer(); })            
             .button("OK", move |s| {
                 let empty = String::from("Empty entry\n");
-                state_temp_clear.borrow_mut().store.insert(&name, &empty);
+                state_temp_clear.borrow_mut().store.modify(&name, &empty);
                 s.pop_layer();
                 visualize_if_modified(s, state_temp_clear.clone());
                 display_entry(s, state_temp_clear.clone(), &name, true);

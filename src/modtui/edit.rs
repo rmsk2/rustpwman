@@ -113,7 +113,7 @@ pub fn entry(s: &mut Cursive, state_for_edit_entry: Rc<RefCell<AppState>>, entry
             None => { show_message(s, "Unable to read entry text"); return }
         }; 
 
-        state_for_edit_entry.borrow_mut().store.insert(&entry_to_edit, &entry_text);
+        state_for_edit_entry.borrow_mut().store.modify(&entry_to_edit, &entry_text);
         visualize_if_modified(s, state_for_edit_entry.clone());
         display_entry(s, state_for_edit_entry.clone(), &entry_to_edit, true);
 

@@ -20,6 +20,7 @@ use std::io::BufReader;
 use std::io::BufWriter;
 use std::io::{Error, ErrorKind};
 use crate::fcrypt;
+use crate::undo::UndoRepo;
 use fcrypt::KeyDeriver;
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -76,7 +77,8 @@ pub struct Jots {
     pub contents: HashMap<String, String>,
     pub kdf: KeyDeriver,
     pub kdf_id: fcrypt::KdfId,
-    pub dirty: bool
+    pub dirty: bool,
+    pub undoer: UndoRepo<String, String>
 }
 
 impl Jots {
@@ -85,7 +87,8 @@ impl Jots {
             contents: HashMap::new(),
             kdf: d,
             kdf_id: kdf_id,
-            dirty: false
+            dirty: false,
+            undoer: UndoRepo::<String, String>::new()
         };
     }
 
@@ -99,6 +102,7 @@ impl Jots {
 
     pub fn mark_as_clean(&mut self) {
         self.dirty = false;
+        self.undoer.clear();
     }
 
     pub fn len(&self) -> usize {
@@ -135,14 +139,50 @@ impl Jots {
         (&self.contents).iter().for_each(|i| {println!("{}: {}", i.0, i.1);} );
     }    
 
-    pub fn insert(&mut self, k: &String, v: &String) {
+    fn insert_int(&mut self, k: &String, v: &String) {
         self.contents.insert(k.clone(), v.clone());
         self.dirty = true;
     }
 
-    pub fn remove(&mut self, k: &String) {
+    fn remove_int(&mut self, k: &String) {
         let _ = self.contents.remove(k);
         self.dirty = true;
+    }
+
+    pub fn modify(&mut self, k: &String, v: &String) {
+        let old_value = match self.get(k) {
+            Some(o) => o,
+            None => return
+        };
+
+        self.insert_int(k, v);
+
+        let msg = format!("Modify entry '{}'", k);
+        let old_key = k.clone();
+
+        self.undoer.push(&msg, Box::new(move |s: &mut HashMap<String, String>| -> bool {
+            s.insert(old_key.clone(), old_value.clone());
+    
+            return true;
+        }));
+    }
+
+    pub fn delete(&mut self, k: &String) {
+        let old_value = match self.get(k) {
+            Some(o) => o,
+            None => return
+        };
+
+        self.remove_int(k);
+
+        let msg = format!("Delete entry '{}'", k);
+        let old_key = k.clone();
+
+        self.undoer.push(&msg, Box::new(move |s: &mut HashMap<String, String>| -> bool {
+            s.insert(old_key.clone(), old_value.clone());
+    
+            return true;
+        }));
     }
 
     pub fn get(&self, k: &String) -> Option<String> {
@@ -157,13 +197,24 @@ impl Jots {
     // false means add has failed
     pub fn add(&mut self, k: &String, v: &String) -> bool {
         // Check for entry with the given name. It must not exist.
-        match self.get(k) {
+        let res = match self.get(k) {
             None => {
-                self.insert(k, v);
-                return true;
+                self.insert_int(k, v);
+                true
             },
-            _ => false // Entry already exists
-        }
+            _ => return false // Entry already exists
+        };
+
+        let msg = format!("Add entry '{}'", k);
+        let old_key = k.clone();
+
+        self.undoer.push(&msg, Box::new(move |s: &mut HashMap<String, String>| -> bool {
+            s.remove(&old_key);
+    
+            return true;
+        }));
+
+        return res;
     }
 
     pub fn entry_exists(&self, k: &String) -> bool {
@@ -171,6 +222,16 @@ impl Jots {
             None => false,
             Some(_) => true,
         }
+    }
+
+    pub fn undo(&mut self) -> (String, bool) {
+        let res = self.undoer.undo_one(&mut self.contents);
+
+        if res.1 {
+            self.dirty = !self.undoer.is_all_undone();
+        }
+
+        return res;
     }
 
     // false means rename has failed
@@ -182,14 +243,27 @@ impl Jots {
         };
 
         // Check if entry k_new exists. It must not exist.
-        match self.get(k_new) {
+        let res = match self.get(k_new) {
             None => {
-                self.remove(k_old);
-                self.insert(k_new, &contents);
-                return true;
+                self.remove_int(k_old);
+                self.insert_int(k_new, &contents);
+                true
             },
-            _ => false
-        }
+            _ => return false
+        };
+
+        let msg = format!("Rename entry '{}' to '{}'", k_old, k_new);
+        let old_key = k_old.clone();
+        let new_key = k_new.clone();
+
+        self.undoer.push(&msg, Box::new(move |s: &mut HashMap<String, String>| -> bool {
+            s.remove(&new_key);
+            s.insert(old_key.clone(), contents.clone());
+    
+            return true;
+        }));  
+
+        return res;      
     }
 
     pub fn from_enc_file(&mut self, file_name: &str, password: &str) -> std::io::Result<()> {

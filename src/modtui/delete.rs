@@ -35,7 +35,7 @@ pub fn entry(s: &mut Cursive, state_temp_del: Rc<RefCell<AppState>>) {
             )
             .button("Cancel", |s| { s.pop_layer(); })            
             .button("OK", move |s| {
-                state_temp_del.borrow_mut().store.remove(&name);
+                state_temp_del.borrow_mut().store.delete(&name);
                 visualize_if_modified(s, state_temp_del.clone());
                 redraw_tui(s, state_temp_del.clone());
                 s.pop_layer();

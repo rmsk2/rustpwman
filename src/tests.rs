@@ -13,9 +13,17 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #[cfg(test)]
+use std;
+
+#[cfg(test)]
+use std::collections::HashMap;
+
+#[cfg(test)]
 use crate::fcrypt;
 #[cfg(test)]
 use crate::jots;
+#[cfg(test)]
+use crate::undo;
 #[cfg(test)]
 use scrypt::scrypt;
 #[cfg(test)]
@@ -145,9 +153,9 @@ pub fn test_jots_serialize_deserialize() {
     
     {
         let mut j = jots::Jots::new_id(derivers::sha256_deriver, fcrypt::KdfId::Sha256);
-        j.insert(&t1, &d1);
-        j.insert(&t2, &d2);
-        j.insert(&t3, &d3);
+        j.add(&t1, &d1);
+        j.add(&t2, &d2);
+        j.add(&t3, &d3);
 
         if j.contents.len() != 3 {
             panic!("Unexpected number of elements {}", j.contents.len());        
@@ -169,7 +177,7 @@ pub fn test_jots_serialize_deserialize() {
         panic!("Unexpected number of elements {}", j2.contents.len());        
     }
 
-    j2.remove(&t3);
+    j2.delete(&t3);
 
     if j2.contents.len() != 2 {
         panic!("Unexpected number of elements {}", j2.contents.len());        
@@ -202,9 +210,9 @@ pub fn test_jots_iter() {
     let d3 = String::from("data3"); 
     
     let mut j = jots::Jots::new_id(derivers::sha256_deriver, fcrypt::KdfId::Sha256);
-    j.insert(&t1, &d1);
-    j.insert(&t2, &d2);
-    j.insert(&t3, &d3);
+    j.add(&t1, &d1);
+    j.add(&t2, &d2);
+    j.add(&t3, &d3);
 
     let mut count = 0;
 
@@ -323,4 +331,73 @@ fn test_save_load_config() {
     assert_eq!(res_val.clip_cmd, String::from("egal42"));
 
     remove_file(current_dir.as_os_str().to_str().unwrap()).unwrap();
+}
+
+#[test]
+#[allow(suspicious_double_ref_op)]
+fn test_undo_1() {
+    let mut u = undo::UndoRepo::<&str, &str>::new();
+    let mut h = HashMap::<&str, &str>::new();
+
+    //--------------
+
+    h.insert("schnulli", "bulli");
+
+    let undo1 = Box::new(move |s: &mut HashMap<&str, &str>| -> bool {
+        s.remove("schnulli");
+
+        return true;
+    });
+    u.push(&String::from("Added schnulli"), undo1);
+
+    //--------------
+
+    h.insert("kulli", "wulli");
+
+    let undo2 = Box::new(move |s: &mut HashMap<&str, &str>| -> bool {
+        s.remove("kulli");
+
+        return true;
+    });    
+
+    u.push(&String::from("Added kulli"), undo2);
+
+    //--------------
+
+    let undo3 = Box::new(move |s: &mut HashMap<&str, &str>| -> bool {
+        s.insert("kulli", "wulli");
+
+        return true;
+    });
+
+    h.insert("kulli", "hawulli");
+
+    u.push(&String::from("Modified kulli"), undo3);
+
+    //--------------
+
+    let comments = u.get_comments();
+
+    for i in comments.into_iter() {
+        println!("{}", i);
+    }
+
+    assert_eq!(h.len(), 2);
+
+    let mut val = h.get("kulli").unwrap().clone();
+    assert_eq!(val, "hawulli");
+    
+    u.undo_one(&mut h);
+    val = h.get("kulli").unwrap().clone();
+    assert_eq!(val, "wulli");
+    assert_eq!(h.len(), 2);
+
+    u.undo_one(&mut h);
+    assert_eq!(h.len(), 1);
+    assert_eq!(h.contains_key("schnulli"), true);
+
+    u.undo_one(&mut h);
+    assert_eq!(h.len(), 0);
+    assert_eq!(u.is_all_undone(), true);
+
 }

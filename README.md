@@ -127,6 +127,12 @@ Shows an about dialog containing information about the author and the program ve
 
 Shows how many entries are present in this data file.
 
+### Undo last change
+
+When an entry is modified, added or deleted `rustpwman` retains information which allows to undo this modification. Selecting this menu entry causes the most current
+change to be undone. If more than one unsaved changes have been recorded then selecting this menu entry several times undoes these modifications in reverse order. When
+all changes are undone a suitable message is shown.
+
 ### Quit and print
 
 Selecting this entry ends the program and prints the value of the currently selected entry to the CLI window after the TUI has been closed. About the reasoning behind this idea have 

@@ -24,6 +24,7 @@ mod edit;
 mod pw;
 mod pwentry;
 mod init;
+mod tuiundo;
 pub mod tuimain;
 
 pub const PW_MAX_SEC_LEVEL: usize = 24;
@@ -290,6 +291,7 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
 
     let state_for_callback = shared_state.clone();
     let state_for_fill_tui = shared_state.clone();
+    let state_for_undo = shared_state.clone();
 
     let menu_bar = s.menubar();
 
@@ -322,7 +324,10 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
             let num_entries = state_temp_count.borrow().store.len();
             let msg_str = format!("\nThere are {} entries", num_entries);
             show_message(s, &msg_str[..]);
-        })            
+        })   
+        .leaf("Undo last change ...", move |s| {
+            tuiundo::undo(s, state_for_undo.clone());
+        })                    
         .delimiter()
         .leaf("Quit and print", move |s| {
             let key = match get_selected_entry_name(s) {

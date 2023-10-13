@@ -68,7 +68,7 @@ pub fn entry(s: &mut Cursive, state_for_add_entry: Rc<RefCell<AppState>>) {
             }
         };
 
-        state_for_add_entry.borrow_mut().store.insert(&entry_name, &value);
+        state_for_add_entry.borrow_mut().store.modify(&entry_name, &value);
         s.pop_layer();
         visualize_if_modified(s, state_for_add_entry.clone());
         display_entry(s, state_for_add_entry.clone(), &entry_name, true);

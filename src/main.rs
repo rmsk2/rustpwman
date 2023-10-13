@@ -22,6 +22,7 @@ mod tomlconfig;
 mod tuiconfig;
 mod tuigen;
 mod clip;
+mod undo;
 #[cfg(feature = "pwmanclient")]
 mod pwman_client;
 #[cfg(feature = "pwmanclientux")]
