@@ -2,6 +2,9 @@ use std::rc::Rc;
 use std::cell::RefCell;
 
 use cursive::Cursive;
+use cursive::views::{Dialog, TextView, Panel, ListView};
+use cursive::traits::*;
+
 
 use super::visualize_if_modified;
 use super::show_message;
@@ -9,20 +12,49 @@ use super::redraw_tui;
 use super::AppState;
 
 pub fn undo(s: &mut Cursive, state_for_undo: Rc<RefCell<AppState>>) {
-    if ! state_for_undo.borrow().store.is_dirty() {
+    if !state_for_undo.borrow().store.is_dirty() {
         show_message(s, "Nothing to undo");
         return;
     }
 
-    let res = state_for_undo.borrow_mut().store.undo();
+    let comments = state_for_undo.borrow().store.undoer.get_comments();
 
-    visualize_if_modified(s, state_for_undo.clone());
-    redraw_tui(s, state_for_undo.clone());
+    let mut list_view = ListView::new();
+    
+    for i in comments.into_iter() {
+        list_view.add_child("", TextView::new(i.as_str()))
+    }
 
-    if res.1 {
-        let msg = format!("{} undone", res.0);
-        show_message(s, msg.as_str());
-    } else {
-        show_message(s, "Failed to undo last change");
-    }      
+    let named_list_view = list_view.with_name("undolist");
+
+    let res = Dialog::new()
+    .title("Rustpwman undo actions")
+    .padding_lrtb(1, 1, 1, 1)
+    .content(
+        Panel::new(named_list_view)
+        .title("Actions to undo")        
+    )
+    .button("Undo", move |s| {    
+        if !state_for_undo.borrow().store.is_dirty() {
+            show_message(s, "Nothing to undo");
+            return;
+        }
+
+        let res = state_for_undo.borrow_mut().store.undo();
+    
+        visualize_if_modified(s, state_for_undo.clone());
+        redraw_tui(s, state_for_undo.clone());
+    
+        if !res.1 {
+            show_message(s, "Failed to undo last change");
+        }
+
+        s.call_on_name("undolist", |view: &mut ListView| { view.remove_child(view.len()-1) });
+    })
+    .button("Cancel", move |s| { 
+        s.pop_layer(); 
+    });                
+    
+    s.add_layer(res);      
 }
+

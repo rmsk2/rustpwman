@@ -325,7 +325,7 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
             let msg_str = format!("\nThere are {} entries", num_entries);
             show_message(s, &msg_str[..]);
         })   
-        .leaf("Undo last change ...", move |s| {
+        .leaf("Undo changes ...", move |s| {
             tuiundo::undo(s, state_for_undo.clone());
         })                    
         .delimiter()
