@@ -103,6 +103,21 @@ fn do_quit(s: &mut Cursive, sender: Rc<Sender<String>>, message: String) {
     s.quit();
 }
 
+/*fn process_event_result(s: &mut Cursive, call_res:Option<EventResult>) {
+    match call_res {
+        None => (),
+        Some(event) => match event {
+            Ignored => (),
+            Consumed(opt_callback) => {
+                match opt_callback {
+                    None => (),
+                    Some(cb) => cb(s)
+                }
+            }
+        }
+    }
+}*/
+
 fn pwman_quit_with_state(s: &mut Cursive, sender: Rc<Sender<String>>, message: String, dirty_bit: bool, app_state: Option<Rc<RefCell<AppState>>>) {
     let msg = message.clone();
     let msg2 = message.clone();

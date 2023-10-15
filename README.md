@@ -127,11 +127,11 @@ Shows an about dialog containing information about the author and the program ve
 
 Shows how many entries are present in this data file.
 
-### Undo last change
+### Undo changes
 
-When an entry is modified, added or deleted `rustpwman` retains information which allows to undo this modification. Selecting this menu entry causes the most current
-change to be undone. If more than one unsaved changes have been recorded then selecting this menu entry several times undoes these modifications in reverse order. When
-all changes are undone a suitable message is shown.
+When an entry is modified, added or deleted `rustpwman` retains information which allows to undo this modification. Selecting this menu entry opens a dialog which
+allows to manually undo changes in the reverse order in which they were applied or to undo all unchages which have been recorded since the last time the data
+file was saved.
 
 ### Quit and print
 
