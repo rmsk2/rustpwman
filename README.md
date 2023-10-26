@@ -140,7 +140,7 @@ a look at the section [A note about using the clipboard](#a-note-about-using-the
 
 Tip: You can pipe the output of `rustpwman` to a program that places the data it reads via stdin in the clipboard. This works even under Windows which offers the `clip` 
 command for this purpose. Under Linux `xsel` can be used and MacOS provides the `pbcopy` command. When you use `clip` under Windows you have to be aware that non ASCII
-characters may not be displayed correctly when pasting the data copied by `clip`.
+characters may not be displayed correctly when pasting the data copied by `clip.exe`. Alternatively you can use the `Copy to clipboard` menu entry for this purpose.
 
 ### Quit
 
@@ -170,6 +170,13 @@ Additionally the user is able to select the set of characters which may appear i
 
 According to the Rust documentation the random number generator underlying the whole process is a *thread-local CSPRNG with periodic seeding from OsRng. Because this is local, it is typically much faster than OsRng. It should be secure, though the paranoid may prefer OsRng*.
 
+### Copy to clipboard
+
+This menu entry can be used to copy the value of the currently selected password entry to the clipboard. For the reasons described [below](#a-note-about-using-the-clipboard) this 
+feature requires an additional tool which accepts its input via stdin and uses that data to set the clipboard contents. The path to this tool can be confgured by calling
+`rustpwman cfg`. When you use `clip.exe` under Windows for this purpose you have to be aware that non ASCII characters may not be displayed correctly after pasting the clipboard
+data. The reason for this is that `clip.exe` expects a character encoding different from UTF-8 which is the default for Rust.
+
 ### Add entry
 
 Select this menu item to create a new password entry and edit its contents.
@@ -195,9 +202,12 @@ This allows to load the contents of a (text-)file into an entry. The current con
 It has to be noted that copying and pasting text in its most basic form is not possible in a terminal window while the cursive application is running. This in turn is probably 
 an unfixable problem as cursive by definition controls the cursor in the terminal window, which most likely precludes the OS from "doing its thing". 
 
-`rustpwman` works around this problem in two ways. At first pasting from the clipboard is emulated by spawning a new process in which a command is executed that writes the clipboard contents to stdout. `rustpwman` can then read the output of that process and write it into the TUI. `rustpwman` expects that the data to be read from stdout is UTF-8 encoded.
+`rustpwman` works around this problem in three ways. At first pasting from the clipboard is emulated by spawning a new process in which a command is executed that writes the clipboard contents to stdout. `rustpwman` can then read the output of that process and write it into the TUI. `rustpwman` expects that the data to be read from stdout is UTF-8 encoded.
 
 Secondly copying to the clipboard is possible as soon as `rustpwman` has stopped. When selecting `Quit and print` from the main menu `rustpwman` is stopped and the contents of the currently selected entry is printed to the terminal window. The necessary information can now be copied from the terminal into the clipboard and pasted where needed.
+
+The third implemented option is the possibility to copy an entry as a whole to the clipboard by spawning a process that runs a program which is able to transfer the data it
+receives via stdin to the clipboard. As Rust uses the UTF-8 character encoding this works best when the tool used for this purpose also expects its data in UTF-8.
 
 As an additional workaround there is a possibility to load data from a file into an existing entry using the `Load entry` menu entry.
 
@@ -217,17 +227,21 @@ seclevel = 18
 pbkdf = "argon2"
 pwgen = "special"
 clip_cmd = "xsel -ob"
+copy_cmd = "xsel -ib"
 ```
 
 - `seclevel` has to be an integer between 0 and 23. The security level in bits is calculated as (`seclevel` + 1) * 8. 
 - `pbkdf` is a string that can assume the values `scrypt`, `argon2`, `sha256`
 - `pwgen` is one of the strings `base64`, `hex` or `special`
 - `clip_cmd` is a string which specifies a command that can be used to write the current contents of the clipboard to stdout. 
+- `copy_cmd` is a string which specifies a command that can be used to transfer the data sent to it via stdin to the clipboard. 
 
 The default value for `clip_cmd` is `xsel -ob`, which works on Linux to retrieve the contents of the clipboard, which is filled via `CTRL+C` or after activating the `Copy` 
 item from the context menu. If you want to use the primary selection, where text only has to be selected and not explicitly copied then use `xsel -op`. Remark: I had 
 to manually install `xsel` on Ubuntu 22.04. Under MacOS `pbpaste -Prefer txt` can be used. For usage under Windows `rustpwman` provides the ("slightly" overengineered ;-))
 tool `paste_utf8.exe` which can be built in a Visual Studio developer prompt using the `build_paste_utf8.bat` batch file.
+
+The value `copy_cmd` uses `xsel -ib` as a default. This should work under Linux. Use `pbcopy` under MacOS and `clip.exe` under Windows.
 
 The config file is stored in the users' home directory in a file named `.rustpwman` and you can alternatively edit it by hand instead of calling `rustpwman cfg`. 
 
