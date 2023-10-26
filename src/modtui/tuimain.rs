@@ -20,7 +20,7 @@ use super::pwentry;
 use super::cache;
 use super::init;
 
-pub fn main(data_file_name: String, default_sec_bits: usize, derive_func: KeyDeriver, deriver_id: fcrypt::KdfId, default_pw_gen: GenerationStrategy, paste_cmd: String) {
+pub fn main(data_file_name: String, default_sec_bits: usize, derive_func: KeyDeriver, deriver_id: fcrypt::KdfId, default_pw_gen: GenerationStrategy, paste_cmd: String, copy_cmd: String) {
     let (tx, rx): (Sender<String>, Receiver<String>) = mpsc::channel();
 
     let capture_file_name = data_file_name.clone();
@@ -38,7 +38,7 @@ pub fn main(data_file_name: String, default_sec_bits: usize, derive_func: KeyDer
             generators.insert(i, i.to_creator()());
         }
 
-        let state = AppState::new(jots_store, &f_name, generators, default_sec_bits, default_pw_gen, &paste_cmd);
+        let state = AppState::new(jots_store, &f_name, generators, default_sec_bits, default_pw_gen, &paste_cmd, &copy_cmd);
 
         // No else branch is neccessary as open_file performs error handling
         if let Some(state_after_open) = pwentry::open_file(s, password, state) {

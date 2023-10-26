@@ -13,7 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 use std::string::String;
-use std::process::Command;
+use std::process::{Command, Stdio};
+use std::io::Write;
 use std::str;
 
 pub fn get_clipboard(cmd: &str) -> Option<String> {
@@ -47,4 +48,37 @@ pub fn get_clipboard(cmd: &str) -> Option<String> {
     };
 
     return Some(String::from(s));
+}
+
+// Return value false means that no error occurred
+pub fn set_clipboard(cmd: String, data: Box<String>) -> bool {
+    let cmd_args = cmd.split_ascii_whitespace();
+    let collection: Vec<&str> = cmd_args.collect(); 
+
+    let mut child = match Command::new(collection[0])
+        .stdin(Stdio::piped())
+        .stderr(Stdio::null())
+        .stdout(Stdio::null())
+        .args(collection[1..].into_iter())
+        .spawn()
+        {
+            Ok(v) => v,
+            Err(_) => { return true; }
+        };
+
+    let mut stdin = match child.stdin.take() {
+        Some(v) => v,
+        None => { return true; }
+    };
+    
+   std::thread::spawn(move || {
+        stdin.write_all(data.as_bytes()).expect("failed to talk to child preocess")
+    });
+
+    match child.wait() {
+        Ok(status) => {
+            return !status.success();
+        },
+        Err(_) => { return true; }
+    };
 }

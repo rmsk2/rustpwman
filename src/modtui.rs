@@ -25,6 +25,7 @@ mod pw;
 mod pwentry;
 mod init;
 mod tuiundo;
+mod copy;
 pub mod tuimain;
 
 pub const PW_MAX_SEC_LEVEL: usize = 24;
@@ -38,6 +39,7 @@ const TEXT_AREA_MAIN: &str = "entrytext";
 const PW_WIDTH: usize = 35;
 
 pub const DEFAULT_PASTE_CMD: &str = "xsel -ob";
+pub const DEFAULT_COPY_CMD: &str = "xsel -ib";
 
 use crate::VERSION_STRING;
 use cursive::theme::ColorStyle;
@@ -73,11 +75,12 @@ pub struct AppState {
     pw_gens: HashMap<GenerationStrategy, Box<dyn PasswordGenerator>>,
     default_security_level: usize,
     default_generator: GenerationStrategy,
-    paste_command: String
+    paste_command: String,
+    copy_command: String
 }
 
 impl AppState {
-    pub fn new(s: jots::Jots, f_name: &String, generators: HashMap<GenerationStrategy, Box<dyn PasswordGenerator>>, default_sec: usize, default_gen: GenerationStrategy, paste_cmd: &String) -> Self {
+    pub fn new(s: jots::Jots, f_name: &String, generators: HashMap<GenerationStrategy, Box<dyn PasswordGenerator>>, default_sec: usize, default_gen: GenerationStrategy, paste_cmd: &String, copy_cmd: &String) -> Self {
         return AppState {
             store: s,
             password: None,
@@ -85,7 +88,8 @@ impl AppState {
             pw_gens: generators,
             default_security_level: default_sec,
             default_generator: default_gen,
-            paste_command: paste_cmd.clone()
+            paste_command: paste_cmd.clone(),
+            copy_command: copy_cmd.clone()
         }
     }
 
@@ -303,6 +307,7 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
     let state_temp_quit_print = shared_state.clone();
     let sender = sndr.clone();
     let sender2 = sndr.clone();
+    let state_temp_copy = shared_state.clone();
 
     let state_for_callback = shared_state.clone();
     let state_for_fill_tui = shared_state.clone();
@@ -378,7 +383,10 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
             "Entry", Tree::new()
             .leaf("Edit Entry ...", move |s| {
                 edit::entry(s, state_temp_edit.clone(), None)
-            })        
+            })
+            .leaf("Copy to clipboard ...", move |s| {
+                copy::entry(s, state_temp_copy.clone())
+            })  
             .leaf("Add Entry ...", move |s| {
                 add::entry(s, state_temp_add.clone());
             })

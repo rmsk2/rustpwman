@@ -25,6 +25,7 @@ use crate::modtui;
 const BITS_SEC_VALUE: &str = "cfgseclevel";
 const SLIDER_SEC_NAME: &str = "cfgslider";
 const EDIT_PASTE_COMMAND: &str = "pastecmd";
+const EDIT_COPY_COMMAND: &str = "copycmd";
 
 pub fn show_yes_no_decision(siv: &mut Cursive, msg: &str) {
     siv.add_layer(
@@ -57,7 +58,7 @@ fn show_sec_bits(s: &mut Cursive, val: usize) {
     });
 }
 
-pub fn config_main(config_file: std::path::PathBuf, sec_level: usize, pw_gen_strategy: pwgen::GenerationStrategy, pbkdf_id: fcrypt::KdfId, clp_cmd: &String) {
+pub fn config_main(config_file: std::path::PathBuf, sec_level: usize, pw_gen_strategy: pwgen::GenerationStrategy, pbkdf_id: fcrypt::KdfId, clp_cmd: &String, cpy_cmd: &String) {
     let mut siv = cursive::default();
 
     let mut strategy_group: RadioGroup<pwgen::GenerationStrategy> = RadioGroup::new();
@@ -89,9 +90,7 @@ pub fn config_main(config_file: std::path::PathBuf, sec_level: usize, pw_gen_str
 
         linear_layout_pbkdf.add_child(b);
         linear_layout_pbkdf.add_child(TextView::new(" "));
-    }     
-
-    let cmd = clp_cmd.clone();
+    }
 
     let res = Dialog::new()
     .title("Rustpwman change config")
@@ -125,7 +124,15 @@ pub fn config_main(config_file: std::path::PathBuf, sec_level: usize, pw_gen_str
                 .child(TextView::new("Paste command: "))
                 .child(EditView::new()
                     .with_name(EDIT_PASTE_COMMAND)
-                    .fixed_width(45))        
+                    .fixed_width(60))        
+        )
+        .child(TextView::new("\n"))
+        .child(
+            LinearLayout::horizontal()
+                .child(TextView::new("Copy command : "))
+                .child(EditView::new()
+                    .with_name(EDIT_COPY_COMMAND)
+                    .fixed_width(60))        
         )
     )
     .button("OK", move |s| {  
@@ -145,10 +152,18 @@ pub fn config_main(config_file: std::path::PathBuf, sec_level: usize, pw_gen_str
             }
         };
 
+        let copy_command = match s.call_on_name(EDIT_COPY_COMMAND, |view: &mut EditView| { view.get_content() }) {
+            Some(v) => v,
+            None => { 
+                show_message(s, "Unable to determine copy command"); 
+                return; 
+            }
+        };
+
         let strategy = &strategy_group.selection();
         let pbkdf = &pbkdf_group.selection();
 
-        let new_config = RustPwManSerialize::new(rand_bytes, pbkdf.to_str(), strategy.to_str(), clip_command.as_str());
+        let new_config = RustPwManSerialize::new(rand_bytes, pbkdf.to_str(), strategy.to_str(), clip_command.as_str(), copy_command.as_str());
 
         match tomlconfig::save(&config_file, new_config) {
             Some(e) => {
@@ -163,7 +178,8 @@ pub fn config_main(config_file: std::path::PathBuf, sec_level: usize, pw_gen_str
     
     siv.add_layer(res);
     show_sec_bits(&mut siv, sec_level);
-    siv.call_on_name(EDIT_PASTE_COMMAND, |view: &mut EditView| { view.set_content(cmd) });
+    siv.call_on_name(EDIT_PASTE_COMMAND, |view: &mut EditView| { view.set_content(clp_cmd) });
+    siv.call_on_name(EDIT_COPY_COMMAND, |view: &mut EditView| { view.set_content(cpy_cmd) });
 
     siv.run();
 }

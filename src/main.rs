@@ -34,6 +34,7 @@ use std::env;
 use dirs;
 use clap::{Arg, Command};
 use modtui::DEFAULT_PASTE_CMD;
+use modtui::DEFAULT_COPY_CMD;
 use std::fs::File;
 use std::io::BufReader;
 use std::io::BufWriter;
@@ -60,6 +61,7 @@ struct RustPwMan {
     default_sec_level: usize,
     default_pw_gen: GenerationStrategy,
     paste_command: String,
+    copy_command: String
 }
 
 impl RustPwMan {
@@ -71,7 +73,8 @@ impl RustPwMan {
             default_deriver_id: DEFAULT_KDF_ID,
             default_sec_level: modtui::PW_SEC_LEVEL,
             default_pw_gen: GenerationStrategy::Base64,
-            paste_command: String::from(DEFAULT_PASTE_CMD)
+            paste_command: String::from(DEFAULT_PASTE_CMD),
+            copy_command: String::from(DEFAULT_COPY_CMD)
         }
     }
 
@@ -114,7 +117,8 @@ impl RustPwMan {
         self.default_deriver_id = id;
         self.default_pw_gen = self.str_to_gen_strategy(&loaded_config.pwgen[..]);
         self.default_sec_level = self.verify_sec_level(loaded_config.seclevel);
-        self.paste_command = loaded_config.clip_cmd
+        self.paste_command = loaded_config.clip_cmd;
+        self.copy_command = loaded_config.copy_cmd;
     }
 
     fn str_to_gen_strategy(&self, strategy_name: &str) -> GenerationStrategy {
@@ -290,7 +294,7 @@ impl RustPwMan {
         match a {
             Some(v) => {
                 let data_file_name : String = v.clone();
-                modtui::tuimain::main(data_file_name, self.default_sec_level, self.default_deriver, self.default_deriver_id, self.default_pw_gen, self.paste_command.clone());
+                modtui::tuimain::main(data_file_name, self.default_sec_level, self.default_deriver, self.default_deriver_id, self.default_pw_gen, self.paste_command.clone(), self.copy_command.clone());
             },
             None => {
                 eprintln!("Password file name missing");
@@ -325,7 +329,8 @@ impl RustPwMan {
                     seclevel: self.default_sec_level,
                     pbkdf: self.default_deriver_id.to_string(),
                     pwgen: self.default_pw_gen.to_string(),
-                    clip_cmd: String::from(crate::modtui::DEFAULT_PASTE_CMD)
+                    clip_cmd: String::from(crate::modtui::DEFAULT_PASTE_CMD),
+                    copy_cmd: String::from(crate::modtui::DEFAULT_COPY_CMD),
                 }
             }
         };
@@ -334,8 +339,7 @@ impl RustPwMan {
         let pw_gen_strategy = self.str_to_gen_strategy(&loaded_config.pwgen);
         let (_, pbkdf_id) = self.str_to_deriver(&loaded_config.pbkdf);
 
-
-        tuiconfig::config_main(config_file_name, sec_level, pw_gen_strategy, pbkdf_id, &loaded_config.clip_cmd);
+        tuiconfig::config_main(config_file_name, sec_level, pw_gen_strategy, pbkdf_id, &loaded_config.clip_cmd, &loaded_config.copy_cmd);
     }   
 
     fn perform_generate_command(&mut self) {

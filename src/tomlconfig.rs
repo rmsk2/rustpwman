@@ -12,15 +12,17 @@ pub struct RustPwManSerialize {
     pub pbkdf: String,
     pub pwgen: String,
     pub clip_cmd: String,
+    pub copy_cmd: String,
 }
 
 impl RustPwManSerialize {
-    pub fn new(seclevel: usize, pbkdf: &str, pwgen: &str, clip_command: &str) -> Self {
+    pub fn new(seclevel: usize, pbkdf: &str, pwgen: &str, clip_command: &str, copy_command: &str) -> Self {
         return RustPwManSerialize {
             seclevel: seclevel,
             pbkdf: String::from(pbkdf),
             pwgen: String::from(pwgen),
             clip_cmd: String::from(clip_command),
+            copy_cmd: String::from(copy_command),
         }
     }
 }
