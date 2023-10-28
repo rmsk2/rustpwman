@@ -219,7 +219,7 @@ void help() {
 	std::cout << "       -h print help message" << std::endl;
 	std::cout << std::endl;
 	std::cout << "This program prints the contents of the clipboard as an UTF-8 encoded string to stdout." << std::endl;
-	std::cout << "If the -c option is specified paste_utf8.exe copies data from from stdin to the clipboard." << std::endl;
+	std::cout << "If the -c option is specified paste_utf8.exe copies data from stdin to the clipboard." << std::endl;
 }
 
 bool parse_opts(int argc, char* argv[], bool& do_stop, bool& do_copy) {
