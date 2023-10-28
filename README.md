@@ -140,7 +140,8 @@ a look at the section [A note about using the clipboard](#a-note-about-using-the
 
 Tip: You can pipe the output of `rustpwman` to a program that places the data it reads via stdin in the clipboard. This works even under Windows which offers the `clip` 
 command for this purpose. Under Linux `xsel` can be used and MacOS provides the `pbcopy` command. When you use `clip` under Windows you have to be aware that non ASCII
-characters may not be displayed correctly when pasting the data copied by `clip.exe`. Alternatively you can use the `Copy to clipboard` menu entry for this purpose.
+characters may not be displayed correctly when pasting the data copied by `clip.exe`. Alternatively you can use the `Copy to clipboard` menu entry for this purpose or
+use `paste_utf8.exe -c ` (see below) instead of `clip.exe`.
 
 ### Quit
 
@@ -175,7 +176,8 @@ According to the Rust documentation the random number generator underlying the w
 This menu entry can be used to copy the value of the currently selected password entry to the clipboard. For the reasons described [below](#a-note-about-using-the-clipboard) this 
 feature requires an additional tool which accepts its input via stdin and uses that data to set the clipboard contents. The path to this tool can be confgured by calling
 `rustpwman cfg`. When you use `clip.exe` under Windows for this purpose you have to be aware that non ASCII characters may not be displayed correctly after pasting the clipboard
-data. The reason for this is that `clip.exe` expects a character encoding different from UTF-8 which is the default for Rust.
+data. The reason for this is that `clip.exe` expects a character encoding different from UTF-8 which is the default for Rust. If you want to prevent this problem you can use
+`paste_utf8.exe -c` instead of `clip.exe`.
 
 ### Add entry
 
@@ -241,7 +243,7 @@ item from the context menu. If you want to use the primary selection, where text
 to manually install `xsel` on Ubuntu 22.04. Under MacOS `pbpaste -Prefer txt` can be used. For usage under Windows `rustpwman` provides the ("slightly" overengineered ;-))
 tool `paste_utf8.exe` which can be built in a Visual Studio developer prompt using the `build_paste_utf8.bat` batch file.
 
-The value `copy_cmd` uses `xsel -ib` as a default. This should work under Linux. Use `pbcopy` under MacOS and `clip.exe` under Windows.
+The value `copy_cmd` uses `xsel -ib` as a default. This should work under Linux. Use `pbcopy` under MacOS and `clip.exe` or `paste_utf8.exe -c` under Windows.
 
 The config file is stored in the users' home directory in a file named `.rustpwman` and you can alternatively edit it by hand instead of calling `rustpwman cfg`. 
 
