@@ -280,7 +280,8 @@ compiler when used under Windows.
 
 In order to build `rustpwman` with the password cache feature you have to use the command `cargo build --release --no-default-features --features pwmanclientwin`. If you do not
 care about the password cache use `cargo build --release --no-default-features`. You should additionally build the `paste_utf8.exe` tool by running `build_paste_utf8.bat` in a Visual 
-Studio developer prompt which enables you to paste the clipboard contents while editing an entry. 
+Studio developer prompt which enables you to paste the clipboard contents while editing an entry and to copy an entry which contains non-ASCII characters (in my case Umlauts) to the 
+clipboard in such a way that the non ASCII characters are displayed correctly.
 
 This batch file also builds `winfilter.exe` from the rust source `winfilter.rs`. This tool copies its stdin to stdout while filtering out the Escape sequence `ESC[?1002l` from its 
 input (if it appears at the beginning of the stream). Therefore if you pipe the output of `rustpwman` through `winfilter.exe` you can cleanup `rustpwman`'s output in order to
