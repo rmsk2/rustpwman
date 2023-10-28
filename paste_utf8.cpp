@@ -10,38 +10,51 @@ const int MAX_DATA_SIZE = 32768;
 class LockedMem {
 public:
 	LockedMem(HANDLE hnd);
+	void Release() { is_released = true; } 
 	~LockedMem();
 	LPVOID Lock();
 	void Unlock();
 protected:
 	bool is_locked;
+	bool is_released;
 	HANDLE h;
 };
 
 void LockedMem::Unlock() {
-	if (is_locked) {
+	if (is_locked) 
+	{
 		GlobalUnlock(h);
+		is_locked = false;
 	}
 }
 
 LockedMem::LockedMem(HANDLE hnd) {
 	is_locked = false;
+	is_released = false;
 	h = hnd;
 }
 
 LPVOID LockedMem::Lock() {
-	if (!is_locked) {
+	if (!is_locked) 
+	{
 		auto res = GlobalLock(h);
 		is_locked = (res != NULL);
 
 		return res;
-	} else {
+	} 
+	else 
+	{
 		return NULL;
 	}
 }
 
 LockedMem::~LockedMem(){
 	Unlock();
+
+	if (!is_released)
+	{
+		GlobalFree(h);
+	}	
 }
 
 class Clipboard {
@@ -94,6 +107,7 @@ void Clipboard::close() {
 	if (is_open)
 	{
 		CloseClipboard();
+		is_open = false;
 	}
 }
 
@@ -107,8 +121,11 @@ Clipboard::Clipboard() {
 
 // True on success
 bool Clipboard::open() {
-	auto res = OpenClipboard(NULL);
-	is_open = res != 0;
+	if (!is_open)
+	{
+		auto res = OpenClipboard(NULL);
+		is_open = res != 0;
+	}
 
 	return is_open;
 }
@@ -147,9 +164,7 @@ bool Clipboard::set_clipboard_utf8(std::string& txt)
 	auto ptr = mem.Lock();
 	if (ptr == NULL)
 	{
-		// We are still responsible for freeing the memory as ownership
-		// was not transferred yet.
-		GlobalFree(mem_handle);		
+		// GlobalFree is called by the destructor of mem
 		return false;
 	}
 
@@ -160,13 +175,14 @@ bool Clipboard::set_clipboard_utf8(std::string& txt)
 	auto h = SetClipboardData(CF_UNICODETEXT, mem_handle); 
 	if (h == NULL)
 	{
-		// The system did not take responsibility for the handle.
-		// We have to free the allocated memory.
-		GlobalFree(mem_handle);
+		// GlobalFree is called by the destructor of mem
 		return false;
 	}
+
 	// The memory handle is now owned by the system. We do therefore not call
 	// GlobalFree()
+	mem.Release();
+
 	return true;
 }
 
@@ -184,6 +200,8 @@ bool Clipboard::get_clipboard_utf8(std::string& res) {
 	}
 
 	auto mem = LockedMem(h);
+	// We are not responsible for freeing the memory handle
+	mem.Release();
 
 	auto utf16_data = mem.Lock();
 	if (utf16_data == NULL) {
