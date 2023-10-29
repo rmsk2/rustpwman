@@ -215,9 +215,9 @@ As an additional workaround there is a possibility to load data from a file into
 
 # Configuration or the functionality of the `cfg` command
 
-Rustpwman uses a TOML config file for setting the default security level for newly generated passwords, the default password generator, the default PBKDF 
-and a CLI command which can be used to retrieve the contents of the clipboard. The most convenient way to edit the config file is to use the `rustpwman cfg` 
-command which will open a window similar to this one
+Rustpwman uses a TOML config file for setting the default security level for newly generated passwords, the default password generator, the default PBKDF, 
+a CLI command which can be used to retrieve the contents of the clipboard and a CLI command which can be used to set the contents of the clipboard. The most convenient 
+way to edit the config file is to use the `rustpwman cfg` command which will open a window similar to this one
 
 ![](/scrshot_cfg.png?raw=true "Screenshot of rustpwman cfg")
 
@@ -278,10 +278,11 @@ The good news is that it works and it even works well. I have tested the `pancur
 uses a binding to a C library and requires an [installed C compiler](https://github.com/ihalila/pdcurses-sys) in order to build. On the other hand Rust itself is dependent on a C 
 compiler when used under Windows. 
 
-In order to build `rustpwman` with the password cache feature you have to use the command `cargo build --release --no-default-features --features pwmanclientwin`. If you do not
-care about the password cache use `cargo build --release --no-default-features`. You should additionally build the `paste_utf8.exe` tool by running `build_paste_utf8.bat` in a Visual 
-Studio developer prompt which enables you to paste the clipboard contents while editing an entry and to copy an entry which contains non-ASCII characters (in my case Umlauts) to the 
-clipboard in such a way that the non ASCII characters are displayed correctly.
+In order to build `rustpwman` with the password cache feature you have to use the command `cargo build --release --no-default-features --features pwmanclientwin`. 
+Alternatively you can call the batch file `build_win.bat` which executes this command and calls `build_paste_utf8.bat` (see below). If you do not care about the 
+password cache use `cargo build --release --no-default-features`. You should additionally build the `paste_utf8.exe` tool by running `build_paste_utf8.bat` in a 
+Visual Studio developer prompt which enables you to paste the clipboard contents while editing an entry and to copy an entry which contains non-ASCII characters 
+(in my case Umlauts) to the clipboard in such a way that the non ASCII characters are displayed correctly.
 
 This batch file also builds `winfilter.exe` from the rust source `winfilter.rs`. This tool copies its stdin to stdout while filtering out the Escape sequence `ESC[?1002l` from its 
 input (if it appears at the beginning of the stream). Therefore if you pipe the output of `rustpwman` through `winfilter.exe` you can cleanup `rustpwman`'s output in order to
