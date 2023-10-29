@@ -20,7 +20,8 @@ protected:
 	HANDLE h;
 };
 
-void LockedMem::Unlock() {
+void LockedMem::Unlock() 
+{
 	if (is_locked) 
 	{
 		GlobalUnlock(h);
@@ -28,13 +29,15 @@ void LockedMem::Unlock() {
 	}
 }
 
-LockedMem::LockedMem(HANDLE hnd) {
+LockedMem::LockedMem(HANDLE hnd) 
+{
 	is_locked = false;
 	is_released = false;
 	h = hnd;
 }
 
-LPVOID LockedMem::Lock() {
+LPVOID LockedMem::Lock() 
+{
 	if (!is_locked) 
 	{
 		auto res = GlobalLock(h);
@@ -48,7 +51,8 @@ LPVOID LockedMem::Lock() {
 	}
 }
 
-LockedMem::~LockedMem(){
+LockedMem::~LockedMem()
+{
 	Unlock();
 
 	if (!is_released)
@@ -74,14 +78,17 @@ protected:
 	bool is_open;
 };
 
-bool Clipboard::to_utf8(std::string& res) {
+bool Clipboard::to_utf8(std::string& res) 
+{
 	Clipboard clip;
 
-	if (!clip.open()) {
+	if (!clip.open()) 
+	{
 		return false;
 	}
 
-	if (!clip.get_clipboard_utf8(res)) {
+	if (!clip.get_clipboard_utf8(res)) 
+	{
 		return false;
 	}
 
@@ -92,18 +99,21 @@ bool Clipboard::from_utf8(std::string& data_in)
 {
 	Clipboard clip;
 
-	if (!clip.open()) {
+	if (!clip.open()) 
+	{
 		return false;
 	}
 
-	if (!clip.set_clipboard_utf8(data_in)) {
+	if (!clip.set_clipboard_utf8(data_in)) 
+	{
 		return false;
 	}
 
 	return true;
 }
 
-void Clipboard::close() {
+void Clipboard::close() 
+{
 	if (is_open)
 	{
 		CloseClipboard();
@@ -111,16 +121,19 @@ void Clipboard::close() {
 	}
 }
 
-Clipboard::~Clipboard() {
+Clipboard::~Clipboard() 
+{
 	close();
 }
 
-Clipboard::Clipboard() {
+Clipboard::Clipboard() 
+{
 	is_open = false;
 }
 
 // True on success
-bool Clipboard::open() {
+bool Clipboard::open() 
+{
 	if (!is_open)
 	{
 		auto res = OpenClipboard(NULL);
@@ -132,13 +145,15 @@ bool Clipboard::open() {
 
 bool Clipboard::set_clipboard_utf8(std::string& txt)
 {
-	if (!is_open) {
+	if (!is_open) 
+	{
 		return false;
 	}	
 
 	// determine output buffer size in UTF-16 chars
 	auto num_chars_needed = MultiByteToWideChar(CP_UTF8, 0, (LPCCH)txt.c_str(), -1, NULL, 0);
-	if (num_chars_needed == 0) {
+	if (num_chars_needed == 0) 
+	{
 		return false;
 	}
 
@@ -187,7 +202,8 @@ bool Clipboard::set_clipboard_utf8(std::string& txt)
 }
 
 bool Clipboard::get_clipboard_utf8(std::string& res) {
-	if (!is_open) {
+	if (!is_open) 
+	{
 		return false;
 	}
 
@@ -195,7 +211,8 @@ bool Clipboard::get_clipboard_utf8(std::string& res) {
 	// The clipboard controls the handle that the GetClipboardData function returns, not the application. The 
 	// application should copy the data immediately. The application **must not free the handle** nor leave it locked.	
 	auto h = GetClipboardData(CF_UNICODETEXT);
-	if (h == NULL) {
+	if (h == NULL) 
+	{
 		return false;
 	}
 
@@ -204,20 +221,23 @@ bool Clipboard::get_clipboard_utf8(std::string& res) {
 	mem.Release();
 
 	auto utf16_data = mem.Lock();
-	if (utf16_data == NULL) {
+	if (utf16_data == NULL) 
+	{
 		return false;
 	}
 
 	// determine output buffer size
 	auto num_bytes_needed = WideCharToMultiByte(CP_UTF8, 0, (LPCWCH)utf16_data, -1, NULL, 0, NULL, NULL);
-	if (num_bytes_needed == 0) {
+	if (num_bytes_needed == 0) 
+	{
 		return false;
 	}
 
 	// convert to UTF-8
 	std::vector<char> buf(num_bytes_needed);
 	auto conv_res = WideCharToMultiByte(CP_UTF8, 0, (LPCWCH)utf16_data, -1, buf.data(), num_bytes_needed, NULL, NULL);
-	if (conv_res == 0) {
+	if (conv_res == 0) 
+	{
 		return false;
 	}
 	auto temp = std::string(buf.data());
@@ -243,25 +263,33 @@ void help() {
 bool parse_opts(int argc, char* argv[], bool& do_stop, bool& do_copy) {
 	bool binary = true;
 	do_copy = false;
+	do_stop = false;
 
-	if (argc > 1) {
-		for (int i = 1; i < argc; i++) {
+	if (argc > 1) 
+	{
+		for (int i = 1; i < argc; i++) 
+		{
 			std::string opt = std::string(argv[i]);
 
-			if (opt == "-h") {
+			if (opt == "-h") 
+			{
 				help();
 				do_stop = true;
 			}
-			else {
-				if (opt == "-b") {
+			else 
+			{
+				if (opt == "-b") 
+				{
 					binary = true;
 				}
 				
-				if (opt == "-t") {
+				if (opt == "-t") 
+				{
 					binary = false;
 				} 
 
-				if (opt == "-c") {
+				if (opt == "-c") 
+				{
 					do_copy = true;
 				}
 			}
@@ -275,18 +303,21 @@ int paste_clipboard(bool binary)
 {
 	auto clip_contents = std::string();
 
-	if (!Clipboard::to_utf8(clip_contents)) {
+	if (!Clipboard::to_utf8(clip_contents)) 
+	{
 		return 42;
 	}
 
-	if (binary) {
+	if (binary) 
+	{
 		(void)_setmode(_fileno(stdout), O_BINARY);
 	}
 	
     std::cout << clip_contents << std::endl;
 	std::cout.flush();
 
-	if (binary) {
+	if (binary) 
+	{
 		(void)_setmode(_fileno(stdout), O_TEXT);
 	}
 
@@ -298,7 +329,8 @@ int read_stdin(bool binary, std::vector<char>& data)
 	int  res = 0;
 
 	// yes I know, this can also be controlled from std::iostream
-	if (binary) {
+	if (binary) 
+	{
 		(void)_setmode(_fileno(stdin), O_BINARY);
 	}
 
@@ -356,7 +388,8 @@ int main(int argc, char *argv[])
 	int res;
 	std::vector<char> data(MAX_DATA_SIZE, 0);
 
-	if (do_stop) {
+	if (do_stop) 
+	{
 		return 42;
 	}
 
