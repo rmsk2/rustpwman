@@ -15,10 +15,12 @@ pub fn entry(s: &mut Cursive, state_for_copy_entry: Rc<RefCell<AppState>>) {
         }
     };
 
-    let content = match state_for_copy_entry.borrow().store.get(&entry_name) {
+    let mut content = match state_for_copy_entry.borrow().store.get(&entry_name) {
         Some(c) => c,
         None => { show_message(s, "Unable to read value of entry"); return }
     };
+
+    content = format!("-------- {} --------\n{}", entry_name, content);
 
     match set_clipboard(String::from(state_for_copy_entry.borrow().copy_command.clone()), Box::new(content)) {
         true => {
