@@ -7,8 +7,6 @@ use cursive::traits::*;
 
 use super::show_message;
 use super::pwman_quit;
-use super::path_exists;
-use super::AppState;
 use super::PW_WIDTH;
 use crate::fcrypt;
 
@@ -55,7 +53,7 @@ pub fn dialog(sndr: Rc<Sender<String>>, ok_cb_with_state: Box<dyn Fn(&mut Cursiv
     return res;
 }
 
-fn show_pw_error(siv: &mut Cursive, msg: &str) {
+pub fn show_pw_error(siv: &mut Cursive, msg: &str) {
     siv.add_layer(
         Dialog::text(msg)
             .title("Rustpwman")
@@ -66,31 +64,4 @@ fn show_pw_error(siv: &mut Cursive, msg: &str) {
                 s.call_on_name(NAME_PWDIALOG, |view: &mut Dialog| {view.set_focus(DialogFocus::Content)});
             }),
     );
-}
-
-pub fn open_file(s: &mut Cursive, password: &String, state: AppState) -> Option<AppState> {
-    let file_name = state.file_name.clone();
-    let mut state = state;
-    
-    if !path_exists(&file_name) {
-        match state.store.to_enc_file(&file_name, password) {
-            Ok(_) => (),
-            Err(_) => {
-                show_message(s, &format!("Unable to initialize file\n\n{}", &file_name));
-                return None;
-            }
-        }
-    }
-
-    match state.store.from_enc_file(&file_name, password) {
-        Ok(_) => { },
-        Err(e) => {
-            show_pw_error(s, &format!("Unable to read file '{}'\n\nError: '{:?}'", file_name, e));
-            return None;                
-        }
-    }
-
-    state.password = Some(password.clone());
-
-    return Some(state);
 }

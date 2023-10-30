@@ -26,6 +26,7 @@ mod pwentry;
 mod init;
 mod tuiundo;
 mod copy;
+mod open;
 pub mod tuimain;
 
 pub const PW_MAX_SEC_LEVEL: usize = 24;
