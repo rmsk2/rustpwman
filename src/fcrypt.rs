@@ -148,6 +148,10 @@ impl GcmContext {
         return None;
     }
 
+    pub fn from_dyn_reader(&mut self, reader: Box<dyn Read>)-> std::io::Result<Vec<u8>> {
+        return self.from_reader(reader);
+    }
+
     pub fn from_reader<T: Read>(&mut self, reader: T) -> std::io::Result<Vec<u8>> {
         let json_struct: CryptedJson = serde_json::from_reader(reader)?;
 
@@ -195,6 +199,10 @@ impl GcmContext {
         let reader = BufReader::new(file);
 
         return self.from_reader(reader);
+    }
+
+    pub fn to_dyn_writer(&self, writer: Box<dyn Write>, data: &Vec<u8>) -> std::io::Result<()> {
+        return self.to_writer(writer, data);
     }
 
     pub fn to_writer<T: Write>(&self, writer: T, data: &Vec<u8>) -> std::io::Result<()> {
