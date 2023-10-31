@@ -94,7 +94,7 @@ impl AppState {
         }
     }
 
-    pub fn make_persister(store_id: &String, _credentials: &String) -> Box<dyn Persister> {
+    pub fn make_persister(store_id: &String, _credentials_and_config: &String) -> Box<dyn Persister> {
         return FilePersister::new(store_id);
     }
 
