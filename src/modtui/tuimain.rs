@@ -83,7 +83,7 @@ fn show_unable_to_check_error(siv: &mut Cursive, sender: Rc<Sender<String>>) {
 }
 
 #[cfg(feature = "pwmanclient")]
-fn setup_password_entry_with_pwman(siv: &mut Cursive, data_file_name: &String, sender: Rc<Sender<String>>, pw_callback: Box<dyn Fn(&mut Cursive, &String)>, p: &Box<dyn Persister>) {
+fn setup_password_entry_with_pwman(siv: &mut Cursive, store_id: &String, sender: Rc<Sender<String>>, pw_callback: Box<dyn Fn(&mut Cursive, &String)>, p: &Box<dyn Persister>) {
     let does_exist = match p.does_exist() {
         Ok(b) => b,
         Err(_) => {
@@ -93,9 +93,9 @@ fn setup_password_entry_with_pwman(siv: &mut Cursive, data_file_name: &String, s
     };
 
     if does_exist {
-        let file_name_for_uds_client = data_file_name.clone();
+        let store_id_for_uds_client = store_id.clone();
 
-        match cache::make_pwman_client(file_name_for_uds_client.clone()) {
+        match cache::make_pwman_client(store_id_for_uds_client.clone()) {
             Ok(c) => {
                 match c.get_password() {
                     Ok(password) => {
@@ -121,7 +121,7 @@ fn setup_password_entry_with_pwman(siv: &mut Cursive, data_file_name: &String, s
 
 
 #[cfg(not(feature = "pwmanclient"))]
-fn setup_password_entry_without_pwman(siv: &mut Cursive, _data_file_name: &String, sender: Rc<Sender<String>>, pw_callback: Box<dyn Fn(&mut Cursive, &String)>, p: &Box<dyn Persister>) {
+fn setup_password_entry_without_pwman(siv: &mut Cursive, _store_id: &String, sender: Rc<Sender<String>>, pw_callback: Box<dyn Fn(&mut Cursive, &String)>, p: &Box<dyn Persister>) {
     let does_exist = match p.does_exist() {
         Ok(b) => b,
         Err(_) => {
