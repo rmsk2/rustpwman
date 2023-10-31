@@ -90,11 +90,11 @@ impl AppState {
             default_generator: default_gen,
             paste_command: paste_cmd.clone(),
             copy_command: copy_cmd.clone(),
-            persister: AppState::make_persister(f_name),
+            persister: AppState::make_persister(f_name, &String::from("")),
         }
     }
 
-    pub fn make_persister(store_id: &String) -> Box<dyn Persister> {
+    pub fn make_persister(store_id: &String, _credentials: &String) -> Box<dyn Persister> {
         return FilePersister::new(store_id);
     }
 

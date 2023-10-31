@@ -52,10 +52,10 @@ pub fn main(data_file_name: String, default_sec_bits: usize, derive_func: KeyDer
 
     // Add a layer for the password entry dialog
     #[cfg(feature = "pwmanclient")]
-    setup_password_entry_with_pwman(&mut siv, &data_file_name, sender, pw_callback, &AppState::make_persister(&data_file_name));
+    setup_password_entry_with_pwman(&mut siv, &data_file_name, sender, pw_callback, &AppState::make_persister(&data_file_name, &String::from("")));
 
     #[cfg(not(feature = "pwmanclient"))]
-    setup_password_entry_without_pwman(&mut siv, &data_file_name, sender, pw_callback, &AppState::make_persister(&data_file_name));
+    setup_password_entry_without_pwman(&mut siv, &data_file_name, sender, pw_callback, &AppState::make_persister(&data_file_name, &String::from("")));
 
     // run password entry dialog
     siv.run();
