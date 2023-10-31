@@ -174,7 +174,7 @@ fn ask_for_save(s: &mut Cursive, sender: Rc<Sender<String>>, message: String, ap
             .title("Rustpwman")
             .button("Yes", move |s: &mut Cursive| {
                 s.pop_layer(); 
-                save::file(s, app_state.clone());
+                save::storage(s, app_state.clone());
 
                 if !app_state.borrow().store.is_dirty() {
                     do_quit(s, sender.clone(), message.clone());
@@ -339,7 +339,7 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
 
     file_tree = Tree::new()
         .leaf("Save File", move |s| { 
-            save::file(s, state_temp_save.clone()); 
+            save::storage(s, state_temp_save.clone()); 
         })
         .delimiter()
         .leaf("Change password ...", move |s| {

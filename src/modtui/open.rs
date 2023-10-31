@@ -4,7 +4,7 @@ use super::AppState;
 use super::show_message;
 use super::pwentry::show_pw_error;
 
-pub fn file(s: &mut Cursive, password: &String, state: AppState) -> Option<AppState> {
+pub fn storage(s: &mut Cursive, password: &String, state: AppState) -> Option<AppState> {
     let mut state = state;
 
     let does_exist = match state.persister.does_exist() {

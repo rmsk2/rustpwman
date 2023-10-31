@@ -67,7 +67,7 @@ pub fn change(s: &mut Cursive, state_for_pw_change: Rc<RefCell<AppState>>) {
             let new_pw: String = (&pw1_text).to_string();
 
             state_for_pw_change.borrow_mut().password = Some(new_pw);
-            save::file(s, state_for_pw_change.clone());
+            save::storage(s, state_for_pw_change.clone());
             s.pop_layer();
 
             #[cfg(feature = "pwmanclient")]

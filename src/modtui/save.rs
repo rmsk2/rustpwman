@@ -7,7 +7,7 @@ use super::AppState;
 use super::show_message;
 use super::visualize_if_modified;
 
-pub fn file(s: &mut Cursive, state_temp_save: Rc<RefCell<AppState>>) {
+pub fn storage(s: &mut Cursive, state_temp_save: Rc<RefCell<AppState>>) {
     match state_temp_save.borrow().password.clone() {
         Some(_) => (),
         None => { show_message(s, "Unable to read password"); return; }
