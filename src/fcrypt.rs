@@ -27,6 +27,7 @@ use cipher::generic_array::GenericArray;
 use base64;
 use aes_gcm::{Nonce, Tag, AesGcm};
 use crate::derivers;
+use crate::persist::Persister;
 
 use aes_gcm::aead::{Aead, AeadInPlace};
 
@@ -201,6 +202,12 @@ impl GcmContext {
         return self.from_reader(reader);
     }
 
+    pub fn retrieve(&mut self, p: &mut Box<dyn Persister>) -> std::io::Result<Vec<u8>> {
+        let data = *p.retrieve()?;
+
+        return self.from_reader(data.as_slice());
+    }
+
     pub fn to_dyn_writer(&self, writer: Box<dyn Write>, data: &Vec<u8>) -> std::io::Result<()> {
         return self.to_writer(writer, data);
     }
@@ -223,6 +230,13 @@ impl GcmContext {
         let w = BufWriter::new(file);
 
         return self.to_writer(w, data);
+    }
+
+    pub fn persist(&self, data: &Vec<u8>, p: &mut Box<dyn Persister>) -> std::io::Result<()> {
+        let mut res_data: Vec<u8> = vec![];
+        self.to_writer(&mut res_data, data)?;
+
+        return p.persist(&res_data);
     }
 
     fn fill_random(&mut self) {

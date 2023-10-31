@@ -43,6 +43,7 @@ pub const DEFAULT_PASTE_CMD: &str = "xsel -ob";
 pub const DEFAULT_COPY_CMD: &str = "xsel -ib";
 
 use crate::VERSION_STRING;
+use crate::persist::{Persister, FilePersister};
 use cursive::theme::ColorStyle;
 use cursive::traits::*;
 use cursive::views::{Dialog, LinearLayout, SelectView, TextArea, Panel, NamedView, ScrollView, ResizedView};
@@ -57,27 +58,25 @@ use cursive::theme::{ColorType, Effect, Color, PaletteColor};
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::sync::mpsc::Sender;
+use std::io::{Error, ErrorKind};
 
-use std::fs;
 use std::collections::HashMap;
 
 use crate::pwgen::GenerationStrategy;
 use crate::pwgen::PasswordGenerator;
 use crate::jots;
 
-pub fn path_exists(path: &str) -> bool {
-    fs::metadata(path).is_ok()
-}
 
 pub struct AppState {
     store: jots::Jots,
     password: Option<String>,
-    file_name: String,
+    store_id: String,
     pw_gens: HashMap<GenerationStrategy, Box<dyn PasswordGenerator>>,
     default_security_level: usize,
     default_generator: GenerationStrategy,
     paste_command: String,
-    copy_command: String
+    copy_command: String,
+    persister: Box<dyn Persister>,
 }
 
 impl AppState {
@@ -85,17 +84,33 @@ impl AppState {
         return AppState {
             store: s,
             password: None,
-            file_name: f_name.clone(),
+            store_id: f_name.clone(),
             pw_gens: generators,
             default_security_level: default_sec,
             default_generator: default_gen,
             paste_command: paste_cmd.clone(),
-            copy_command: copy_cmd.clone()
+            copy_command: copy_cmd.clone(),
+            persister: AppState::make_persister(f_name),
         }
+    }
+
+    pub fn make_persister(store_id: &String) -> Box<dyn Persister> {
+        return FilePersister::new(store_id);
     }
 
     pub fn get_default_bits(&self) -> usize {
         return self.default_security_level;
+    }
+
+    pub fn persist_store(&mut self) -> std::io::Result<()> {
+        let pw = match &self.password {
+            Some(p) => p,
+            None => {
+                return Err(Error::new(ErrorKind::Other, format!("No password available, unable to persist store '{}'", &self.store_id)));
+            }
+        };
+        
+        return self.store.persist(&mut self.persister, pw.as_str());
     }   
 }
 

@@ -2,27 +2,33 @@ use cursive::Cursive;
 
 use super::AppState;
 use super::show_message;
-use super::path_exists;
 use super::pwentry::show_pw_error;
 
 pub fn file(s: &mut Cursive, password: &String, state: AppState) -> Option<AppState> {
-    let file_name = state.file_name.clone();
     let mut state = state;
+
+    let does_exist = match state.persister.does_exist() {
+        Ok(b) => b,
+        Err(e) => {
+            show_message(s, &format!("Unable to check for existence of: {:?}", e));
+            return None;
+        }
+    };
     
-    if !path_exists(&file_name) {
-        match state.store.to_enc_file(&file_name, password) {
+    if !does_exist {
+        match state.store.persist(&mut state.persister, password) {
             Ok(_) => (),
-            Err(_) => {
-                show_message(s, &format!("Unable to initialize file\n\n{}", &file_name));
+            Err(e) => {
+                show_message(s, &format!("Unable to initialize password storage: {:?}", e));
                 return None;
             }
         }
     }
 
-    match state.store.from_enc_file(&file_name, password) {
+    match state.store.retrieve(&mut state.persister, password) {
         Ok(_) => { },
         Err(e) => {
-            show_pw_error(s, &format!("Unable to read file '{}'\n\nError: '{:?}'", file_name, e));
+            show_pw_error(s, &format!("Unable to read password storage: '{:?}'", e));
             return None;                
         }
     }

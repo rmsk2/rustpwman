@@ -4,6 +4,7 @@ use std::sync::mpsc;
 use std::collections::HashMap;
 
 use cursive::Cursive;
+use cursive::views::Dialog;
 
 use crate::pwgen;
 use crate::fcrypt::KeyDeriver;
@@ -13,9 +14,10 @@ use crate::pwgen::GenerationStrategy;
 use crate::pwgen::PasswordGenerator;
 use super::AppState;
 use super::open;
+use crate::persist::Persister;
 
 use super::main_window;
-use super::path_exists;
+use super::pwman_quit;
 use super::pwentry;
 #[cfg(feature = "pwmanclient")]
 use super::cache;
@@ -50,10 +52,10 @@ pub fn main(data_file_name: String, default_sec_bits: usize, derive_func: KeyDer
 
     // Add a layer for the password entry dialog
     #[cfg(feature = "pwmanclient")]
-    setup_password_entry_with_pwman(&mut siv, &data_file_name, sender, pw_callback);
+    setup_password_entry_with_pwman(&mut siv, &data_file_name, sender, pw_callback, &AppState::make_persister(&data_file_name));
 
     #[cfg(not(feature = "pwmanclient"))]
-    setup_password_entry_without_pwman(&mut siv, &data_file_name, sender, pw_callback);
+    setup_password_entry_without_pwman(&mut siv, &data_file_name, sender, pw_callback, &AppState::make_persister(&data_file_name));
 
     // run password entry dialog
     siv.run();
@@ -69,9 +71,28 @@ pub fn main(data_file_name: String, default_sec_bits: usize, derive_func: KeyDer
     
 }
 
+fn show_unable_to_check_error(siv: &mut Cursive, sender: Rc<Sender<String>>) {
+    siv.add_layer(
+        Dialog::text("Unable to determine if password storage exists. Quitting now ...")
+            .title("Rustpwman")
+            .button("Ok", move |s| {
+                s.pop_layer();
+                pwman_quit(s, sender.clone(), String::from(""))
+            }),
+    );    
+}
+
 #[cfg(feature = "pwmanclient")]
-fn setup_password_entry_with_pwman(siv: &mut Cursive, data_file_name: &String, sender: Rc<Sender<String>>, pw_callback: Box<dyn Fn(&mut Cursive, &String)>) {
-    if path_exists(&data_file_name) {
+fn setup_password_entry_with_pwman(siv: &mut Cursive, data_file_name: &String, sender: Rc<Sender<String>>, pw_callback: Box<dyn Fn(&mut Cursive, &String)>, p: &Box<dyn Persister>) {
+    let does_exist = match p.does_exist() {
+        Ok(b) => b,
+        Err(_) => {
+            show_unable_to_check_error(siv, sender.clone());
+            return;
+        }
+    };
+
+    if does_exist {
         let file_name_for_uds_client = data_file_name.clone();
 
         match cache::make_pwman_client(file_name_for_uds_client.clone()) {
@@ -100,8 +121,16 @@ fn setup_password_entry_with_pwman(siv: &mut Cursive, data_file_name: &String, s
 
 
 #[cfg(not(feature = "pwmanclient"))]
-fn setup_password_entry_without_pwman(siv: &mut Cursive, data_file_name: &String, sender: Rc<Sender<String>>, pw_callback: Box<dyn Fn(&mut Cursive, &String)>) {
-    if path_exists(&data_file_name) {
+fn setup_password_entry_without_pwman(siv: &mut Cursive, _data_file_name: &String, sender: Rc<Sender<String>>, pw_callback: Box<dyn Fn(&mut Cursive, &String)>, p: &Box<dyn Persister>) {
+    let does_exist = match p.does_exist() {
+        Ok(b) => b,
+        Err(_) => {
+            show_unable_to_check_error(siv, sender.clone());
+            return;
+        }
+    };
+
+    if does_exist {
         let d = pwentry::dialog(sender.clone(), pw_callback);
         siv.add_layer(d);
     } else {

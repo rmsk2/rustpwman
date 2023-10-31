@@ -20,8 +20,10 @@ use std::io::BufReader;
 use std::io::BufWriter;
 use std::io::{Error, ErrorKind};
 use crate::fcrypt;
+use crate::persist::Persister;
 use crate::undo::UndoRepo;
 use fcrypt::KeyDeriver;
+
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct KvEntry {
@@ -281,6 +283,21 @@ impl Jots {
         return Ok(());
     }
 
+    pub fn retrieve(&mut self, p: &mut Box<dyn Persister>, password: &str) -> std::io::Result<()> {
+        let mut ctx = fcrypt::GcmContext::new_with_kdf(self.kdf, self.kdf_id);
+
+        let data = ctx.retrieve(p)?;
+        let plain_data = match ctx.decrypt(password, &data) {
+            Err(e) => { return Err(Error::new(ErrorKind::Other, format!("{:?}", e))); },
+            Ok(d) => d
+        };
+
+        self.from_reader(plain_data.as_slice())?;
+        self.mark_as_clean();
+
+        return Ok(());
+    }
+
     pub fn to_enc_file(&mut self, file_name: &str, password: &str) -> std::io::Result<()> {
         let mut ctx = fcrypt::GcmContext::new_with_kdf(self.kdf, self.kdf_id);
         let mut serialized: Vec<u8> = Vec::new();
@@ -296,6 +313,22 @@ impl Jots {
 
         return Ok(());
     }
+
+    pub fn persist(&mut self, p: &mut Box<dyn Persister>, password: &str) -> std::io::Result<()> {
+        let mut ctx = fcrypt::GcmContext::new_with_kdf(self.kdf, self.kdf_id);
+        let mut serialized: Vec<u8> = Vec::new();
+
+        self.to_writer(&mut serialized)?;
+        let enc_data = match ctx.encrypt(password, &serialized) {
+            Err(e) => { return Err(Error::new(ErrorKind::Other, format!("{:?}", e))); },
+            Ok(d) => d
+        };
+
+        ctx.persist(&enc_data, p)?;
+        self.mark_as_clean();
+
+        return Ok(());
+    }    
 }
 
 impl<'a> IntoIterator for &'a Jots {

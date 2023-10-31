@@ -38,7 +38,7 @@ pub fn make_pwman_client(file_name: String) -> std::io::Result<Box<dyn PWManClie
 #[cfg(feature = "pwmanclient")]
 pub fn password(s: &mut Cursive, state_for_write_cache: Rc<RefCell<AppState>>) {
     let pw_option = state_for_write_cache.borrow().password.clone();
-    let file_name = state_for_write_cache.borrow().file_name.clone();
+    let file_name = state_for_write_cache.borrow().store_id.clone();
     let password : String;
     let client: Box<dyn PWManClient>;
 
@@ -71,7 +71,7 @@ pub fn password(s: &mut Cursive, state_for_write_cache: Rc<RefCell<AppState>>) {
 
 #[cfg(feature = "pwmanclient")]
 pub fn uncache_password(s: &mut Cursive, state_for_write_cache: Rc<RefCell<AppState>>) {
-    let file_name = state_for_write_cache.borrow().file_name.clone();
+    let file_name = state_for_write_cache.borrow().store_id.clone();
     let client: Box<dyn PWManClient>;
 
     let c = make_pwman_client(file_name);

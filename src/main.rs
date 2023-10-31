@@ -23,6 +23,7 @@ mod tuiconfig;
 mod tuigen;
 mod clip;
 mod undo;
+mod persist;
 #[cfg(feature = "pwmanclient")]
 mod pwman_client;
 #[cfg(feature = "pwmanclientux")]
