@@ -4,8 +4,6 @@
 application in 2023. The main reason is portability without creating a dependency to any of the usual GUI toolkits. `rustpwman` should work on MacOS, Linux and Windows and 
 it should compile without the necessity to install more or less exotic (or maybe even toxic) toolchains. Additionally I like the retro appeal of it.
 
-# Introduction
-
 The basic concept of `rustpwman` is to manage a set of entries which have a value or content. The entries are presented in a flat list and no further structuring is offered at 
 the moment. In order to start the programm use
 
@@ -18,55 +16,6 @@ or `cargo run --release -- gui -i <file_name>` which will result, after a succes
 ![](/screenshot.png?raw=true "Screenshot of rustpwman")
 
 If the file specified through the `-i` parameter does not exist `rustpwman` will create a new data file using that name after you have supplied a suitable password.
-
-## About the crypto
-
-`rustpwman` encrypts its data at rest using AES-256 in GCM mode with a 128 bit tag length and a 96 bit nonce. The encrypted data file is a simple JSON data structure. 
-This may serve as an example:
-
-```
-{
-  "PbKdf": "sha256",
-  "Salt": "/qcBaihI/4wV1A==",
-  "Nonce": "t8RCYaLY3Bsisl5K",
-  "Data": "4YM5XNvMou3TukBnYCRCMoAhia2jaoBfyRIr+aGJ0dTrZTtiah4dm6W8gKnmt95/mDPBx2E+5Hy8cxz
-  ef4vOM0vTjy/2H9EFgpO5m7onxJTzBOgjqtnE4lH6vLiYJ+FN6GW+68Y1X7OgifCln8nP4D++u4vJnZEYgiAMB7Y
-  rjdvP7Evp4fHcx6/B/LM1ga7Cg4T57/a8SG7wK7hlBY+CUoVH9HKjzEZAMPyuyai/ZQMjgG1w9Bpn5zNnjntTn/K
-  +y0hX209VTiEPK43DO/3d05tPrJfmkJNUsjskTn2teANooIlo9ZG1YMCNxe/r0ns8YPJEAlgS2R5HSNBodqgIiFc
-  qQ9mSuta4iwaBG+DAZ5KHmVooLZ+L0djsgKtbEGVjjIVsaO/qFZpx"
-}
- ```
-
-As a default the actual encryption key is derived from the entered password using the `Argon2id` key derivation function. `rustpwman` also allows to alternatively use `scrypt` 
-or to derive the key from the specified password using the following calculation:
-
-```
-SHA-256( password | salt | password )
-```
-
-where `salt` is a random value of appropriate length and `|` symbolizes concatenation. It is also possible to select this or another password based key derivation function 
-(PBKDF) through the `--kdf` option or by a config file. Currently `scrypt`, `argon2` and `sha256` are valid as a parameter for this option and as a config 
-file entry. As a source for the PBKDF parameter choices https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html has been used.
-
-## Format of payload data
-
-The plaintext password data is simply stored as key value pairs in an obvious way using JSON. There is not much more to know than shown in this example: 
-
-```
-[
-  {
-    "Key": "test2",
-    "Text": "first test \n"
-  },
-  {
-    "Key": "test42",
-    "Text": "second test \n"
-  }
-]
-```
-
-Due to this extreme simplicity the password files created by `rustpwman` are really compact. The file which holds my passwords (having about 50 entries) is less than 16 KB in 
-size.
 
 # Getting help
 
@@ -281,7 +230,7 @@ compiler when used under Windows.
 In order to build `rustpwman` with the password cache feature you have to use the command `cargo build --release --no-default-features --features pwmanclientwin`. 
 Alternatively you can call the batch file `build_win.bat` which executes this command and calls `build_paste_utf8.bat` (see below). If you do not care about the 
 password cache use `cargo build --release --no-default-features`. You should additionally build the `paste_utf8.exe` tool by running `build_paste_utf8.bat` in a 
-Visual Studio developer prompt which enables you to paste the clipboard contents while editing an entry and to copy an entry which contains non-ASCII characters 
+Visual Studio developer prompt. This tool enables you to paste the clipboard contents while editing an entry and to copy an entry which contains non-ASCII characters 
 (in my case Umlauts) to the clipboard in such a way that the non ASCII characters are displayed correctly.
 
 This batch file also builds `winfilter.exe` from the rust source `winfilter.rs`. This tool copies its stdin to stdout while filtering out the Escape sequence `ESC[?1002l` from its 
@@ -297,15 +246,66 @@ Version 1.0.0: As expected, building `rustpwman` for WSL works without problems 
 Version 1.2.8 and higher: Building and running `rustpwman` works. Performance is still not quite on the same level as the native version (TUI flickers a bit when updating the screen) but overall performance 
 has improved with respect to the previous test mentioned above.
 
+# Some technical information
+
+## About the crypto
+
+`rustpwman` encrypts its data at rest using AES-256 in GCM mode with a 128 bit tag length and a 96 bit nonce. The encrypted data file is a simple JSON data structure. 
+This may serve as an example:
+
+```
+{
+  "PbKdf": "sha256",
+  "Salt": "/qcBaihI/4wV1A==",
+  "Nonce": "t8RCYaLY3Bsisl5K",
+  "Data": "4YM5XNvMou3TukBnYCRCMoAhia2jaoBfyRIr+aGJ0dTrZTtiah4dm6W8gKnmt95/mDPBx2E+5Hy8cxz
+  ef4vOM0vTjy/2H9EFgpO5m7onxJTzBOgjqtnE4lH6vLiYJ+FN6GW+68Y1X7OgifCln8nP4D++u4vJnZEYgiAMB7Y
+  rjdvP7Evp4fHcx6/B/LM1ga7Cg4T57/a8SG7wK7hlBY+CUoVH9HKjzEZAMPyuyai/ZQMjgG1w9Bpn5zNnjntTn/K
+  +y0hX209VTiEPK43DO/3d05tPrJfmkJNUsjskTn2teANooIlo9ZG1YMCNxe/r0ns8YPJEAlgS2R5HSNBodqgIiFc
+  qQ9mSuta4iwaBG+DAZ5KHmVooLZ+L0djsgKtbEGVjjIVsaO/qFZpx"
+}
+ ```
+
+As a default the actual encryption key is derived from the entered password using the `Argon2id` key derivation function. `rustpwman` also allows to alternatively use `scrypt` 
+or to derive the key from the specified password using the following calculation:
+
+```
+SHA-256( password | salt | password )
+```
+
+where `salt` is a random value of appropriate length and `|` symbolizes concatenation. It is also possible to select this or another password based key derivation function 
+(PBKDF) through the `--kdf` option or by a config file. Currently `scrypt`, `argon2` and `sha256` are valid as a parameter for this option and as a config 
+file entry. As a source for the PBKDF parameter choices https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html has been used.
+
+## Format of payload data
+
+The plaintext password data is simply stored as key value pairs in an obvious way using JSON. There is not much more to know than shown in this example: 
+
+```
+[
+  {
+    "Key": "test2",
+    "Text": "first test \n"
+  },
+  {
+    "Key": "test42",
+    "Text": "second test \n"
+  }
+]
+```
+
+Due to this extreme simplicity the password files created by `rustpwman` are really compact. The file which holds my passwords (having about 50 entries) is less than 16 KB in 
+size.
+
 # Caveats
 
-This section provides information about stuff which is in my view suboptimal and should be (and possibly will be) improved in the future.
+This section provides information about stuff which is in my view suboptimal and the user should be aware of:
 
 - At the moment I do not attempt to overwrite memory that holds sensitive information when `rustpwman` is closed. This may be a problem when `rustpwman` is used in an environment where an attacker can gain access to memory previously used by `rustpwman`, i.e. when sharing a machine with an attacker.
 - When the list of entries changes (after an add or delete) it may be possible that the entry selected after the change is not visible in the `ScrollView` on the left. I was not successfull in forcing cursive to scroll to the newly selected entry. This is most probably my fault and meanwhile an appropriate warning dialog is displayed.
 - I am fairly new to Rust. I guess it shows in the code.
 - On a MacBook Air 2018 using the touchpad to click elements in the TUI does not work. The problem does not manifest itself when using a mouse. Using the touchpad seems to work though on other models. I do not think that this is a hardware problem on my MacBook and I unfortunately have no idea why this happens.
 - On MacOS using the mouse scroll wheel or the Page Up/Down keys confuses cursive. This does not happen on Linux or Windows.
-- On Windows a spurious Escape sequence `ESC[?1002l` is printed to stdout when the TUI application stops. This does not happen on Linux or MacOS. It happens less frequently when using the Windows terminal. By piping the output of `rustpwman` to `winfilter.exe` you can remove this unwanted data from the output.
+- On Windows a spurious Escape sequence `ESC[?1002l` is printed to stdout when the TUI application stops. This does not happen on Linux or MacOS. By piping the output of `rustpwman` to `winfilter.exe` you can remove this unwanted data from the output.
 - In non `--release` builds scrypt with the chosen parameters is *extremely* slow
 
