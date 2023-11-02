@@ -128,6 +128,9 @@ impl RustPwMan {
         self.default_sec_level = self.verify_sec_level(loaded_config.seclevel);
         self.paste_command = loaded_config.clip_cmd;
         self.copy_command = loaded_config.copy_cmd;
+        self.webdav_user = loaded_config.webdav_user;
+        self.webdav_pw = loaded_config.webdav_pw;
+        self.webdav_server = loaded_config.webdav_server;
     }
 
     fn str_to_gen_strategy(&self, strategy_name: &str) -> GenerationStrategy {
