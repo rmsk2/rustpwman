@@ -15,6 +15,7 @@ use crate::pwgen::PasswordGenerator;
 use super::AppState;
 use super::open;
 use crate::persist::Persister;
+use crate::persist;
 
 use super::main_window;
 use super::pwman_quit;
@@ -23,7 +24,8 @@ use super::pwentry;
 use super::cache;
 use super::init;
 
-pub fn main(data_file_name: String, default_sec_bits: usize, derive_func: KeyDeriver, deriver_id: fcrypt::KdfId, default_pw_gen: GenerationStrategy, paste_cmd: String, copy_cmd: String) {
+pub fn main(data_file_name: String, default_sec_bits: usize, derive_func: KeyDeriver, deriver_id: fcrypt::KdfId, default_pw_gen: GenerationStrategy, 
+            paste_cmd: String, copy_cmd: String, make_default: persist::PersistCreator) {
     let (tx, rx): (Sender<String>, Receiver<String>) = mpsc::channel();
 
     let capture_file_name = data_file_name.clone();
@@ -31,8 +33,11 @@ pub fn main(data_file_name: String, default_sec_bits: usize, derive_func: KeyDer
     let sender = Rc::new(tx);
     let sender_main = sender.clone();
 
+    let p = make_default(&data_file_name);    
+
     // stuff to run after successfull password entry
     let pw_callback = Box::new(move |s: &mut Cursive, password: &String| {
+        let p_cb = make_default(&capture_file_name);
         let jots_store = jots::Jots::new(derive_func, deriver_id);
         let f_name = capture_file_name.clone();
         let mut generators: HashMap<GenerationStrategy, Box<dyn PasswordGenerator>> = HashMap::new();
@@ -41,7 +46,7 @@ pub fn main(data_file_name: String, default_sec_bits: usize, derive_func: KeyDer
             generators.insert(i, i.to_creator()());
         }
 
-        let state = AppState::new(jots_store, &f_name, generators, default_sec_bits, default_pw_gen, &paste_cmd, &copy_cmd);
+        let state = AppState::new(jots_store, &f_name, generators, default_sec_bits, default_pw_gen, &paste_cmd, &copy_cmd, p_cb);
 
         // No else branch is neccessary as open_file performs error handling
         if let Some(state_after_open) = open::storage(s, password, state) {
@@ -52,10 +57,10 @@ pub fn main(data_file_name: String, default_sec_bits: usize, derive_func: KeyDer
 
     // Add a layer for the password entry dialog
     #[cfg(feature = "pwmanclient")]
-    setup_password_entry_with_pwman(&mut siv, &data_file_name, sender, pw_callback, &AppState::make_persister(&data_file_name, &String::from("")));
+    setup_password_entry_with_pwman(&mut siv, &data_file_name, sender, pw_callback, &p);
 
     #[cfg(not(feature = "pwmanclient"))]
-    setup_password_entry_without_pwman(&mut siv, &data_file_name, sender, pw_callback, &AppState::make_persister(&data_file_name, &String::from("")));
+    setup_password_entry_without_pwman(&mut siv, &data_file_name, sender, pw_callback, &p);
 
     // run password entry dialog
     siv.run();

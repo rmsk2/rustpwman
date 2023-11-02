@@ -43,7 +43,7 @@ pub const DEFAULT_PASTE_CMD: &str = "xsel -ob";
 pub const DEFAULT_COPY_CMD: &str = "xsel -ib";
 
 use crate::VERSION_STRING;
-use crate::persist::{Persister, FilePersister};
+use crate::persist::Persister;
 use cursive::theme::ColorStyle;
 use cursive::traits::*;
 use cursive::views::{Dialog, LinearLayout, SelectView, TextArea, Panel, NamedView, ScrollView, ResizedView};
@@ -80,7 +80,8 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub fn new(s: jots::Jots, f_name: &String, generators: HashMap<GenerationStrategy, Box<dyn PasswordGenerator>>, default_sec: usize, default_gen: GenerationStrategy, paste_cmd: &String, copy_cmd: &String) -> Self {
+    pub fn new(s: jots::Jots, f_name: &String, generators: HashMap<GenerationStrategy, Box<dyn PasswordGenerator>>, default_sec: usize, default_gen: GenerationStrategy, 
+               paste_cmd: &String, copy_cmd: &String, p: Box<dyn Persister>) -> Self {
         return AppState {
             store: s,
             password: None,
@@ -90,12 +91,8 @@ impl AppState {
             default_generator: default_gen,
             paste_command: paste_cmd.clone(),
             copy_command: copy_cmd.clone(),
-            persister: AppState::make_persister(f_name, &String::from("")),
+            persister: p,
         }
-    }
-
-    pub fn make_persister(store_id: &String, _credentials_and_config: &String) -> Box<dyn Persister> {
-        return FilePersister::new(store_id);
     }
 
     pub fn get_default_bits(&self) -> usize {

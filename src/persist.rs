@@ -4,6 +4,7 @@ use std::io::BufReader;
 use std::io::BufWriter;
 //use std::io::{Error, ErrorKind};
 
+pub type PersistCreator = Box<dyn Fn(&String) -> Box<dyn Persister>>;
 
 pub trait Persister {
     fn does_exist(&self) -> std::io::Result<bool>;
@@ -11,7 +12,7 @@ pub trait Persister {
     fn retrieve(&mut self) -> std::io::Result<Box<Vec<u8>>>;
 }
 
-pub struct FilePersister {
+struct FilePersister {
     file_name: String
 }
 
@@ -49,4 +50,8 @@ impl Persister for FilePersister {
 
         return Ok(Box::<Vec<u8>>::new(data));
     }
+}
+
+pub fn make_file_persist(store_id: &String) -> Box<dyn Persister> {
+    return FilePersister::new(store_id);
 }

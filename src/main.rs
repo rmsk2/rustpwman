@@ -291,11 +291,13 @@ impl RustPwMan {
         self.set_pbkdf_from_command_line(gui_matches);
     
         let a:Option<&String> = gui_matches.get_one(ARG_INPUT_FILE);
+        let persist_maker = Box::new(persist::make_file_persist);
 
         match a {
             Some(v) => {
                 let data_file_name : String = v.clone();
-                modtui::tuimain::main(data_file_name, self.default_sec_level, self.default_deriver, self.default_deriver_id, self.default_pw_gen, self.paste_command.clone(), self.copy_command.clone());
+                modtui::tuimain::main(data_file_name, self.default_sec_level, self.default_deriver, self.default_deriver_id, 
+                                      self.default_pw_gen, self.paste_command.clone(), self.copy_command.clone(), persist_maker);
             },
             None => {
                 eprintln!("Password file name missing");
