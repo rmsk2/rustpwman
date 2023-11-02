@@ -36,6 +36,8 @@ use dirs;
 use clap::{Arg, Command};
 use modtui::DEFAULT_PASTE_CMD;
 use modtui::DEFAULT_COPY_CMD;
+use persist::PersistCreator;
+use persist::Persister;
 use std::fs::File;
 use std::io::BufReader;
 use std::io::BufWriter;
@@ -297,13 +299,21 @@ impl RustPwMan {
         self.set_pbkdf_from_command_line(gui_matches);
     
         let a:Option<&String> = gui_matches.get_one(ARG_INPUT_FILE);
-        let persist_maker = Box::new(persist::make_file_persist);
+        let u = self.webdav_user.clone();
+        let p = self.webdav_pw.clone();
+        let s = self.webdav_server.clone();
+
+        let persist_closure : PersistCreator;
+
+        persist_closure = Box::new(move |store_id: &String| -> Box<dyn Persister> {
+            return persist::make_file_persist(store_id, &u, &p, &s);
+        });
 
         match a {
             Some(v) => {
                 let data_file_name : String = v.clone();
                 modtui::tuimain::main(data_file_name, self.default_sec_level, self.default_deriver, self.default_deriver_id, 
-                                      self.default_pw_gen, self.paste_command.clone(), self.copy_command.clone(), persist_maker);
+                                      self.default_pw_gen, self.paste_command.clone(), self.copy_command.clone(), persist_closure);
             },
             None => {
                 eprintln!("Password file name missing");

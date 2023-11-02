@@ -52,6 +52,7 @@ impl Persister for FilePersister {
     }
 }
 
-pub fn make_file_persist(store_id: &String) -> Box<dyn Persister> {
+pub fn make_file_persist(store_id: &String, _user: &String, _pw: &String, _server: &String) -> Box<dyn Persister> {
     return FilePersister::new(store_id);
 }
+
