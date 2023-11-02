@@ -312,7 +312,7 @@ fn test_save_load_config() {
     const TEST_CONF_NAME: &str = "config_test_delete_me.toml";
 
     current_dir.push(TEST_CONF_NAME);
-    let c = tomlconfig::RustPwManSerialize::new(15, "egal1", "egal2", "egal42", "egal43");
+    let c = tomlconfig::RustPwManSerialize::new(15, "egal1", "egal2", "egal42", "egal43", "user", "password", "server");
 
     match tomlconfig::save(&current_dir, c) {
         Some(e) => panic!("{:?}", e),
@@ -329,6 +329,8 @@ fn test_save_load_config() {
     assert_eq!(res_val.pbkdf, String::from("egal1"));
     assert_eq!(res_val.pwgen, String::from("egal2"));
     assert_eq!(res_val.clip_cmd, String::from("egal42"));
+    assert_eq!(res_val.webdav_user, String::from("user"));
+    assert_eq!(res_val.webdav_server, String::from("server"));
 
     remove_file(current_dir.as_os_str().to_str().unwrap()).unwrap();
 }

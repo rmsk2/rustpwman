@@ -58,7 +58,8 @@ fn show_sec_bits(s: &mut Cursive, val: usize) {
     });
 }
 
-pub fn config_main(config_file: std::path::PathBuf, sec_level: usize, pw_gen_strategy: pwgen::GenerationStrategy, pbkdf_id: fcrypt::KdfId, clp_cmd: &String, cpy_cmd: &String) {
+pub fn config_main(config_file: std::path::PathBuf, sec_level: usize, pw_gen_strategy: pwgen::GenerationStrategy, pbkdf_id: fcrypt::KdfId, 
+                   clp_cmd: &String, cpy_cmd: &String, webdav_user: &String, webdav_pw: &String, webdav_server: &String) {
     let mut siv = cursive::default();
 
     let mut strategy_group: RadioGroup<pwgen::GenerationStrategy> = RadioGroup::new();
@@ -91,6 +92,10 @@ pub fn config_main(config_file: std::path::PathBuf, sec_level: usize, pw_gen_str
         linear_layout_pbkdf.add_child(b);
         linear_layout_pbkdf.add_child(TextView::new(" "));
     }
+
+    let user = webdav_user.clone();
+    let pw = webdav_pw.clone();
+    let server = webdav_server.clone();
 
     let res = Dialog::new()
     .title("Rustpwman change config")
@@ -163,7 +168,7 @@ pub fn config_main(config_file: std::path::PathBuf, sec_level: usize, pw_gen_str
         let strategy = &strategy_group.selection();
         let pbkdf = &pbkdf_group.selection();
 
-        let new_config = RustPwManSerialize::new(rand_bytes, pbkdf.to_str(), strategy.to_str(), clip_command.as_str(), copy_command.as_str());
+        let new_config = RustPwManSerialize::new(rand_bytes, pbkdf.to_str(), strategy.to_str(), clip_command.as_str(), copy_command.as_str(), user.as_str(), pw.as_str(), server.as_str());
 
         match tomlconfig::save(&config_file, new_config) {
             Some(e) => {

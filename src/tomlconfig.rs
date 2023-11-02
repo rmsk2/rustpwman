@@ -13,16 +13,22 @@ pub struct RustPwManSerialize {
     pub pwgen: String,
     pub clip_cmd: String,
     pub copy_cmd: String,
+    pub webdav_user: String,
+    pub webdav_pw: String,
+    pub webdav_server: String,
 }
 
 impl RustPwManSerialize {
-    pub fn new(seclevel: usize, pbkdf: &str, pwgen: &str, clip_command: &str, copy_command: &str) -> Self {
+    pub fn new(seclevel: usize, pbkdf: &str, pwgen: &str, clip_command: &str, copy_command: &str, user: &str, pw: &str, server: &str) -> Self {
         return RustPwManSerialize {
             seclevel: seclevel,
             pbkdf: String::from(pbkdf),
             pwgen: String::from(pwgen),
             clip_cmd: String::from(clip_command),
             copy_cmd: String::from(copy_command),
+            webdav_user: String::from(user),
+            webdav_pw: String::from(pw),
+            webdav_server: String::from(server),
         }
     }
 }

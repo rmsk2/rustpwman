@@ -62,7 +62,10 @@ struct RustPwMan {
     default_sec_level: usize,
     default_pw_gen: GenerationStrategy,
     paste_command: String,
-    copy_command: String
+    copy_command: String,
+    webdav_user: String,
+    webdav_pw: String,
+    webdav_server: String
 }
 
 impl RustPwMan {
@@ -75,7 +78,10 @@ impl RustPwMan {
             default_sec_level: modtui::PW_SEC_LEVEL,
             default_pw_gen: GenerationStrategy::Base64,
             paste_command: String::from(DEFAULT_PASTE_CMD),
-            copy_command: String::from(DEFAULT_COPY_CMD)
+            copy_command: String::from(DEFAULT_COPY_CMD),
+            webdav_user: String::from(""),
+            webdav_pw: String::from(""),
+            webdav_server: String::from(""),
         }
     }
 
@@ -334,6 +340,9 @@ impl RustPwMan {
                     pwgen: self.default_pw_gen.to_string(),
                     clip_cmd: String::from(crate::modtui::DEFAULT_PASTE_CMD),
                     copy_cmd: String::from(crate::modtui::DEFAULT_COPY_CMD),
+                    webdav_user: self.webdav_user.clone(),
+                    webdav_pw: self.webdav_pw.clone(),
+                    webdav_server: self.webdav_server.clone()
                 }
             }
         };
@@ -342,7 +351,8 @@ impl RustPwMan {
         let pw_gen_strategy = self.str_to_gen_strategy(&loaded_config.pwgen);
         let (_, pbkdf_id) = self.str_to_deriver(&loaded_config.pbkdf);
 
-        tuiconfig::config_main(config_file_name, sec_level, pw_gen_strategy, pbkdf_id, &loaded_config.clip_cmd, &loaded_config.copy_cmd);
+        tuiconfig::config_main(config_file_name, sec_level, pw_gen_strategy, pbkdf_id, &loaded_config.clip_cmd, &loaded_config.copy_cmd, 
+                               &loaded_config.webdav_user, &loaded_config.webdav_pw, &loaded_config.webdav_server);
     }   
 
     fn perform_generate_command(&mut self) {
