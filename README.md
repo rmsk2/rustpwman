@@ -297,6 +297,26 @@ The plaintext password data is simply stored as key value pairs in an obvious wa
 Due to this extreme simplicity the password files created by `rustpwman` are really compact. The file which holds my passwords (having about 50 entries) is less than 16 KB in 
 size.
 
+# Experimental webdav support
+
+If you build `rustpwman` with the optional `webdav` feature enabled you can access password data files on Webdav shares without explicitly mounting the share first. The credentials
+are read from the `.rustpwman` config file using the following entries:
+
+```
+....
+webdav_user = "user"
+webdav_pw = "password"
+webdav_server = "http://server.test.com/davtest/"
+```
+
+For the moment these entries have to be set manually and not via `rustpwman cfg`. The code works on my Synology NAS in my local LAN without TLS. TLS should work though
+via the `reqwest` library but as of now I did not try to verify this. The entry `webdav_server` can be set to the empty string because it and the value supplied with 
+the `-i` option are concatenated to form the store location. If this location starts with `http` then `rustpwman` assumes that a Webdav share is to be accessed. 
+Otherwise it is expected that the password file resides in the file system. 
+
+As any Webdav share can be mounted in such a way that it apperas as a local drive I am not a 100% sure whether this feature is worth the additional about 50 
+dependencies but it demonstrates that my abstraction of the storage backend is viable.
+
 # Caveats
 
 This section provides information about stuff which is in my view suboptimal and the user should be aware of:

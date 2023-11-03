@@ -92,11 +92,11 @@ impl Persister for WebDavPersister {
             }
         };
 
-        if status.is_success() {
-            return Ok(())
+        if !status.is_success() {
+            return Err(Error::new(ErrorKind::Other, format!("HTTP error '{}'", status.as_u16())));
         };
 
-        return Err(Error::new(ErrorKind::Other, format!("HTTP error '{}'", status.as_u16())));
+        return Ok(());
     }
 
     fn retrieve(&mut self) -> std::io::Result<Box<Vec<u8>>> {
