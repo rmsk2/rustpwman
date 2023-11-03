@@ -2,7 +2,8 @@ use std::fs::File;
 use std::fs;
 use std::io::BufReader;
 use std::io::BufWriter;
-//use std::io::{Error, ErrorKind};
+use std::io::{Error, ErrorKind};
+use std::path::PathBuf;
 
 pub type PersistCreator = Box<dyn Fn(&String) -> Box<dyn Persister>>;
 
@@ -10,6 +11,7 @@ pub trait Persister {
     fn does_exist(&self) -> std::io::Result<bool>;
     fn persist(&mut self, data: &Vec<u8>) -> std::io::Result<()>;
     fn retrieve(&mut self) -> std::io::Result<Box<Vec<u8>>>;
+    fn get_canonical_path(&self) -> std::io::Result<String>;
 }
 
 struct FilePersister {
@@ -49,6 +51,17 @@ impl Persister for FilePersister {
         std::io::copy(&mut reader, &mut data).unwrap();
 
         return Ok(Box::<Vec<u8>>::new(data));
+    }
+
+    fn get_canonical_path(&self) -> std::io::Result<String> {
+        let pw_file = PathBuf::from(&self.file_name);
+        let abs_file = fs::canonicalize(pw_file)?;
+        let path_as_string = match abs_file.to_str() {
+            Some(s) => String::from(s),
+            None => return Err(Error::new(ErrorKind::Other, "File path not UTF-8"))
+        };
+
+        return Ok(path_as_string);
     }
 }
 

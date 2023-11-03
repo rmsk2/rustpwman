@@ -14,13 +14,9 @@ limitations under the License. */
 
 #![allow(dead_code)]
 
-//use users;
-use std::path::PathBuf;
 use std::io::{Error, ErrorKind};
 use md5::{Md5, Digest};
 use serde::{Serialize, Deserialize};
-use std::fs;
-//use std::os::unix::net::UnixStream;
 
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -122,16 +118,9 @@ fn hex_string(buf: &[u8]) -> String {
 }
 
 pub fn hash_password_file_name(password_file: &String) -> std::io::Result<String> {
-    let pw_file = PathBuf::from(password_file);
-    let abs_file = fs::canonicalize(pw_file)?;
-    let path_as_string = match abs_file.to_str() {
-        Some(s) => String::from(s),
-        None => return Err(Error::new(ErrorKind::Other, "File path not UTF-8"))
-    };
-
     let mut md5 = Md5::new();
 
-    md5.update(&path_as_string);
+    md5.update(password_file);
     let hash_res = md5.finalize();
     let name: String = format!("PWMAN:{}", hex_string(&hash_res));
 

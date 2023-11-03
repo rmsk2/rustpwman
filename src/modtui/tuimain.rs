@@ -57,10 +57,10 @@ pub fn main(data_file_name: String, default_sec_bits: usize, derive_func: KeyDer
 
     // Add a layer for the password entry dialog
     #[cfg(feature = "pwmanclient")]
-    setup_password_entry_with_pwman(&mut siv, &data_file_name, sender, pw_callback, &p);
+    setup_password_entry_with_pwman(&mut siv, sender, pw_callback, &p);
 
     #[cfg(not(feature = "pwmanclient"))]
-    setup_password_entry_without_pwman(&mut siv, &data_file_name, sender, pw_callback, &p);
+    setup_password_entry_without_pwman(&mut siv, sender, pw_callback, &p);
 
     // run password entry dialog
     siv.run();
@@ -76,9 +76,9 @@ pub fn main(data_file_name: String, default_sec_bits: usize, derive_func: KeyDer
     
 }
 
-fn show_unable_to_check_error(siv: &mut Cursive, sender: Rc<Sender<String>>) {
+fn show_unable_to_check_error(siv: &mut Cursive, msg: &str, sender: Rc<Sender<String>>) {
     siv.add_layer(
-        Dialog::text("Unable to determine if password storage exists. Quitting now ...")
+        Dialog::text(msg)
             .title("Rustpwman")
             .button("Ok", move |s| {
                 s.pop_layer();
@@ -88,19 +88,25 @@ fn show_unable_to_check_error(siv: &mut Cursive, sender: Rc<Sender<String>>) {
 }
 
 #[cfg(feature = "pwmanclient")]
-fn setup_password_entry_with_pwman(siv: &mut Cursive, store_id: &String, sender: Rc<Sender<String>>, pw_callback: Box<dyn Fn(&mut Cursive, &String)>, p: &Box<dyn Persister>) {
+fn setup_password_entry_with_pwman(siv: &mut Cursive, sender: Rc<Sender<String>>, pw_callback: Box<dyn Fn(&mut Cursive, &String)>, p: &Box<dyn Persister>) {
     let does_exist = match p.does_exist() {
         Ok(b) => b,
         Err(_) => {
-            show_unable_to_check_error(siv, sender.clone());
+            show_unable_to_check_error(siv, "Unable to determine if password storage exists. Quitting now ...", sender.clone());
             return;
         }
     };
 
     if does_exist {
-        let store_id_for_uds_client = store_id.clone();
+        let store_id = match p.get_canonical_path() {
+            Ok(s) => s,
+            Err(_) => {
+                show_unable_to_check_error(siv, "Unable to determine canonical storage identity. Quitting now ...", sender.clone());    
+                return 
+            }
+        };        
 
-        match cache::make_pwman_client(store_id_for_uds_client.clone()) {
+        match cache::make_pwman_client(store_id) {
             Ok(c) => {
                 match c.get_password() {
                     Ok(password) => {
@@ -126,11 +132,11 @@ fn setup_password_entry_with_pwman(siv: &mut Cursive, store_id: &String, sender:
 
 
 #[cfg(not(feature = "pwmanclient"))]
-fn setup_password_entry_without_pwman(siv: &mut Cursive, _store_id: &String, sender: Rc<Sender<String>>, pw_callback: Box<dyn Fn(&mut Cursive, &String)>, p: &Box<dyn Persister>) {
+fn setup_password_entry_without_pwman(siv: &mut Cursive, sender: Rc<Sender<String>>, pw_callback: Box<dyn Fn(&mut Cursive, &String)>, p: &Box<dyn Persister>) {
     let does_exist = match p.does_exist() {
         Ok(b) => b,
         Err(_) => {
-            show_unable_to_check_error(siv, sender.clone());
+            show_unable_to_check_error(siv, "Unable to determine canonical storage identity. Quitting now ...", sender.clone());
             return;
         }
     };

@@ -135,4 +135,8 @@ impl Persister for WebDavPersister {
 
         return Ok(Box::<Vec<u8>>::new(res_data));
     }
+
+    fn get_canonical_path(&self) -> std::io::Result<String> {
+        return Ok(format!("{}{}", &self.server, &self.store_id));
+    }
 }
