@@ -24,6 +24,8 @@ mod tuigen;
 mod clip;
 mod undo;
 mod persist;
+#[cfg(feature = "webdav")]
+mod webdav;
 #[cfg(feature = "pwmanclient")]
 mod pwman_client;
 #[cfg(feature = "pwmanclientux")]
@@ -298,6 +300,37 @@ impl RustPwMan {
         };
     }
     
+    fn make_persist_creator(&self, u: &String, p: &String, s: &String, s_id: &String) -> PersistCreator {
+        let persist_closure : PersistCreator;
+
+        let u = u.clone();
+        let p = p.clone();
+        let s = s.clone();
+        
+        #[cfg(feature = "webdav")]
+        {
+            let test_str = format!("{}{}", s, s_id).to_lowercase();
+            if test_str.starts_with("http") {
+                persist_closure = Box::new(move |store_id: &String| -> Box<dyn Persister> {
+                    return webdav::WebDavPersister::new(&u, &p, &s, store_id);
+                });
+            } else {
+                persist_closure = Box::new(move |store_id: &String| -> Box<dyn Persister> {
+                    return persist::make_file_persist(store_id, &u, &p, &s);
+                });
+            }
+        }
+
+        #[cfg(not(feature = "webdav"))]
+        {
+            persist_closure = Box::new(move |store_id: &String| -> Box<dyn Persister> {
+                return persist::make_file_persist(store_id, &u, &p, &s);
+            });
+        }
+
+        return persist_closure;
+    }
+
     fn perform_gui_command(&mut self, gui_matches: &clap::ArgMatches) {
         self.set_pbkdf_from_command_line(gui_matches);
     
@@ -306,15 +339,11 @@ impl RustPwMan {
         let p = self.webdav_pw.clone();
         let s = self.webdav_server.clone();
 
-        let persist_closure : PersistCreator;
-
-        persist_closure = Box::new(move |store_id: &String| -> Box<dyn Persister> {
-            return persist::make_file_persist(store_id, &u, &p, &s);
-        });
-
         match a {
             Some(v) => {
                 let data_file_name : String = v.clone();
+                let persist_closure = self.make_persist_creator(&u, &p, &s, &data_file_name);
+
                 modtui::tuimain::main(data_file_name, self.default_sec_level, self.default_deriver, self.default_deriver_id, 
                                       self.default_pw_gen, self.paste_command.clone(), self.copy_command.clone(), persist_closure);
             },

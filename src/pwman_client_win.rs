@@ -20,7 +20,7 @@ use crate::pwman_client::ReaderWriter;
 use crate::pwman_client::hash_password_file_name;
 use dirs;
 
-use std::{path::PathBuf};
+use std::path::PathBuf;
 use std::io::{Error, ErrorKind};
 
 #[cfg(feature = "pwmanclientwin")]

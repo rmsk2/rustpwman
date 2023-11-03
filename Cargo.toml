@@ -1,6 +1,6 @@
 [package]
 name = "rustpwman"
-version = "1.7.2"
+version = "1.8.0"
 authors = ["Martin <rmsk2@gmx.de>"]
 edition = "2021"
 
@@ -27,6 +27,7 @@ toml = "0.5.9"
 dirs = "4.0"
 uds_windows =  {version ="1.0.2", optional = true}
 users = {version = "0.11.0", optional = true}
+reqwest = {version = "0.11", optional = true, features = ["blocking"]}
 
 [target.'cfg(unix)'.dependencies]
 cursive = "0.20"
@@ -41,8 +42,8 @@ default-features = false
 features = ["pancurses-backend"]
 
 [features]
-# Use "pwmanclientwin" for Windowsbuild
 default = ["pwmanclientux"]
 pwmanclient = []
 pwmanclientux = ["dep:users", "pwmanclient"]
 pwmanclientwin = ["dep:uds_windows", "pwmanclient"]
+webdav = ["dep:reqwest"]
