@@ -300,6 +300,7 @@ impl RustPwMan {
         };
     }
     
+    #[allow(unused_variables)]
     fn make_persist_creator(&self, u: &String, p: &String, s: &String, s_id: &String) -> PersistCreator {
         let persist_closure : PersistCreator;
 
