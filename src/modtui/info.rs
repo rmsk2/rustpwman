@@ -18,7 +18,7 @@ pub fn show(s: &mut Cursive, state_for_info: Rc<RefCell<AppState>>) {
     };
 
     msg_str.push_str(format!("Entry count  : {}\n", num_entries).as_str());
-    msg_str.push_str(format!("Store Id     : {}\n", info2).as_str());
+    msg_str.push_str(format!("Location     : {}\n", info2).as_str());
     msg_str.push_str(format!("Access method: {}\n", state_for_info.borrow().persister.get_type()).as_str());
 
     let res = Dialog::new()
