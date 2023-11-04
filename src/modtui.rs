@@ -27,6 +27,7 @@ mod init;
 mod tuiundo;
 mod copy;
 mod open;
+mod info;
 pub mod tuimain;
 
 pub const PW_MAX_SEC_LEVEL: usize = 24;
@@ -315,7 +316,7 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
     let state_temp_rename = shared_state.clone();
     let state_temp_write_chache = shared_state.clone();
     let state_temp_clear_chache = shared_state.clone();
-    let state_temp_count = shared_state.clone();
+    let state_temp_info = shared_state.clone();
     let state_temp_quit = shared_state.clone();
     let state_temp_quit_print = shared_state.clone();
     let sender = sndr.clone();
@@ -353,10 +354,8 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
             let msg_str = format!("\n     A simple password manager\n\nWritten by Martin Grap in 2021-2023\n\n           Version {}", VERSION_STRING);
             show_message(s, &msg_str[..]);
         })
-        .leaf("Count entries ...", move |s| {
-            let num_entries = state_temp_count.borrow().store.len();
-            let msg_str = format!("\nThere are {} entries", num_entries);
-            show_message(s, &msg_str[..]);
+        .leaf("File info ...", move |s| {
+            info::show(s, state_temp_info.clone());
         })   
         .leaf("Undo changes ...", move |s| {
             tuiundo::undo(s, state_for_undo.clone());

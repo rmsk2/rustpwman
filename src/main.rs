@@ -317,7 +317,7 @@ impl RustPwMan {
                 });
             } else {
                 persist_closure = Box::new(move |store_id: &String| -> Box<dyn Persister> {
-                    return persist::make_file_persist(store_id, &u, &p, &s);
+                    return persist::FilePersister::new(store_id);
                 });
             }
         }
@@ -325,7 +325,7 @@ impl RustPwMan {
         #[cfg(not(feature = "webdav"))]
         {
             persist_closure = Box::new(move |store_id: &String| -> Box<dyn Persister> {
-                return persist::make_file_persist(store_id, &u, &p, &s);
+                return persist::FilePersister::new(store_id);
             });
         }
 

@@ -12,9 +12,10 @@ pub trait Persister {
     fn persist(&mut self, data: &Vec<u8>) -> std::io::Result<()>;
     fn retrieve(&mut self) -> std::io::Result<Box<Vec<u8>>>;
     fn get_canonical_path(&self) -> std::io::Result<String>;
+    fn get_type(&self) -> String;
 }
 
-struct FilePersister {
+pub struct FilePersister {
     file_name: String
 }
 
@@ -63,9 +64,9 @@ impl Persister for FilePersister {
 
         return Ok(path_as_string);
     }
-}
 
-pub fn make_file_persist(store_id: &String, _user: &String, _pw: &String, _server: &String) -> Box<dyn Persister> {
-    return FilePersister::new(store_id);
+    fn get_type(&self) -> String {
+        return String::from("Filesystem")
+    }
 }
 

@@ -139,4 +139,8 @@ impl Persister for WebDavPersister {
     fn get_canonical_path(&self) -> std::io::Result<String> {
         return Ok(format!("{}{}", &self.server, &self.store_id));
     }
+
+    fn get_type(&self) -> String {
+        return String::from("WebDAV")
+    }
 }
