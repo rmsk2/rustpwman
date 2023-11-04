@@ -123,7 +123,7 @@ impl RustPwMan {
             Ok(c) => c,
             Err(_) => {
                 if file_was_read {
-                    panic!("A config file was found but it seems to be corrupt");
+                    panic!("A config file was found but it seems to be corrupt!");
                 } else {
                     return;
                 }
