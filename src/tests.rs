@@ -319,12 +319,15 @@ fn test_save_load_config() {
         None => ()
     };
 
-    let res = tomlconfig::load(&current_dir);
+    let mut file_was_read = false;
+
+    let res = tomlconfig::load(&current_dir, &mut file_was_read);
     let res_val = match res {
         Ok(v) => v,
         Err(e) => panic!("{:?}", e)
     };
 
+    assert_eq!(file_was_read, true);
     assert_eq!(res_val.seclevel, 15);
     assert_eq!(res_val.pbkdf, String::from("egal1"));
     assert_eq!(res_val.pwgen, String::from("egal2"));

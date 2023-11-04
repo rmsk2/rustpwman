@@ -117,9 +117,17 @@ impl RustPwMan {
             None => return
         };
 
-        let loaded_config = match tomlconfig::load(&cfg_file) {
+        let mut file_was_read = false;
+
+        let loaded_config = match tomlconfig::load(&cfg_file, &mut file_was_read) {
             Ok(c) => c,
-            Err(_) => return
+            Err(_) => {
+                if file_was_read {
+                    panic!("A config file was found but it seems to be corrupt");
+                } else {
+                    return;
+                }
+            }
         };
 
         let (k, id) = self.str_to_deriver(&loaded_config.pbkdf[..]);
@@ -374,9 +382,16 @@ impl RustPwMan {
             }
         }
 
-        let loaded_config = match tomlconfig::load(&config_file_name) {
+        let mut file_was_loaded = false; 
+
+        let loaded_config = match tomlconfig::load(&config_file_name, &mut file_was_loaded) {
             Ok(c) => c,
             Err(_) => {
+                if file_was_loaded {
+                    eprintln!("A config file was found but it seems to be corrupt!");
+                    return;
+                }
+
                 tomlconfig::RustPwManSerialize {
                     seclevel: self.default_sec_level,
                     pbkdf: self.default_deriver_id.to_string(),

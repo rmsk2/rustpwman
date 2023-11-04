@@ -38,12 +38,15 @@ struct Config {
     defaults: RustPwManSerialize
 }
 
-pub fn load(file_path: &std::path::PathBuf) -> std::io::Result<RustPwManSerialize> {
+pub fn load(file_path: &std::path::PathBuf, file_was_read: &mut bool) -> std::io::Result<RustPwManSerialize> {
+    *file_was_read = false;
     let raw_string: String = match fs::read_to_string(file_path)
     {
         Ok(d) => d,
         Err(e) => return Err(e) 
     };
+
+    *file_was_read = true;
 
     let value: Config = match toml::from_str(&raw_string[..]) {
         Ok(v) => v,
