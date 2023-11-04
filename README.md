@@ -72,9 +72,9 @@ When selecting this entry `rustpwman` attempts to remove a cached password from 
 
 Shows an about dialog containing information about the author and the program version.
 
-### Count entries
+### File info
 
-Shows how many entries are present in this data file.
+Shows how many entries are present in this data file, how it is accessed and where it is located.
 
 ### Undo changes
 
