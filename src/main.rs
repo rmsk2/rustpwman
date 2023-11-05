@@ -362,7 +362,7 @@ impl RustPwMan {
                     p = match de_obfuscate(&p, OBFUSCATION_ENV_VAR) {
                         Some(s) => s,
                         None => {
-                            eprintln!("Password file name missing");
+                            eprintln!("Unable to de obfuscate password from config");
                             return;        
                         }
                     };
