@@ -239,8 +239,14 @@ For the moment these entries have to be set manually and not via `rustpwman cfg`
 the `-i` option are concatenated to form the store location. If this location starts with `http` then `rustpwman` assumes that a Webdav share is to be accessed. Otherwise it is 
 expected that the password file resides in the file system. This `rustpwman` feature has been successfully tested against a well known cloud storage provider using TLS.
 
-As any Webdav share can be mounted in such a way that it appears as a local drive I am not a 100% sure whether this feature is worth the additional about 50 dependencies 
-but it demonstrates that my abstraction of the storage backend is viable.
+The WebDAV password can optionally be stored in an obfuscated way. For this to work the environment variable `RUSTPWMAN_OBFUSCATION` has to be
+set to a random value which is then used to encrypt and decrypt the password. Encrypted passwords have to have the prefix `##obfuscated##:`. A 
+de obfuscation is only attempted if the environment variable is set **and** the `webdav_pw` value in the config file starts with the above 
+mentioned prefix. Obfuscation of a plaintext password can be performed via the `rustpwman obf` command. When executing this command the
+user has to enter the password twice and then the obfuscated version is printed to the screen from where it can be copied to the `.rustpwman`
+config file.
+
+As any Webdav share can be mounted in such a way that it appears as a local drive I am not a 100% sure whether this feature is worth the additional about 50 dependencies but it demonstrates that my abstraction of the storage backend is viable. 
 
 # Rustpwman under Windows
 
