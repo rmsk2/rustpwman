@@ -224,9 +224,9 @@ the cached password does not match the current password of the file which is to 
 
 Depending on the platform for which `rustpwman` is being built the feature is named `pwmanclientux` (Linux and MacOS) or `pwmanclientwin` (Windows).
 
-## Experimental webdav support
+## Experimental WebDAV support
 
-If you build `rustpwman` with the optional `webdav` feature enabled you can access password data files on Webdav shares without explicitly mounting the share first. The credentials
+If you build `rustpwman` with the optional `webdav` feature enabled you can access password data files on WebDAV shares without explicitly mounting the share first. The credentials
 are read from the `.rustpwman` config file using the following entries:
 
 ```
@@ -237,7 +237,7 @@ webdav_server = "http://server.test.com/davtest/"
 ```
 
 For the moment these entries have to be set manually and not via `rustpwman cfg`. The entry `webdav_server` can be set to the empty string because it and the value supplied with 
-the `-i` option are concatenated to form the store location. If this location starts with `http` then `rustpwman` assumes that a Webdav share is to be accessed. Otherwise it is 
+the `-i` option are concatenated to form the store location. If this location starts with `http` then `rustpwman` assumes that a WebDAV share is to be accessed. Otherwise it is
 expected that the password file resides in the file system. This `rustpwman` feature has been successfully tested against a well known cloud storage provider using TLS.
 
 The WebDAV password can optionally be stored in an obfuscated way. For this to work the environment variable `RUSTPWMAN_OBFUSCATION` has to be
@@ -247,7 +247,7 @@ mentioned prefix. Obfuscation of a plaintext password can be performed via the `
 user has to enter the password twice and then the obfuscated version is printed to the screen from where it can be copied to the `.rustpwman`
 config file. It has to be noted that this system of obfuscation only stops the most casual of attackers.
 
-As any Webdav share can be mounted in such a way that it appears as a local drive I am not a 100% sure whether this feature is worth the additional about 50 dependencies but it demonstrates that my abstraction of the storage backend is viable. 
+As any WebDAV share can be mounted in such a way that it appears as a local drive I am not a 100% sure whether this feature is worth the additional about 50 dependencies but it demonstrates that my abstraction of the storage backend is viable. 
 
 # Rustpwman under Windows
 
