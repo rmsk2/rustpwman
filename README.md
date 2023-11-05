@@ -211,6 +211,8 @@ one PBKDF and reencrypt that data using another key derivation function in case 
 
 # Optional features
 
+## Password cache
+
 Beginning with version 1.2.0 `rustpwman` is being built with support for the password cache implemented in [`pwman`](https://github.com/rmsk2/pwman). This feature can be
 disabled by issuing the command `cargo build --release --no-default-features` on all supported platforms. When the feature is active `rustpwman` attempts to read the 
 password for the data file specified by the `-i` option from the cache provided by `pwserv`.
@@ -218,6 +220,27 @@ password for the data file specified by the `-i` option from the cache provided 
 If this does not succeed, the user is requested to enter a password as was the case in Version 1.1.0 and below. If on the other hand the password was successfully read, the 
 user is asked to confirm that it should be used. Through the correspondig dialog the user is also able to clear the password from the cache. This can come in handy when
 the cached password does not match the current password of the file which is to be opened.
+
+Depending on the platform for which `rustpwman` is being built the feature is named `pwmanclientux` (Linux and MacOS) or `pwmanclientwin` (Windows).
+
+## Experimental webdav support
+
+If you build `rustpwman` with the optional `webdav` feature enabled you can access password data files on Webdav shares without explicitly mounting the share first. The credentials
+are read from the `.rustpwman` config file using the following entries:
+
+```
+....
+webdav_user = "user"
+webdav_pw = "password"
+webdav_server = "http://server.test.com/davtest/"
+```
+
+For the moment these entries have to be set manually and not via `rustpwman cfg`. The entry `webdav_server` can be set to the empty string because it and the value supplied with 
+the `-i` option are concatenated to form the store location. If this location starts with `http` then `rustpwman` assumes that a Webdav share is to be accessed. Otherwise it is 
+expected that the password file resides in the file system. This `rustpwman` feature has been successfully tested against a well known cloud storage provider using TLS.
+
+As any Webdav share can be mounted in such a way that it appears as a local drive I am not a 100% sure whether this feature is worth the additional about 50 dependencies 
+but it demonstrates that my abstraction of the storage backend is viable.
 
 # Rustpwman under Windows
 
@@ -296,25 +319,6 @@ The plaintext password data is simply stored as key value pairs in an obvious wa
 
 Due to this extreme simplicity the password files created by `rustpwman` are really compact. The file which holds my passwords (having about 50 entries) is less than 16 KB in 
 size.
-
-# Experimental webdav support
-
-If you build `rustpwman` with the optional `webdav` feature enabled you can access password data files on Webdav shares without explicitly mounting the share first. The credentials
-are read from the `.rustpwman` config file using the following entries:
-
-```
-....
-webdav_user = "user"
-webdav_pw = "password"
-webdav_server = "http://server.test.com/davtest/"
-```
-
-For the moment these entries have to be set manually and not via `rustpwman cfg`. The entry `webdav_server` can be set to the empty string because it and the value supplied with 
-the `-i` option are concatenated to form the store location. If this location starts with `http` then `rustpwman` assumes that a Webdav share is to be accessed. Otherwise it is 
-expected that the password file resides in the file system. This `rustpwman` feature has been successfully tested against a well known cloud storage provider using TLS.
-
-As any Webdav share can be mounted in such a way that it appears as a local drive I am not a 100% sure whether this feature is worth the additional about 50 dependencies 
-but it demonstrates that my abstraction of the storage backend is viable.
 
 # Caveats
 
