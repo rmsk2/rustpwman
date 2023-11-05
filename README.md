@@ -5,7 +5,7 @@ application in 2023. The main reason is portability without creating a dependenc
 it should compile without the necessity to install more or less exotic (or maybe even toxic) toolchains. Additionally I like the retro appeal of it.
 
 The basic concept of `rustpwman` is to manage a set of entries which have a value or content. The entries are presented in a flat list and no further structuring is offered at 
-the moment. In order to start the programm use
+the moment. In order to start the program use
 
 ```
 rustpwman gui -i <file_name>
