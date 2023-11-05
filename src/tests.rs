@@ -36,6 +36,8 @@ use std::env;
 use crate::derivers;
 #[cfg(test)]
 use std::fs::remove_file;
+#[cfg(test)]
+use crate::obfuscate;
 
 
 #[test]
@@ -405,4 +407,19 @@ fn test_undo_1() {
     assert_eq!(h.len(), 0);
     assert_eq!(u.is_all_undone(), true);
 
+}
+
+#[test]
+#[cfg(target_family = "unix")]
+fn test_obfuscator() {
+    let password = String::from("Dies ist ein Täst");
+    let ob_val = obfuscate::obfuscate(&password, "USER");
+    let plain_again = match obfuscate::de_obfuscate(&ob_val, "USER") {
+        Some(s) => s,
+        None => { panic!("Obfuscation failed") }
+    };
+
+    assert_eq!(password, plain_again);
+
+    println!("{}", &ob_val);
 }

@@ -24,6 +24,7 @@ mod tuigen;
 mod clip;
 mod undo;
 mod persist;
+mod obfuscate;
 #[cfg(feature = "webdav")]
 mod webdav;
 #[cfg(feature = "pwmanclient")]
@@ -32,6 +33,8 @@ mod pwman_client;
 mod pwman_client_ux;
 #[cfg(feature = "pwmanclientwin")]
 mod pwman_client_win;
+
+const OBFUSCATION_ENV_VAR: &str = "RUSTPWMAN_OBFUSCATION";
 
 use std::env;
 use dirs;
@@ -45,6 +48,8 @@ use std::io::BufReader;
 use std::io::BufWriter;
 use std::io::{Error, ErrorKind};
 use pwgen::GenerationStrategy;
+use obfuscate::de_obfuscate;
+use obfuscate::obfuscate;
 
 pub const VERSION_STRING: &'static str = env!("CARGO_PKG_VERSION");
 const COMMAND_ENCRYPT: &str = "enc";
@@ -52,6 +57,7 @@ const COMMAND_DECRYPT: &str = "dec";
 const COMMAND_GUI: &str = "gui";
 const COMMAND_CONFIG: &str = "cfg";
 const COMMAND_GENERATE: &str = "gen";
+const COMMAND_OBFUSCATE: &str = "obf";
 const ARG_INPUT_FILE: &str = "inputfile";
 const ARG_OUTPUT_FILE: &str = "outputfile";
 const ARG_CONFIG_FILE: &str = "cfgfile";
@@ -345,12 +351,23 @@ impl RustPwMan {
     
         let a:Option<&String> = gui_matches.get_one(ARG_INPUT_FILE);
         let u = self.webdav_user.clone();
-        let p = self.webdav_pw.clone();
+        let mut p = self.webdav_pw.clone();
         let s = self.webdav_server.clone();
 
         match a {
             Some(v) => {
                 let data_file_name : String = v.clone();
+
+                if let Ok(_) = std::env::var(OBFUSCATION_ENV_VAR) {
+                    p = match de_obfuscate(&p, OBFUSCATION_ENV_VAR) {
+                        Some(s) => s,
+                        None => {
+                            eprintln!("Password file name missing");
+                            return;        
+                        }
+                    };
+                }
+
                 let persist_closure = self.make_persist_creator(&u, &p, &s, &data_file_name);
 
                 modtui::tuimain::main(data_file_name, self.default_sec_level, self.default_deriver, self.default_deriver_id, 
@@ -361,6 +378,18 @@ impl RustPwMan {
                 return;
             }
         }
+    }
+
+    fn perform_obfuscate_command(&mut self) {
+        let pw1 = rpassword::prompt_password("WebDAV password       : ").unwrap();
+        let pw2 = rpassword::prompt_password("Again for verification: ").unwrap();
+    
+        if pw1 != pw2 {
+            eprintln!("Passwords differ");
+            return;
+        }
+
+        println!("{}", obfuscate(&pw1, OBFUSCATION_ENV_VAR));        
     }
 
     fn perform_config_command(&mut self, config_matches: &clap::ArgMatches) {
@@ -491,7 +520,10 @@ fn main() {
                     .help("Name of config file. Default is .rustpwman")))
         .subcommand(
             Command::new(COMMAND_GENERATE)
-                .about("Generate passwords")
+                .about("Generate passwords"))
+        .subcommand(
+            Command::new(COMMAND_OBFUSCATE)
+                .about("Obfuscate webdav password")                
         );                    
 
     let mut rustpwman = RustPwMan::new();
@@ -518,6 +550,9 @@ fn main() {
                 (COMMAND_GENERATE, _) => {
                     rustpwman.perform_generate_command();
                 },
+                (COMMAND_OBFUSCATE, _) => {
+                    rustpwman.perform_obfuscate_command();
+                },                
                 (&_, _) => panic!("Can not happen")           
             }
         },
