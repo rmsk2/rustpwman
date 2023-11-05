@@ -32,6 +32,7 @@ Commands:
   gui   Open file in TUI
   cfg   Change configuration
   gen   Generate passwords
+  obf   Obfuscate WebDAV password
   help  Print this message or the help of the given subcommand(s)
 
 Options:

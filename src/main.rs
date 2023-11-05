@@ -523,7 +523,7 @@ fn main() {
                 .about("Generate passwords"))
         .subcommand(
             Command::new(COMMAND_OBFUSCATE)
-                .about("Obfuscate webdav password")                
+                .about("Obfuscate WebDAV password")                
         );                    
 
     let mut rustpwman = RustPwMan::new();
