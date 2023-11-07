@@ -13,8 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 use cursive::traits::*;
-use cursive::views::{Dialog, LinearLayout, TextView, TextArea, SliderView, RadioGroup, EditView};
+use cursive::views::{Dialog, LinearLayout, TextView, TextArea, SliderView, RadioGroup, EditView, Panel, PaddedView};
 use cursive::Cursive;
+use cursive::view::Margins;
 
 use crate::tomlconfig;
 use crate::tomlconfig::RustPwManSerialize;
@@ -102,9 +103,11 @@ pub fn config_main(config_file: std::path::PathBuf, sec_level: usize, pw_gen_str
     .padding_lrtb(2, 2, 1, 1)
     .content(
         LinearLayout::vertical()
-        .child(TextView::new("Please select new defaults for the following values.\n\n"))
-        .child(TextView::new("\n"))
-        .child(LinearLayout::horizontal()
+        .child(Panel::new(
+            PaddedView::new(Margins::lrtb(1,1,1,1), 
+            LinearLayout::vertical()
+            .child(
+            LinearLayout::horizontal()
             .child(TextView::new("Security level "))
             .child(TextArea::new()
                 .content("")
@@ -118,27 +121,39 @@ pub fn config_main(config_file: std::path::PathBuf, sec_level: usize, pw_gen_str
                 .value(sec_level)
                 .on_change(|s, slider_val| { show_sec_bits(s, slider_val) })
                 .with_name(SLIDER_SEC_NAME))
+            )
+            .child(TextView::new("\n"))
+            .child(linear_layout_pw_gen)
+            ))
+            .title("Parameters for password generation")
+        )      
+        .child(Panel::new(
+            PaddedView::new(Margins::lrtb(1,1,1,1), 
+                linear_layout_pbkdf)
+            ).title("Default PBKDF")
         )
-        .child(TextView::new("\n"))
-        .child(linear_layout_pw_gen)
-        .child(TextView::new("\n"))
-        .child(linear_layout_pbkdf)
-        .child(TextView::new("\n"))
-        .child(
-            LinearLayout::horizontal()
-                .child(TextView::new("Paste command: "))
-                .child(EditView::new()
-                    .with_name(EDIT_PASTE_COMMAND)
-                    .fixed_width(60))        
+        .child(Panel::new(
+            PaddedView::new(Margins::lrtb(1,1,1,1), 
+            LinearLayout::vertical()
+                .child(
+                    LinearLayout::horizontal()
+                        .child(TextView::new("Paste command: "))
+                        .child(EditView::new()
+                            .with_name(EDIT_PASTE_COMMAND)
+                            .fixed_width(60))        
+                )
+                .child(TextView::new("\n"))
+                .child(
+                    LinearLayout::horizontal()
+                        .child(TextView::new("Copy command : "))
+                        .child(EditView::new()
+                            .with_name(EDIT_COPY_COMMAND)
+                            .fixed_width(60))        
+                )
+            ))
+            .title("Clipboard commands")
         )
-        .child(TextView::new("\n"))
-        .child(
-            LinearLayout::horizontal()
-                .child(TextView::new("Copy command : "))
-                .child(EditView::new()
-                    .with_name(EDIT_COPY_COMMAND)
-                    .fixed_width(60))        
-        )
+
     )
     .button("OK", move |s| {  
         let rand_bytes = match s.call_on_name(SLIDER_SEC_NAME, |view: &mut SliderView| { view.get_value() }) {
