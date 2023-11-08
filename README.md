@@ -165,9 +165,10 @@ As an additional workaround there is a possibility to load data from a file into
 
 # Configuration or the functionality of the `cfg` command
 
-Rustpwman uses a TOML config file for setting the default security level for newly generated passwords, the default password generator, the default PBKDF, 
-a CLI command which can be used to retrieve the contents of the clipboard and a CLI command which can be used to set the contents of the clipboard. The most convenient 
-way to edit the config file is to use the `rustpwman cfg` command which will open a window similar to this one
+Rustpwman uses a TOML config file for setting the default security level for newly generated passwords, the default password generator, 
+the default PBKDF, CLI commands which can be used to set and retrieve the contents of the clipboard and optionally the parameters needed
+for a WebDAV connection. The most convenient way to edit the config file is to use the `rustpwman cfg` command which will open a window 
+similar to this one
 
 ![](/scrshot_cfg.png?raw=true "Screenshot of rustpwman cfg")
 
