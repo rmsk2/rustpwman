@@ -246,8 +246,8 @@ set to a random value which is then used to encrypt and decrypt the password. En
 de obfuscation is only attempted if the environment variable is set **and** the `webdav_pw` value in the config file starts with the above 
 mentioned prefix. Obfuscation of a plaintext password can be performed via the `rustpwman obf` command. When executing this command the
 user has to enter the password twice and then the obfuscated version is printed to the screen from where it can be copied to the `.rustpwman`
-config file. It has to be noted that this system of obfuscation only stops the most casual of attackers. Alternatively the password can
-be obfuscated via the `rustpwman cfg` command.
+config file. Alternatively the password can be obfuscated via the `rustpwman cfg` command. It has to be noted that this system of obfuscation 
+only stops the most casual of attackers.
 
 As any WebDAV share can be mounted in such a way that it appears as a local drive I am not a 100% sure whether this feature is worth the additional about 50 dependencies but it demonstrates that my abstraction of the storage backend is viable. 
 
