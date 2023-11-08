@@ -358,12 +358,12 @@ impl RustPwMan {
             Some(v) => {
                 let data_file_name : String = v.clone();
 
-                if let Ok(_) = std::env::var(OBFUSCATION_ENV_VAR) {
+                if obfuscate::is_obfuscation_possible(OBFUSCATION_ENV_VAR) {
                     p = match de_obfuscate(&p, OBFUSCATION_ENV_VAR) {
                         Some(s) => s,
                         None => {
                             eprintln!("Unable to de obfuscate password from config");
-                            return;        
+                            return;
                         }
                     };
                 }

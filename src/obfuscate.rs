@@ -5,10 +5,21 @@ use std::str;
 use aes::cipher::{AsyncStreamCipher, KeyIvInit};
 use cfb8;
 
-const PREFIX: &str = "##obfuscated##:";
+pub const PREFIX: &str = "##obfuscated##:";
 
 type Aes128Cfb8Enc = cfb8::Encryptor<aes::Aes128>;
 type Aes128Cfb8Dec = cfb8::Decryptor<aes::Aes128>;
+
+pub fn is_obfuscation_possible(env_name: &str) -> bool {
+    match env::var(env_name) {
+        Ok(_) => true,
+        Err(_) => false
+    }
+}
+
+pub fn is_obfuscated(val: &String) -> bool {
+    val.starts_with(PREFIX)
+}
 
 fn do_crypt(v: &mut [u8], env_name: &str, do_enc: bool) {
     let h = match env::var(env_name) {
