@@ -17,6 +17,7 @@ pub fn is_obfuscation_possible(env_name: &str) -> bool {
     }
 }
 
+#[allow(dead_code)]
 pub fn is_obfuscated(val: &String) -> bool {
     val.starts_with(PREFIX)
 }
