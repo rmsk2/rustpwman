@@ -306,9 +306,7 @@ pub fn config_main(config_file: std::path::PathBuf, sec_level: usize, pw_gen_str
     res.add_button("Cancel", |s| s.quit() );
 
     #[cfg(feature = "webdav")]
-    {
-        res.add_button("Obfuscate", move |s| obfuscate_password(s));
-    };
+    res.add_button("Obfuscate", move |s| obfuscate_password(s));
 
     siv.add_layer(res);
     show_sec_bits(&mut siv, sec_level);
