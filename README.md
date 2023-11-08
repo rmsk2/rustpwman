@@ -108,6 +108,8 @@ the file is saved. I.e. if the header is `Entries *` then there are unsaved chan
 This menu entry allows to manually edit the value or contents of the currently selected password entry. After the edit dialog opens you can additionally either generate a random 
 password and insert it at the current cursor position or insert the current contents of the clipboard at that position.
 
+![](/edit.png?raw=true "Screenshot of edit entry dialog")
+
 When inserting a random password into the current entry the user has to specify some parameters which will influence the password generation process. One parameter is the 
 security level in bits (of entropy). This describes how large the set of passwords should be from which the generator selects one at random. A security level of `k` bits 
 means that there are `2**k` passwords to choose from. This parameter in essence determines the difficulty for an attacker when performing a brute force password search. 
@@ -118,8 +120,6 @@ Additionally the user is able to select the set of characters which may appear i
 - Base64, where the potential padding character `=` is removed and the the special characters `/` and `+` are replaced by `$` and `!`
 - Hex
 - Special: This password generator aims to create pronouncable passwords which are constructed from the following elements: A sequence of two letter groups which consist of a consonant followed by a vowel. There are 420 such groups. Therefore when selecting one of these groups at random each one contains 8.7 bits of entropy. The final four character group is a consonant followed by a three digit number. There are 52*1000 such four character groups so it has an entropy of 15.6 Bits when one is chosen randomly.
-
-![](/edit.png?raw=true "Screenshot of edit entry dialog")
 
 According to the Rust documentation the random number generator underlying the whole process is a *thread-local CSPRNG with periodic seeding from OsRng. Because this is local, it is typically much faster than OsRng. It should be secure, though the paranoid may prefer OsRng*.
 
