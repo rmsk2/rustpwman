@@ -123,7 +123,7 @@ pub fn entry(s: &mut Cursive, state_for_edit_entry: Rc<RefCell<AppState>>, entry
             show_message(s, "Entry created successfully. It has been selected\n but you may need to scroll to it manually.");            
         }
     })
-    .button("Insert Password", move |s: &mut Cursive| {
+    .button("Insert Password ...", move |s: &mut Cursive| {
         pwgenerate::generate_password(s, state_for_gen_pw.clone());
     })
     .button("Paste clipboard", move |s: &mut Cursive| {
