@@ -233,8 +233,8 @@ Depending on the platform for which `rustpwman` is being built the feature is na
 
 ## Experimental WebDAV support
 
-If you build `rustpwman` with the optional `webdav` feature enabled you can access password data files on WebDAV shares without explicitly mounting the share first. The credentials
-are read from the `.rustpwman` config file using the following entries:
+If you build `rustpwman` with the optional `webdav` feature enabled you can access password data files on WebDAV shares without explicitly mounting the share first. This `rustpwman` 
+feature has been successfully tested against a well known cloud storage provider using TLS. The credentials are read from the `.rustpwman` config file using the following entries:
 
 ```
 ....
@@ -243,9 +243,8 @@ webdav_pw = "password"
 webdav_server = "http://server.test.com/davtest/"
 ```
 
-For the moment these entries have to be set manually and not via `rustpwman cfg`. The entry `webdav_server` can be set to the empty string because it and the value supplied with 
-the `-i` option are concatenated to form the store location. If this location starts with `http` then `rustpwman` assumes that a WebDAV share is to be accessed. Otherwise it is
-expected that the password file resides in the file system. This `rustpwman` feature has been successfully tested against a well known cloud storage provider using TLS.
+The entry `webdav_server` can be set to the empty string because it and the value supplied with  the `-i` option are concatenated to form the store location. If this location 
+starts with `http` then `rustpwman` assumes that a WebDAV share is to be accessed. Otherwise it is expected that the password file resides in the file system. 
 
 The WebDAV password can optionally be stored in an obfuscated way. For this to work the environment variable `RUSTPWMAN_OBFUSCATION` has to be
 set to a random value which is then used to encrypt and decrypt the password. Encrypted passwords have to have the prefix `##obfuscated##:`. A 
