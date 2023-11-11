@@ -183,6 +183,9 @@ pbkdf = "argon2"
 pwgen = "special"
 clip_cmd = "xsel -ob"
 copy_cmd = "xsel -ib"
+webdav_user = ""
+webdav_pw = ""
+webdav_server = ""
 ```
 
 - `seclevel` has to be an integer between 0 and 23. The security level in bits is calculated as (`seclevel` + 1) * 8. 
@@ -190,6 +193,7 @@ copy_cmd = "xsel -ib"
 - `pwgen` is one of the strings `base64`, `hex` or `special`
 - `clip_cmd` is a string which specifies a command that can be used to write the current contents of the clipboard to stdout. 
 - `copy_cmd` is a string which specifies a command that can be used to transfer the data sent to it via stdin to the clipboard. 
+- See below for an explanation of  the `webdav_xx` entries.
 
 The default value for `clip_cmd` is `xsel -ob`, which works on Linux to retrieve the contents of the clipboard, which is filled via `CTRL+C` or after activating the `Copy` 
 item from the context menu. If you want to use the primary selection, where text only has to be selected and not explicitly copied then use `xsel -op`. Remark: I had 
@@ -251,7 +255,11 @@ user has to enter the password twice and then the obfuscated version is printed 
 config file. Alternatively the password can be obfuscated via the `rustpwman cfg` command. It has to be noted that this system of obfuscation 
 only stops the most casual of attackers.
 
-As any WebDAV share can be mounted in such a way that it appears as a local drive I am not a 100% sure whether this feature is worth the additional about 50 dependencies but it demonstrates that my abstraction of the storage backend is viable. 
+As any WebDAV share can be mounted in such a way that it appears as a local drive I am not a 100% sure whether this feature is worth the additional about 50 dependencies but it demonstrates 
+that my abstraction of the storage backend is viable. 
+
+Additional note: Under Linux you have to install the package `libssl-dev` when compiling with this feature as the TLS implementation of the `reqwest` library seems to 
+depend on it being present.
 
 # Rustpwman under Windows
 
