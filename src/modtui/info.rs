@@ -86,7 +86,7 @@ pub fn about(s: &mut Cursive) {
     .button("OK", move |s| {
         s.pop_layer();
     })
-    .button("Features", |s| {
+    .button("Features ...", |s| {
         show_message(s, &make_feature_string().as_str());
     });
 
