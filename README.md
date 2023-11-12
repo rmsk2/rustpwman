@@ -278,7 +278,9 @@ This batch file also builds `winfilter.exe` from the rust source `winfilter.rs`.
 input (if it appears at the beginning of the stream). Therefore if you pipe the output of `rustpwman` through `winfilter.exe` you can cleanup `rustpwman`'s output in order to
 make further processing easier.
 
-I have tested `rustpwman` with the `pancurses` backend in the normal `cmd.exe` console and the new [Windows Terminal](https://www.microsoft.com/en-us/p/windows-terminal/9n0dx20hk701#activetab=pivot:overviewtab). Both work well.
+I have tested `rustpwman` with the `pancurses` backend in the normal `cmd.exe` console and the new [Windows Terminal](https://www.microsoft.com/en-us/p/windows-terminal/9n0dx20hk701#activetab=pivot:overviewtab). Both work well. It has to be noted though that the `pancurses` version does not run in the console window from which it was started:
+It opens a new window. On top of that this window, let's call it the `pancurses` window, remembers it size from session to session. You can change the font type and size which
+is used if you right click on the title bar of the `pancurses` window.
 
 ## Windows Subsystem for Linux (WSL)
 
