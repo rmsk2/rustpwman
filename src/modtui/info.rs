@@ -20,6 +20,8 @@ use cursive::Cursive;
 use cursive::views::{Dialog, TextView};
 
 use super::AppState;
+use super::show_message;
+use crate::VERSION_STRING;
 
 
 pub fn show(s: &mut Cursive, state_for_info: Rc<RefCell<AppState>>) {
@@ -43,6 +45,49 @@ pub fn show(s: &mut Cursive, state_for_info: Rc<RefCell<AppState>>) {
         TextView::new(msg_str))
     .button("OK", move |s| {
         s.pop_layer();
+    });
+
+    s.add_layer(res);
+}
+
+fn make_feature_string() -> String {
+    let mut msg_str = String::from("");
+
+    #[cfg(feature = "pwmanclient")]
+    msg_str.push_str("- pwmanclient\n");
+
+    #[cfg(feature = "pwmanclientux")]
+    msg_str.push_str("- pwmanclientux\n");
+
+    #[cfg(feature = "pwmanclientwin")]
+    msg_str.push_str("- pwmanclientwin\n");
+
+    #[cfg(feature = "webdav")]
+    msg_str.push_str("- webdav\n");
+
+    if msg_str == "" {
+        msg_str.push_str("-- None --");
+    }
+
+    let mut user_msg = String::from("Active features:\n\n");
+    user_msg.push_str(&msg_str);
+
+    return user_msg;
+}
+
+pub fn about(s: &mut Cursive) {    
+    let msg_str = format!("\n     A simple password manager\n\nWritten by Martin Grap in 2021-2023\n\n           Version {}", VERSION_STRING);
+
+    let res = Dialog::new()
+    .title("Rustpwman file info")
+    .padding_lrtb(2, 2, 1, 1)
+    .content(
+        TextView::new(msg_str))
+    .button("OK", move |s| {
+        s.pop_layer();
+    })
+    .button("Features", |s| {
+        show_message(s, &make_feature_string().as_str());
     });
 
     s.add_layer(res);
