@@ -145,8 +145,8 @@ impl PasswordGenerator for HexGenerator {
 // the following elements: A sequence of two letter groups which consist of a consonant
 // followed by a vowel. There are 420 such groups. Therefore when selecting one of these
 // groups at random each one contains 8.7 bits of entropy. The final four character group
-// is a consonant followed by a three digit number. There are 26*1000 such four character 
-// groups so it has an entropy of 14.6 Bits when one is chosen randomly.
+// is a consonant followed by a three digit number. There are 52*1000 such four character 
+// groups so it has an entropy of 15.6 Bits when one is chosen randomly.
 //
 // When setting use_hissing_sounds to true sch and ch are used as additional consonants,
 // which they in essence are in the german language. After implementing this feature it 
