@@ -28,7 +28,7 @@ const GEN_SLIDER_SEC_NAME: &str = "genslider";
 const GEN_SLIDER_NUM_PW_NAME: &str = "genslidernumpw";
 const GEN_NUM_PW_VALUE: &str = "gennumpwval";
 const GEN_DIALOG: &str = "pwgendialog";
-const MAX_NUM_PASSWORDS: usize = 16;
+const MAX_NUM_PASSWORDS: usize = 30;
 const NUM_PW_DEFAULT: usize = 0;
 
 fn show_sec_bits(s: &mut Cursive, val: usize) {

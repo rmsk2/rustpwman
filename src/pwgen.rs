@@ -21,6 +21,7 @@ use crate::modtui::PW_MAX_SEC_LEVEL;
 const GEN_BASE64: &str = "base64";
 const GEN_HEX: &str = "hex";
 const GEN_SPECIAL: &str = "special";
+const GEN_NUMERIC: &str = "numeric";
 
 pub trait PasswordGenerator {
     fn gen_password(&mut self, num_bytes: usize) -> Option<String>;
@@ -32,7 +33,8 @@ type StrategyCreator = dyn Fn() -> Box<dyn PasswordGenerator>;
 pub enum GenerationStrategy {
     Base64,
     Hex,
-    Special
+    Special,
+    Numeric
 }
 
 impl GenerationStrategy {
@@ -41,6 +43,7 @@ impl GenerationStrategy {
             GEN_BASE64 => Some(GenerationStrategy::Base64),
             GEN_HEX => Some(GenerationStrategy::Hex),
             GEN_SPECIAL => Some(GenerationStrategy::Special),
+            GEN_NUMERIC => Some(GenerationStrategy::Numeric),
             _ => None
         };  
     }
@@ -49,7 +52,8 @@ impl GenerationStrategy {
         return match self {
             GenerationStrategy::Base64 => &|| { return Box::new(B64Generator::new()) },
             GenerationStrategy::Hex => &|| { return Box::new(HexGenerator::new()) },
-            GenerationStrategy::Special => &|| { return Box::new(SpecialGenerator::new(false)) }
+            GenerationStrategy::Special => &|| { return Box::new(SpecialGenerator::new(false)) },
+            GenerationStrategy::Numeric => &|| { return Box::new(NumericGenerator::new()) },
         }
     }
 
@@ -57,7 +61,8 @@ impl GenerationStrategy {
         match self {
             GenerationStrategy::Base64 => GEN_BASE64,
             GenerationStrategy::Hex => GEN_HEX,
-            GenerationStrategy::Special => GEN_SPECIAL
+            GenerationStrategy::Special => GEN_SPECIAL,
+            GenerationStrategy::Numeric => GEN_NUMERIC,
         }
     }
 
@@ -66,7 +71,7 @@ impl GenerationStrategy {
     }
 
     pub fn get_known_ids() -> Vec<GenerationStrategy> {
-        return vec![GenerationStrategy::Base64, GenerationStrategy::Hex, GenerationStrategy::Special];
+        return vec![GenerationStrategy::Base64, GenerationStrategy::Hex, GenerationStrategy::Special, GenerationStrategy::Numeric];
     }    
 }
 
@@ -231,4 +236,29 @@ impl PasswordGenerator for SpecialGenerator {
 
         return Some(res);
     }
+}
+
+pub struct NumericGenerator (GeneratorBase);
+
+impl NumericGenerator {
+    pub fn new() -> NumericGenerator {
+        return NumericGenerator(GeneratorBase::new())
+    }
+}
+
+impl PasswordGenerator for NumericGenerator {
+    fn gen_password(&mut self, num_bytes: usize) -> Option<String> {
+        let digits = vec!['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+        let security_level: f64 = (8 * num_bytes) as f64;
+        let sec_level_in_decimal = security_level / 3.32;
+        let number_of_digits: usize = sec_level_in_decimal.ceil() as usize;
+        let mut res = String::from("");
+
+        for _ in 0..number_of_digits {
+            let rand_digit = self.0.rng.gen_range(0..10);
+            res.push(digits[rand_digit])
+        }
+
+        return Some(res);
+    }    
 }

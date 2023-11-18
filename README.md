@@ -119,6 +119,7 @@ Additionally the user is able to select the set of characters which may appear i
 
 - Base64, where the potential padding character `=` is removed and the the special characters `/` and `+` are replaced by `$` and `!`
 - Hex
+- Numeric
 - Special: This password generator aims to create pronouncable passwords which are constructed from the following elements: A sequence of two letter groups which consist of a consonant followed by a vowel. There are 420 such groups. Therefore when selecting one of these groups at random each one contains 8.7 bits of entropy. The final four character group is a consonant followed by a three digit number. There are 52*1000 such four character groups so it has an entropy of 15.6 Bits when one is chosen randomly.
 
 According to the Rust documentation the random number generator underlying the whole process is a *thread-local CSPRNG with periodic seeding from OsRng. Because this is local, it is typically much faster than OsRng. It should be secure, though the paranoid may prefer OsRng*.
@@ -190,7 +191,7 @@ webdav_server = ""
 
 - `seclevel` has to be an integer between 0 and 23. The security level in bits is calculated as (`seclevel` + 1) * 8. 
 - `pbkdf` is a string that can assume the values `scrypt`, `argon2`, `sha256`
-- `pwgen` is one of the strings `base64`, `hex` or `special`
+- `pwgen` is one of the strings `base64`, `hex`, `numeric` or `special`
 - `clip_cmd` is a string which specifies a command that can be used to write the current contents of the clipboard to stdout. 
 - `copy_cmd` is a string which specifies a command that can be used to transfer the data sent to it via stdin to the clipboard. 
 - See below for an explanation of  the `webdav_xx` entries.
