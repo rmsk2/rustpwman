@@ -12,10 +12,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#![allow(dead_code)]
+
 use rand::RngCore;
 use base64;
 use std::io::{Error, ErrorKind};
 use rand::Rng;
+use num_bigint::BigUint;
 
 use crate::modtui::PW_MAX_SEC_LEVEL;
 const GEN_BASE64: &str = "base64";
@@ -258,6 +261,82 @@ impl PasswordGenerator for NumericGenerator {
             let rand_digit = self.0.rng.gen_range(0..10);
             res.push(digits[rand_digit])
         }
+
+        return Some(res);
+    }    
+}
+
+pub struct BaseNGenerator {
+    base: GeneratorBase,
+    digits: Vec<char>,
+    zero_digit: String
+}
+
+impl BaseNGenerator {
+    pub fn new(d: &Vec<char>) -> BaseNGenerator {            
+        if d.len() < 2 {
+            panic!("Not a valid radix")
+        }
+
+        let mut zero = String::from("");
+        zero.push(d[0]);
+
+        return BaseNGenerator { 
+            base: GeneratorBase::new(), 
+            digits: d.clone(),
+            zero_digit: zero,
+        }
+    }
+
+    pub fn get_max_digits(&self, num_bytes: usize) -> usize {
+        // determine max length of generated value in order to spot leading
+        // zeros further on.
+        let len_test: [u8; PW_MAX_SEC_LEVEL] = [0xFF; PW_MAX_SEC_LEVEL];
+        let j = BigUint::from_bytes_be(&len_test[..num_bytes]);
+
+        return j.to_radix_be(self.digits.len() as u32).len();
+    }
+
+    pub fn from_string(s: &String) -> BaseNGenerator {
+        let mut v: Vec<char> = vec![];
+
+        for i in s.chars() {
+            v.push(i);
+        }
+
+        return BaseNGenerator::new(&v);
+    }
+
+    pub fn buf_to_base_n(&self, base_256_num: &[u8], num_bytes: usize) -> String {
+        let i = BigUint::from_bytes_be(base_256_num);
+        // perform radix conversion using self.digits.len() as the base
+        let raw_digits = i.to_radix_be(self.digits.len() as u32);
+
+        // transform numeric values for digits to actual characters
+        let mut res = String::from("");
+        for i in raw_digits {
+            res.push(self.digits[i as usize]);
+        }
+
+        let max_len = self.get_max_digits(num_bytes);
+
+        // add leading zeros if neccessary
+        while res.len() < max_len {
+            res.insert_str(0, &self.zero_digit);
+        }
+
+        return res;
+    }
+}
+
+impl PasswordGenerator for BaseNGenerator {
+    fn gen_password(&mut self, num_bytes: usize) -> Option<String> {
+        let _ = match self.base.fill_buffer(num_bytes) {
+            Err(_) => return None,
+            Ok(b) => b 
+        };        
+        
+        let res = self.buf_to_base_n(&self.base.buffer[..num_bytes], num_bytes);
 
         return Some(res);
     }    

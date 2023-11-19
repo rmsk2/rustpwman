@@ -1,6 +1,6 @@
 [package]
 name = "rustpwman"
-version = "1.8.6"
+version = "1.8.7"
 authors = ["Martin <rmsk2@gmx.de>"]
 edition = "2021"
 
@@ -26,6 +26,7 @@ rpassword = "7.0"
 argon2 = "0.4"
 toml = "0.5.9"
 dirs = "4.0"
+num-bigint = "0.4"
 uds_windows =  {version ="1.0.2", optional = true}
 users = {version = "0.11.0", optional = true}
 reqwest = {version = "0.11", optional = true, features = ["blocking"]}
