@@ -25,9 +25,11 @@ const GEN_BASE64: &str = "base64";
 const GEN_HEX: &str = "hex";
 const GEN_SPECIAL: &str = "special";
 const GEN_NUMERIC: &str = "numeric";
+const GEN_CUSTOM: &str = "custom";
 
 pub trait PasswordGenerator {
     fn gen_password(&mut self, num_bytes: usize) -> Option<String>;
+    fn set_custom(&mut self, _s: &String) {}
 }
 
 type StrategyCreator = dyn Fn() -> Box<dyn PasswordGenerator>;
@@ -37,7 +39,8 @@ pub enum GenerationStrategy {
     Base64,
     Hex,
     Special,
-    Numeric
+    Numeric,
+    Custom
 }
 
 impl GenerationStrategy {
@@ -47,6 +50,7 @@ impl GenerationStrategy {
             GEN_HEX => Some(GenerationStrategy::Hex),
             GEN_SPECIAL => Some(GenerationStrategy::Special),
             GEN_NUMERIC => Some(GenerationStrategy::Numeric),
+            GEN_CUSTOM => Some(GenerationStrategy::Custom),
             _ => None
         };  
     }
@@ -57,6 +61,7 @@ impl GenerationStrategy {
             GenerationStrategy::Hex => &|| { return Box::new(HexGenerator::new()) },
             GenerationStrategy::Special => &|| { return Box::new(SpecialGenerator::new(false)) },
             GenerationStrategy::Numeric => &|| { return Box::new(NumericGenerator::new()) },
+            GenerationStrategy::Custom => &|| { return Box::new(BaseNGenerator::new(&vec!['a', 'b'])) },
         }
     }
 
@@ -66,6 +71,7 @@ impl GenerationStrategy {
             GenerationStrategy::Hex => GEN_HEX,
             GenerationStrategy::Special => GEN_SPECIAL,
             GenerationStrategy::Numeric => GEN_NUMERIC,
+            GenerationStrategy::Custom => GEN_CUSTOM,
         }
     }
 
@@ -298,13 +304,10 @@ impl BaseNGenerator {
     }
 
     pub fn from_string(s: &String) -> BaseNGenerator {
-        let mut v: Vec<char> = vec![];
-
-        for i in s.chars() {
-            v.push(i);
-        }
-
-        return BaseNGenerator::new(&v);
+        let mut res = BaseNGenerator::new(&vec!['a', 'b']);
+        res.set_custom(s);
+        
+        return res;
     }
 
     pub fn buf_to_base_n(&self, base_256_num: &[u8], num_bytes: usize) -> String {
@@ -339,5 +342,17 @@ impl PasswordGenerator for BaseNGenerator {
         let res = self.buf_to_base_n(&self.base.buffer[..num_bytes], num_bytes);
 
         return Some(res);
-    }    
+    }
+
+    fn set_custom(&mut self, s: &String) {
+        let mut v: Vec<char> = vec![];
+
+        for i in s.chars() {
+            v.push(i);
+        }
+        
+        self.digits = v.clone();
+        self.zero_digit = String::from("");
+        self.zero_digit.push(v[0]);
+    }
 }
