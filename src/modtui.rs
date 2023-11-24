@@ -60,10 +60,7 @@ use std::cell::RefCell;
 use std::sync::mpsc::Sender;
 use std::io::{Error, ErrorKind};
 
-use std::collections::HashMap;
-
 use crate::pwgen::GenerationStrategy;
-use crate::pwgen::PasswordGenerator;
 use crate::jots;
 
 
@@ -71,27 +68,27 @@ pub struct AppState {
     store: jots::Jots,
     password: Option<String>,
     store_id: String,
-    pw_gens: HashMap<GenerationStrategy, Box<dyn PasswordGenerator>>,
     default_security_level: usize,
     default_generator: GenerationStrategy,
     paste_command: String,
     copy_command: String,
     persister: Box<dyn Persister>,
+    last_custom_selection: String,
 }
 
 impl AppState {
-    pub fn new(s: jots::Jots, f_name: &String, generators: HashMap<GenerationStrategy, Box<dyn PasswordGenerator>>, default_sec: usize, default_gen: GenerationStrategy, 
+    pub fn new(s: jots::Jots, f_name: &String, default_sec: usize, default_gen: GenerationStrategy, 
                paste_cmd: &String, copy_cmd: &String, p: Box<dyn Persister>) -> Self {
         return AppState {
             store: s,
             password: None,
             store_id: f_name.clone(),
-            pw_gens: generators,
             default_security_level: default_sec,
             default_generator: default_gen,
             paste_command: paste_cmd.clone(),
             copy_command: copy_cmd.clone(),
             persister: p,
+            last_custom_selection: String::from("")
         }
     }
 

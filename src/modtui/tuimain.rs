@@ -16,17 +16,14 @@ limitations under the License. */
 use std::rc::Rc;
 use std::sync::mpsc::{Sender, Receiver};
 use std::sync::mpsc;
-use std::collections::HashMap;
 
 use cursive::Cursive;
 use cursive::views::Dialog;
 
-use crate::pwgen;
 use crate::fcrypt::KeyDeriver;
 use crate::fcrypt;
 use crate::jots;
 use crate::pwgen::GenerationStrategy;
-use crate::pwgen::PasswordGenerator;
 use super::AppState;
 use super::open;
 use crate::persist::Persister;
@@ -55,13 +52,8 @@ pub fn main(data_file_name: String, default_sec_bits: usize, derive_func: KeyDer
         let p_cb = make_default(&capture_file_name);
         let jots_store = jots::Jots::new(derive_func, deriver_id);
         let f_name = capture_file_name.clone();
-        let mut generators: HashMap<GenerationStrategy, Box<dyn PasswordGenerator>> = HashMap::new();
 
-        for i in pwgen::GenerationStrategy::get_known_ids() {
-            generators.insert(i, i.to_creator()());
-        }
-
-        let state = AppState::new(jots_store, &f_name, generators, default_sec_bits, default_pw_gen, &paste_cmd, &copy_cmd, p_cb);
+        let state = AppState::new(jots_store, &f_name, default_sec_bits, default_pw_gen, &paste_cmd, &copy_cmd, p_cb);
 
         // No else branch is neccessary as open_file performs error handling
         if let Some(state_after_open) = open::storage(s, password, state) {
