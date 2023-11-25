@@ -45,7 +45,13 @@ fn show_sec_bits(s: &mut Cursive, val: usize) {
     });
 }
 
-fn strategy_changed(s: &mut Cursive, strategy: &GenerationStrategy) {
+fn show_char_count(s: &mut Cursive, data: &str, _c: usize) {
+    let temp = String::from(data);    
+    let l = eliminate_repititions(&temp).chars().count();
+    s.call_on_name(CHAR_COUNT, |view: &mut TextView| { view.set_content(l.to_string()); });   
+}
+
+fn on_strategy_changed(s: &mut Cursive, strategy: &GenerationStrategy) {
     let mut custom_visible = false;
     
     if *strategy == GenerationStrategy::Custom {
@@ -80,14 +86,6 @@ fn select_default_pw_generator_type(s: &mut Cursive, selector: &mut HashMap<Gene
     }
 }
 
-#[derive(Debug, Hash, PartialEq, Eq, Copy, Clone)]
-enum SelectionType {
-    Upper,
-    Lower,
-    Digits,
-    Special,
-}
-
 fn set_from_str(s: &String) -> HashSet<char> {
     let mut res = HashSet::<char>::new();
 
@@ -108,7 +106,20 @@ fn str_from_set(s: &HashSet<char>) -> String {
     return res;
 }
 
-fn custom_charset_modified(s: &mut Cursive, new_value: bool, st: SelectionType) {
+fn eliminate_repititions(s: &String) -> String {
+    let h = set_from_str(s);
+    return str_from_set(&h);
+}
+
+#[derive(Debug, Hash, PartialEq, Eq, Copy, Clone)]
+enum SelectionType {
+    Upper,
+    Lower,
+    Digits,
+    Special,
+}
+
+fn on_change_charset(s: &mut Cursive, new_value: bool, st: SelectionType) {
     let current_chars = match s.call_on_name(CUSTOM_CHARS, |view: &mut EditView| { view.get_content() }) {
         Some(v) => v,
         None => { show_message(s, "Unable to determine current character selection"); return }
@@ -136,19 +147,59 @@ fn custom_charset_modified(s: &mut Cursive, new_value: bool, st: SelectionType) 
     let for_measurement = new_chars.clone();
 
     s.call_on_name(CUSTOM_CHARS, |view: &mut EditView| { view.set_content(new_chars); });
-    set_char_count(s, for_measurement.as_str(), 0)
+    show_char_count(s, for_measurement.as_str(), 0)
 }
 
-fn set_char_count(s: &mut Cursive, data: &str, _c: usize) {
-    let l = data.chars().count();
-    s.call_on_name(CHAR_COUNT, |view: &mut TextView| { view.set_content(l.to_string()); });   
+
+fn on_ok_clicked(s: &mut Cursive, state_for_gen_pw: Rc<RefCell<AppState>>, strategy_group: &RadioGroup<GenerationStrategy>) {
+    let rand_bytes = match s.call_on_name(SLIDER_SEC_NAME, |view: &mut SliderView| { view.get_value() }) {
+        Some(v) => v,
+        None => { show_message(s, "Unable to determine security level"); return }
+    };
+
+    let new_pw: String;                    
+    let selected_strategy = strategy_group.selection();
+    let current_chars: Rc<String>;
+
+    let mut generator = selected_strategy.to_creator()();
+
+    if *selected_strategy == GenerationStrategy::Custom {
+        current_chars = match s.call_on_name(CUSTOM_CHARS, |view: &mut EditView| { view.get_content() }) {
+            Some(v) => v,
+            None => { show_message(s, "Unable to determine current character selection"); return }
+        };
+
+        let custom_chars = eliminate_repititions(&current_chars).chars().sorted().collect::<String>();
+
+        if custom_chars.len() < 2 {
+            show_message(s, "Not enough unique characters for password generation in selection"); 
+            return;
+        }
+
+        generator.set_custom(&custom_chars);
+
+        {
+            state_for_gen_pw.borrow_mut().last_custom_selection = String::from(custom_chars.as_str());
+        }
+    }
+
+    new_pw = match generator.gen_password(rand_bytes + 1) {
+        Some(pw) => pw,
+        None => {
+            show_message(s, "Unable to generate password"); 
+            return;
+        }
+    };    
+
+    insert_into_entry(s, new_pw);
+    s.pop_layer();        
 }
 
 fn create_custom_select(last_selection: &String) -> Box<dyn View> {
     let mut check_boxes = LinearLayout::horizontal();
 
     let mut check_upper = Checkbox::new().with_checked(false);
-    check_upper.set_on_change(|s: &mut Cursive, val: bool| custom_charset_modified(s, val, SelectionType::Upper));
+    check_upper.set_on_change(|s: &mut Cursive, val: bool| on_change_charset(s, val, SelectionType::Upper));
 
     check_boxes.add_child(LinearLayout::horizontal()
         .child(check_upper) 
@@ -156,7 +207,7 @@ fn create_custom_select(last_selection: &String) -> Box<dyn View> {
     );
 
     let mut check_lower = Checkbox::new().with_checked(false);
-    check_lower.set_on_change(|s: &mut Cursive, val: bool| custom_charset_modified(s, val, SelectionType::Lower));
+    check_lower.set_on_change(|s: &mut Cursive, val: bool| on_change_charset(s, val, SelectionType::Lower));
 
     check_boxes.add_child(LinearLayout::horizontal()
         .child(check_lower) 
@@ -164,7 +215,7 @@ fn create_custom_select(last_selection: &String) -> Box<dyn View> {
     );
 
     let mut check_num = Checkbox::new().with_checked(false);
-    check_num.set_on_change(|s: &mut Cursive, val: bool| custom_charset_modified(s, val, SelectionType::Digits));
+    check_num.set_on_change(|s: &mut Cursive, val: bool| on_change_charset(s, val, SelectionType::Digits));
 
     check_boxes.add_child(LinearLayout::horizontal()
         .child(check_num) 
@@ -172,7 +223,7 @@ fn create_custom_select(last_selection: &String) -> Box<dyn View> {
     );
 
     let mut check_special = Checkbox::new().with_checked(false);
-    check_special.set_on_change(|s: &mut Cursive, val: bool| custom_charset_modified(s, val, SelectionType::Special));
+    check_special.set_on_change(|s: &mut Cursive, val: bool| on_change_charset(s, val, SelectionType::Special));
 
     check_boxes.add_child(LinearLayout::horizontal()
         .child(check_special) 
@@ -185,7 +236,7 @@ fn create_custom_select(last_selection: &String) -> Box<dyn View> {
         .child(LinearLayout::horizontal()
             .child(TextView::new("Custom characters: "))
             .child(EditView::new()
-                .on_edit(set_char_count)
+                .on_edit(show_char_count)
                 .content(last_selection.clone())
                 .with_name(CUSTOM_CHARS)
                 .fixed_width(70)))
@@ -193,7 +244,7 @@ fn create_custom_select(last_selection: &String) -> Box<dyn View> {
         .child(check_boxes)
         .child(TextView::new("\n"))
         .child(LinearLayout::horizontal()
-            .child(TextView::new("Number of characters: "))
+            .child(TextView::new("Number of unique characters: "))
             .child(TextView::new("0")
                 .with_name(CHAR_COUNT))
         )
@@ -235,7 +286,7 @@ pub fn generate_password(s: &mut Cursive, state_for_gen_pw: Rc<RefCell<AppState>
         linear_layout.add_child(TextView::new(" "));
     }
 
-    strategy_group.set_on_change(strategy_changed);
+    strategy_group.set_on_change(on_strategy_changed);
     let custom_select = create_custom_select(&state_for_gen_pw.borrow().last_custom_selection);
     let h = state_for_gen_pw.borrow().last_custom_selection.clone();
     let for_measurement = h.as_str();
@@ -272,51 +323,11 @@ pub fn generate_password(s: &mut Cursive, state_for_gen_pw: Rc<RefCell<AppState>
             .with_name(CUSTOM_HIDEABLE)
         )
     )
-    .button("OK", move |s| {
-        let rand_bytes = match s.call_on_name(SLIDER_SEC_NAME, |view: &mut SliderView| { view.get_value() }) {
-            Some(v) => v,
-            None => { show_message(s, "Unable to determine security level"); return }
-        };
-
-        let new_pw: String;                    
-        let selected_strategy = strategy_group.selection();
-        let current_chars: Rc<String>;
-
-        let mut generator = selected_strategy.to_creator()();
-
-        if *selected_strategy == GenerationStrategy::Custom {
-            current_chars = match s.call_on_name(CUSTOM_CHARS, |view: &mut EditView| { view.get_content() }) {
-                Some(v) => v,
-                None => { show_message(s, "Unable to determine current character selection"); return }
-            };
-
-            if current_chars.len() < 2 {
-                show_message(s, "Not enough characters for password generation in selection"); 
-                return;
-            }
-
-            generator.set_custom(&current_chars);
-
-            {
-                state_for_gen_pw.borrow_mut().last_custom_selection = String::from(current_chars.as_str());
-            }
-        }
-
-        new_pw = match generator.gen_password(rand_bytes + 1) {
-            Some(pw) => pw,
-            None => {
-                show_message(s, "Unable to generate password"); 
-                return;
-            }
-        };    
-
-        insert_into_entry(s, new_pw);
-        s.pop_layer();        
-    })
+    .button("OK", move |s| on_ok_clicked(s, state_for_gen_pw.clone(), &strategy_group))
     .button("Cancel", |s| { s.pop_layer(); });
     
     s.add_layer(res);
     show_sec_bits(s, sec_bits);
-    strategy_changed(s, &default_strategy);
-    set_char_count(s, for_measurement, 0);
+    on_strategy_changed(s, &default_strategy);
+    show_char_count(s, for_measurement, 0);
 }

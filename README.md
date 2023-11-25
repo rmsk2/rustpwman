@@ -121,8 +121,11 @@ Additionally the user is able to select the set of characters which may appear i
 - Hex
 - Numeric
 - Special: This password generator aims to create pronouncable passwords which are constructed from the following elements: A sequence of two letter groups which consist of a consonant followed by a vowel. There are 420 such groups. Therefore when selecting one of these groups at random each one contains 8.7 bits of entropy. The final four character group is a consonant followed by a three digit number. There are 52*1000 such four character groups so it has an entropy of 15.6 Bits when one is chosen randomly.
+- Custom: When selecting this option the user can customize the character set which is used to generate the password. What happens here is in essence a radix conversion of a binary random number, which has the selected number of bits, into the base which is derived from the number `N` of unique characters in the custom character set. Each character in that set is then used a base `N` digit. While the security level of the generated password is guaranteed to be equal to the selected value it has to be noted that this does not mean that all digits appear in all positions with equal probability.
 
-According to the Rust documentation the random number generator underlying the whole process is a *thread-local CSPRNG with periodic seeding from OsRng. Because this is local, it is typically much faster than OsRng. It should be secure, though the paranoid may prefer OsRng*.
+![](/custom.png?raw=true "Screenshot of password generation dialog")
+
+The controls to select a custom character set are hidden unless you select the `custom` option. According to the Rust documentation the random number generator underlying the whole process is a *thread-local CSPRNG with periodic seeding from OsRng. Because this is local, it is typically much faster than OsRng. It should be secure, though the paranoid may prefer OsRng*.
 
 ### Copy to clipboard
 
