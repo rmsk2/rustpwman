@@ -218,7 +218,7 @@ impl RustPwMan {
             return Err(Error::new(ErrorKind::Other, "Passwords differ"));
         }
     
-        match fcrypt::GcmContext::check_password(&pw1) {
+        match fcrypt::check_password(&pw1) {
             Some(e) => return Err(e),
             None => ()
         }
@@ -281,7 +281,7 @@ impl RustPwMan {
             Ok(p) => p
         };
         
-        match fcrypt::GcmContext::check_password(&pw) {
+        match fcrypt::check_password(&pw) {
             Some(e) => {
                 eprintln!("Password illegal: {:?}", e);
                 return;

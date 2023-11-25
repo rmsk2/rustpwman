@@ -37,7 +37,7 @@ pub fn dialog(sndr: Rc<Sender<String>>, ok_cb_with_state: Box<dyn Fn(&mut Cursiv
             None => { show_message(s, "Unable to read password"); return }
         };
 
-        if let Some(err) = fcrypt::GcmContext::check_password(&pw_text) {
+        if let Some(err) = fcrypt::check_password(&pw_text) {
             show_message(s, &format!("Password incorrect: {:?}", err));
             return;        
         }        

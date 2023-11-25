@@ -49,10 +49,35 @@ pub const DEFAULT_KDF_ID: KdfId = KdfId::Argon2;
 pub trait Cryptor {
     fn encrypt(&mut self, pw: &str, data: &Vec<u8>) -> std::io::Result<Vec<u8>>;
     fn decrypt(&mut self, pw: &str, data: &Vec<u8>) -> std::io::Result<Vec<u8>>;
-    fn persist(&self, data: &Vec<u8>, p: &mut Box<dyn Persister>) -> std::io::Result<()>;
-    fn retrieve(&mut self, p: &mut Box<dyn Persister>) -> std::io::Result<Vec<u8>>;
-    fn from_file(&mut self, file_name: &str) -> std::io::Result<Vec<u8>>;
-    fn to_file(&self, data: &Vec<u8>, file_name: &str) -> std::io::Result<()>;
+    fn to_dyn_writer(&self, writer: &mut dyn Write, data: &Vec<u8>) -> std::io::Result<()>;
+    fn from_dyn_reader(&mut self, reader: &mut dyn Read)-> std::io::Result<Vec<u8>>;
+
+    fn to_file(&self, data: &Vec<u8>, file_name: &str) -> std::io::Result<()> {
+        let file = File::create(file_name)?;
+        let mut w = BufWriter::new(file);
+
+        return self.to_dyn_writer(&mut w, data);
+    }
+
+    fn persist(&self, data: &Vec<u8>, p: &mut Box<dyn Persister>) -> std::io::Result<()> {
+        let mut res_data: Vec<u8> = vec![];
+        self.to_dyn_writer(&mut res_data, data)?;
+
+        return p.persist(&res_data);
+    }
+
+    fn from_file(&mut self, file_name: &str) -> std::io::Result<Vec<u8>> {
+        let file = File::open(file_name)?;
+        let mut reader = BufReader::new(file);
+
+        return self.from_dyn_reader(&mut reader);
+    }
+
+    fn retrieve(&mut self, p: &mut Box<dyn Persister>) -> std::io::Result<Vec<u8>> {
+        let data = *p.retrieve()?;
+
+        return self.from_dyn_reader(&mut data.as_slice());
+    } 
 }
 
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
@@ -126,6 +151,13 @@ pub struct GcmContext {
     pub kdf_id: KdfId
 } 
 
+pub fn check_password(pw: &str) -> Option<Error> {
+    if pw.as_bytes().len() > MAX_PW_SIZE_IN_BYTES {
+        return Some(Error::new(ErrorKind::Other, "Password too long"));
+    }
+
+    return None;
+}
 
 impl GcmContext {
     #![allow(dead_code)]
@@ -148,18 +180,6 @@ impl GcmContext {
         res.fill_random();
 
         return res;        
-    }
-
-    pub fn check_password(pw: &str) -> Option<Error> {
-        if pw.as_bytes().len() > MAX_PW_SIZE_IN_BYTES {
-            return Some(Error::new(ErrorKind::Other, "Password too long"));
-        }
-
-        return None;
-    }
-
-    pub fn from_dyn_reader(&mut self, reader: Box<dyn Read>)-> std::io::Result<Vec<u8>> {
-        return self.from_reader(reader);
     }
 
     pub fn from_reader<T: Read>(&mut self, reader: T) -> std::io::Result<Vec<u8>> {
@@ -202,10 +222,6 @@ impl GcmContext {
         }
     
         return Ok(data);
-    }
-
-    pub fn to_dyn_writer(&self, writer: Box<dyn Write>, data: &Vec<u8>) -> std::io::Result<()> {
-        return self.to_writer(writer, data);
     }
 
     pub fn to_writer<T: Write>(&self, writer: T, data: &Vec<u8>) -> std::io::Result<()> {
@@ -289,30 +305,11 @@ impl Cryptor for GcmContext {
         };
     }
 
-    fn to_file(&self, data: &Vec<u8>, file_name: &str) -> std::io::Result<()> {
-        let file = File::create(file_name)?;
-        let w = BufWriter::new(file);
-
-        return self.to_writer(w, data);
-    }
-
-    fn persist(&self, data: &Vec<u8>, p: &mut Box<dyn Persister>) -> std::io::Result<()> {
-        let mut res_data: Vec<u8> = vec![];
-        self.to_writer(&mut res_data, data)?;
-
-        return p.persist(&res_data);
-    }
-
-    fn from_file(&mut self, file_name: &str) -> std::io::Result<Vec<u8>> {
-        let file = File::open(file_name)?;
-        let reader = BufReader::new(file);
-
+    fn from_dyn_reader(&mut self, reader: &mut dyn Read)-> std::io::Result<Vec<u8>> {
         return self.from_reader(reader);
     }
 
-    fn retrieve(&mut self, p: &mut Box<dyn Persister>) -> std::io::Result<Vec<u8>> {
-        let data = *p.retrieve()?;
-
-        return self.from_reader(data.as_slice());
-    }    
+    fn to_dyn_writer(&self, writer: &mut dyn Write, data: &Vec<u8>) -> std::io::Result<()> {
+        return self.to_writer(writer, data);
+    }        
 }
