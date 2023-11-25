@@ -46,6 +46,15 @@ const KDF_SHA256: &str = "sha256";
 
 pub const DEFAULT_KDF_ID: KdfId = KdfId::Argon2;
 
+pub trait Cryptor {
+    fn encrypt(&mut self, pw: &str, data: &Vec<u8>) -> std::io::Result<Vec<u8>>;
+    fn decrypt(&mut self, pw: &str, data: &Vec<u8>) -> std::io::Result<Vec<u8>>;
+    fn persist(&self, data: &Vec<u8>, p: &mut Box<dyn Persister>) -> std::io::Result<()>;
+    fn retrieve(&mut self, p: &mut Box<dyn Persister>) -> std::io::Result<Vec<u8>>;
+    fn from_file(&mut self, file_name: &str) -> std::io::Result<Vec<u8>>;
+    fn to_file(&self, data: &Vec<u8>, file_name: &str) -> std::io::Result<()>;
+}
+
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
 pub enum KdfId {
     Scrypt,
@@ -195,19 +204,6 @@ impl GcmContext {
         return Ok(data);
     }
 
-    pub fn from_file(&mut self, file_name: &str) -> std::io::Result<Vec<u8>> {
-        let file = File::open(file_name)?;
-        let reader = BufReader::new(file);
-
-        return self.from_reader(reader);
-    }
-
-    pub fn retrieve(&mut self, p: &mut Box<dyn Persister>) -> std::io::Result<Vec<u8>> {
-        let data = *p.retrieve()?;
-
-        return self.from_reader(data.as_slice());
-    }
-
     pub fn to_dyn_writer(&self, writer: Box<dyn Write>, data: &Vec<u8>) -> std::io::Result<()> {
         return self.to_writer(writer, data);
     }
@@ -223,20 +219,6 @@ impl GcmContext {
         serde_json::to_writer_pretty(writer, &j)?;
 
         return Ok(());
-    }
-
-    pub fn to_file(&self, data: &Vec<u8>, file_name: &str) -> std::io::Result<()> {
-        let file = File::create(file_name)?;
-        let w = BufWriter::new(file);
-
-        return self.to_writer(w, data);
-    }
-
-    pub fn persist(&self, data: &Vec<u8>, p: &mut Box<dyn Persister>) -> std::io::Result<()> {
-        let mut res_data: Vec<u8> = vec![];
-        self.to_writer(&mut res_data, data)?;
-
-        return p.persist(&res_data);
     }
 
     fn fill_random(&mut self) {
@@ -259,7 +241,10 @@ impl GcmContext {
         return (self.kdf)(&self.salt, password);
     }
 
-    pub fn decrypt(&self, password: &str, data: &Vec<u8>) -> std::io::Result<Vec<u8>> {
+}
+
+impl Cryptor for GcmContext {
+    fn decrypt(&mut self, password: &str, data: &Vec<u8>) -> std::io::Result<Vec<u8>> {
         if data.len() < DEFAULT_TAG_SIZE {
             return Err(Error::new(ErrorKind::Other, "Ciphertext too short"));
         }
@@ -288,7 +273,7 @@ impl GcmContext {
         return Ok(dec_buffer);
     }
 
-    pub fn encrypt(&mut self, password: &str, data: &Vec<u8>) -> std::io::Result<Vec<u8>> {
+    fn encrypt(&mut self, password: &str, data: &Vec<u8>) -> std::io::Result<Vec<u8>> {
         self.fill_random();
 
         let aes_256_key = self.regenerate_key(password);
@@ -303,4 +288,31 @@ impl GcmContext {
             Ok(d) => Ok(d)
         };
     }
+
+    fn to_file(&self, data: &Vec<u8>, file_name: &str) -> std::io::Result<()> {
+        let file = File::create(file_name)?;
+        let w = BufWriter::new(file);
+
+        return self.to_writer(w, data);
+    }
+
+    fn persist(&self, data: &Vec<u8>, p: &mut Box<dyn Persister>) -> std::io::Result<()> {
+        let mut res_data: Vec<u8> = vec![];
+        self.to_writer(&mut res_data, data)?;
+
+        return p.persist(&res_data);
+    }
+
+    fn from_file(&mut self, file_name: &str) -> std::io::Result<Vec<u8>> {
+        let file = File::open(file_name)?;
+        let reader = BufReader::new(file);
+
+        return self.from_reader(reader);
+    }
+
+    fn retrieve(&mut self, p: &mut Box<dyn Persister>) -> std::io::Result<Vec<u8>> {
+        let data = *p.retrieve()?;
+
+        return self.from_reader(data.as_slice());
+    }    
 }

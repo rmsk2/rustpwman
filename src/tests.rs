@@ -16,6 +16,10 @@ limitations under the License. */
 use std;
 
 #[cfg(test)]
+use crate::make_cryptor;
+
+
+#[cfg(test)]
 use std::collections::HashMap;
 
 #[cfg(test)]
@@ -42,6 +46,8 @@ use std::fs::remove_file;
 use crate::obfuscate;
 #[cfg(test)]
 use crate::pwgen::BaseNGenerator;
+#[cfg(test)]
+use crate::fcrypt::Cryptor;
 
 
 #[test]
@@ -147,6 +153,7 @@ pub fn test_fcrypt_enc_dec_with_json() {
     }
 }
 
+
 #[test]
 pub fn test_jots_serialize_deserialize() {
     let mut serialized: Vec<u8> = Vec::new();
@@ -158,7 +165,7 @@ pub fn test_jots_serialize_deserialize() {
     let d3 = String::from("data3"); 
     
     {
-        let mut j = jots::Jots::new_id(derivers::sha256_deriver, fcrypt::KdfId::Sha256);
+        let mut j = jots::Jots::new_id(derivers::sha256_deriver, fcrypt::KdfId::Sha256, make_cryptor);
         j.add(&t1, &d1);
         j.add(&t2, &d2);
         j.add(&t3, &d3);
@@ -173,7 +180,7 @@ pub fn test_jots_serialize_deserialize() {
         };
     }
 
-    let mut j2 = jots::Jots::new_id(derivers::sha256_deriver, fcrypt::KdfId::Sha256);
+    let mut j2 = jots::Jots::new_id(derivers::sha256_deriver, fcrypt::KdfId::Sha256, make_cryptor);
     match j2.from_reader(serialized.as_slice()) {
         Ok(_) => (),
         Err(e) => { panic!("Deserialization failed {:?}", e); }          
@@ -215,7 +222,7 @@ pub fn test_jots_iter() {
     let d2 = String::from("data2");   
     let d3 = String::from("data3"); 
     
-    let mut j = jots::Jots::new_id(derivers::sha256_deriver, fcrypt::KdfId::Sha256);
+    let mut j = jots::Jots::new_id(derivers::sha256_deriver, fcrypt::KdfId::Sha256, make_cryptor);
     j.add(&t1, &d1);
     j.add(&t2, &d2);
     j.add(&t3, &d3);

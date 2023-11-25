@@ -23,7 +23,11 @@ use crate::fcrypt;
 use crate::persist::Persister;
 use crate::undo::UndoRepo;
 use fcrypt::KeyDeriver;
+use fcrypt::KdfId;
+use fcrypt::Cryptor;
 
+
+pub type CryptorGen = fn(d: KeyDeriver, i: KdfId) -> Box<dyn Cryptor>;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct KvEntry {
@@ -80,22 +84,24 @@ pub struct Jots {
     pub kdf: KeyDeriver,
     pub kdf_id: fcrypt::KdfId,
     pub dirty: bool,
-    pub undoer: UndoRepo<String, String>
+    pub undoer: UndoRepo<String, String>,
+    pub cr_gen: CryptorGen
 }
 
 impl Jots {
-    pub fn new(d: KeyDeriver, kdf_id: fcrypt::KdfId) -> Jots {
+    pub fn new(d: KeyDeriver, kdf_id: fcrypt::KdfId, g: CryptorGen) -> Jots {
         return Jots {
             contents: HashMap::new(),
             kdf: d,
             kdf_id: kdf_id,
             dirty: false,
-            undoer: UndoRepo::<String, String>::new()
+            undoer: UndoRepo::<String, String>::new(),
+            cr_gen: g
         };
     }
 
-    pub fn new_id(d: KeyDeriver, kdf_id: fcrypt::KdfId) -> Jots {
-        return Jots::new(d, kdf_id);
+    pub fn new_id(d: KeyDeriver, kdf_id: fcrypt::KdfId, g: CryptorGen) -> Jots {
+        return Jots::new(d, kdf_id, g);
     }
 
     pub fn is_dirty(&self) -> bool {
@@ -269,7 +275,7 @@ impl Jots {
     }
 
     pub fn from_enc_file(&mut self, file_name: &str, password: &str) -> std::io::Result<()> {
-        let mut ctx = fcrypt::GcmContext::new_with_kdf(self.kdf, self.kdf_id);
+        let mut ctx = (self.cr_gen)(self.kdf, self.kdf_id);
 
         let data = ctx.from_file(file_name)?;
         let plain_data = match ctx.decrypt(password, &data) {
@@ -284,7 +290,7 @@ impl Jots {
     }
 
     pub fn retrieve(&mut self, p: &mut Box<dyn Persister>, password: &str) -> std::io::Result<()> {
-        let mut ctx = fcrypt::GcmContext::new_with_kdf(self.kdf, self.kdf_id);
+        let mut ctx = (self.cr_gen)(self.kdf, self.kdf_id);
 
         let data = ctx.retrieve(p)?;
         let plain_data = match ctx.decrypt(password, &data) {
@@ -299,7 +305,7 @@ impl Jots {
     }
 
     pub fn to_enc_file(&mut self, file_name: &str, password: &str) -> std::io::Result<()> {
-        let mut ctx = fcrypt::GcmContext::new_with_kdf(self.kdf, self.kdf_id);
+        let mut ctx = (self.cr_gen)(self.kdf, self.kdf_id);
         let mut serialized: Vec<u8> = Vec::new();
 
         self.to_writer(&mut serialized)?;
@@ -315,7 +321,7 @@ impl Jots {
     }
 
     pub fn persist(&mut self, p: &mut Box<dyn Persister>, password: &str) -> std::io::Result<()> {
-        let mut ctx = fcrypt::GcmContext::new_with_kdf(self.kdf, self.kdf_id);
+        let mut ctx = (self.cr_gen)(self.kdf, self.kdf_id);
         let mut serialized: Vec<u8> = Vec::new();
 
         self.to_writer(&mut serialized)?;

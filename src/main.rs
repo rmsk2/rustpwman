@@ -78,6 +78,10 @@ struct RustPwMan {
     webdav_server: String
 }
 
+pub fn make_cryptor(d: fcrypt::KeyDeriver, i: fcrypt::KdfId) -> Box<dyn fcrypt::Cryptor> {
+    return Box::new(fcrypt::GcmContext::new_with_kdf_id(d, i));
+}
+
 impl RustPwMan {
     fn new() -> Self {
         let (default_kdf, _) = DEFAULT_KDF_ID.to_named_func();
@@ -234,7 +238,7 @@ impl RustPwMan {
             Ok(p) => p
         };
     
-        let mut jots_file = jots::Jots::new(self.default_deriver, self.default_deriver_id);
+        let mut jots_file = jots::Jots::new(self.default_deriver, self.default_deriver_id, make_cryptor);
     
         let file = match File::open(&file_in) {
             Ok(f) => f,
@@ -267,7 +271,7 @@ impl RustPwMan {
         self.set_pbkdf_from_command_line(decrypt_matches);
         let (file_in, file_out) = RustPwMan::determine_in_out_files(decrypt_matches);
         
-        let mut jots_file = jots::Jots::new(self.default_deriver, self.default_deriver_id);
+        let mut jots_file = jots::Jots::new(self.default_deriver, self.default_deriver_id, make_cryptor);
     
         let pw = match rpassword::prompt_password("Password: ") {
             Err(_) => { 
