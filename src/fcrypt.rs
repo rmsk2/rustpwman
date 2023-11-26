@@ -23,6 +23,7 @@ use rand::RngCore;
 use serde::{Serialize, Deserialize};
 use cipher::generic_array::typenum;
 use cipher::KeyInit;
+use cipher::consts::{U32, U12, U16};
 use cipher::generic_array::GenericArray;
 use base64;
 use aes_gcm::{Nonce, Tag, AesGcm};
@@ -30,6 +31,10 @@ use crate::derivers;
 use crate::persist::Persister;
 
 use aes_gcm::aead::{Aead, AeadInPlace};
+
+type Arr32 = GenericArray<u8, U32>;
+type Arr16 = GenericArray<u8, U16>;
+type Arr12 = GenericArray<u8, U12>;
 
 pub const DEFAULT_TAG_SIZE: usize = 16;
 const DEFAULT_NONCE_SIZE: usize = 12;
@@ -249,6 +254,33 @@ impl AeadContext {
         return (self.kdf)(&self.salt, password);
     }
 
+    pub fn prepare_params_encrypt(&mut self, password: &str) -> (Arr32, Arr12) {
+        self.fill_random();
+
+        let raw_32_byte_key = self.regenerate_key(password);
+        let key: Arr32 = *GenericArray::from_slice(raw_32_byte_key.as_slice());
+
+        let nonce: Arr12 = *Nonce::from_slice(self.nonce.as_slice());
+
+        return (key, nonce)
+    }
+
+    pub fn prepare_params_decrypt(&mut self, password: &str, data: &Vec<u8>) -> (Arr32, Arr12, Arr16, Vec<u8>) {
+        let raw_32_byte_key = self.regenerate_key(password);
+        let key: Arr32 = *GenericArray::from_slice(&raw_32_byte_key.as_slice());
+
+        let data_len = data.len() - DEFAULT_TAG_SIZE;
+        let mut dec_buffer = Vec::new();
+        for i in 0..data_len {
+            dec_buffer.push(data[i]);
+        }
+        
+        let nonce: Arr12 = *Nonce::from_slice(self.nonce.as_slice());
+        let tag: Arr16 = *Tag::from_slice(&data[data_len..data.len()]);        
+
+        return (key, nonce, tag, dec_buffer);
+    }
+
 }
 
 
@@ -278,21 +310,11 @@ impl Cryptor for GcmContext {
         if data.len() < DEFAULT_TAG_SIZE {
             return Err(Error::new(ErrorKind::Other, "Ciphertext too short"));
         }
-
-        let aes_256_key = self.0.regenerate_key(password);
-        let key = GenericArray::from_slice(aes_256_key.as_slice());
         let associated_data: [u8; 0] = [];
 
-        let data_len = data.len() - DEFAULT_TAG_SIZE;
-        let mut dec_buffer = Vec::new();
-        for i in 0..data_len {
-            dec_buffer.push(data[i]);
-        }
-        
-        let nonce = Nonce::from_slice(self.0.nonce.as_slice());
-        let tag = Tag::from_slice(&data[data_len..data.len()]);
+        let (key, nonce, tag, mut dec_buffer) = self.0.prepare_params_decrypt(password, data);
 
-        let cipher: AesGcm<aes::Aes256, typenum::U12> = AesGcm::new(key);
+        let cipher: AesGcm<aes::Aes256, typenum::U12> = AesGcm::new(&key);
         let _ = match cipher.decrypt_in_place_detached(&nonce, &associated_data, &mut dec_buffer[0..], &tag) {
             Ok(_) => (),
             Err(_) => {
@@ -304,14 +326,8 @@ impl Cryptor for GcmContext {
     }
 
     fn encrypt(&mut self, password: &str, data: &Vec<u8>) -> std::io::Result<Vec<u8>> {
-        self.0.fill_random();
-
-        let aes_256_key = self.0.regenerate_key(password);
-        let key = GenericArray::from_slice(aes_256_key.as_slice());
-
-        let nonce = Nonce::from_slice(self.0.nonce.as_slice());
-
-        let cipher: AesGcm<aes::Aes256, typenum::U12> = AesGcm::new(key);
+        let (key, nonce) = self.0.prepare_params_encrypt(password);
+        let cipher: AesGcm<aes::Aes256, typenum::U12> = AesGcm::new(&key);
 
         return match cipher.encrypt(&nonce, data.as_slice()) {
             Err(_) => return Err(Error::new(ErrorKind::Other, "AES-GCM Encryption error")),
