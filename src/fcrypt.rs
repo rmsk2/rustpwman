@@ -31,7 +31,7 @@ use crate::persist::Persister;
 
 use aes_gcm::aead::{Aead, AeadInPlace};
 
-const DEFAULT_TAG_SIZE: usize = 16;
+pub const DEFAULT_TAG_SIZE: usize = 16;
 const DEFAULT_NONCE_SIZE: usize = 12;
 const DEFAULT_SALT_SIZE: usize = 16;
 // bcrypt has an input length limitation.
@@ -144,33 +144,25 @@ struct CryptedJson {
 
 pub type KeyDeriver = fn(&Vec<u8>, &str) -> Vec<u8>;
 
-pub struct GcmContext {
+pub struct AeadContext {
     pub salt: Vec<u8>,
     pub nonce: Vec<u8>,
     pub kdf: KeyDeriver,
     pub kdf_id: KdfId
 } 
 
-pub fn check_password(pw: &str) -> Option<Error> {
-    if pw.as_bytes().len() > MAX_PW_SIZE_IN_BYTES {
-        return Some(Error::new(ErrorKind::Other, "Password too long"));
-    }
-
-    return None;
-}
-
-impl GcmContext {
+impl AeadContext {
     #![allow(dead_code)]
-    pub fn new() -> GcmContext {
-        return GcmContext::new_with_kdf_id(derivers::sha256_deriver, KdfId::Sha256)
+    pub fn new() -> AeadContext {
+        return AeadContext::new_with_kdf_id(derivers::sha256_deriver, KdfId::Sha256)
     }
 
-    pub fn new_with_kdf_id(derive: KeyDeriver, deriver_id: KdfId) -> GcmContext {
-        return GcmContext::new_with_kdf(derive, deriver_id);
+    pub fn new_with_kdf_id(derive: KeyDeriver, deriver_id: KdfId) -> AeadContext {
+        return AeadContext::new_with_kdf(derive, deriver_id);
     }
 
-    pub fn new_with_kdf(derive: KeyDeriver, deriver_id: KdfId) -> GcmContext {
-        let mut res = GcmContext {
+    pub fn new_with_kdf(derive: KeyDeriver, deriver_id: KdfId) -> AeadContext {
+        let mut res = AeadContext {
             salt: vec![0; DEFAULT_SALT_SIZE],
             nonce: vec![0; DEFAULT_NONCE_SIZE],
             kdf: derive,
@@ -237,7 +229,7 @@ impl GcmContext {
         return Ok(());
     }
 
-    fn fill_random(&mut self) {
+    pub fn fill_random(&mut self) {
         // ThreadRng, provided by the thread_rng function, is a handle to a thread-local CSPRNG with periodic 
         // seeding from OsRng. Because this is local, it is typically much faster than OsRng. It should be secure, 
         // though the paranoid may prefer OsRng.        
@@ -253,10 +245,32 @@ impl GcmContext {
         self.salt = temp_salt.to_vec();
     }
 
-    fn regenerate_key(&self, password: &str) -> Vec<u8> {
+    pub fn regenerate_key(&self, password: &str) -> Vec<u8> {
         return (self.kdf)(&self.salt, password);
     }
 
+}
+
+
+pub fn check_password(pw: &str) -> Option<Error> {
+    if pw.as_bytes().len() > MAX_PW_SIZE_IN_BYTES {
+        return Some(Error::new(ErrorKind::Other, "Password too long"));
+    }
+
+    return None;
+}
+
+pub struct GcmContext(AeadContext);
+
+impl GcmContext {
+    #![allow(dead_code)]
+    pub fn new() -> GcmContext {
+        return GcmContext(AeadContext::new_with_kdf(derivers::sha256_deriver, KdfId::Sha256))
+    }
+
+    pub fn new_with_kdf(derive: KeyDeriver, deriver_id: KdfId) -> GcmContext {
+        return GcmContext(AeadContext::new_with_kdf(derive, deriver_id));
+    }
 }
 
 impl Cryptor for GcmContext {
@@ -265,7 +279,7 @@ impl Cryptor for GcmContext {
             return Err(Error::new(ErrorKind::Other, "Ciphertext too short"));
         }
 
-        let aes_256_key = self.regenerate_key(password);
+        let aes_256_key = self.0.regenerate_key(password);
         let key = GenericArray::from_slice(aes_256_key.as_slice());
         let associated_data: [u8; 0] = [];
 
@@ -275,14 +289,14 @@ impl Cryptor for GcmContext {
             dec_buffer.push(data[i]);
         }
         
-        let nonce = Nonce::from_slice(self.nonce.as_slice());
+        let nonce = Nonce::from_slice(self.0.nonce.as_slice());
         let tag = Tag::from_slice(&data[data_len..data.len()]);
 
         let cipher: AesGcm<aes::Aes256, typenum::U12> = AesGcm::new(key);
         let _ = match cipher.decrypt_in_place_detached(&nonce, &associated_data, &mut dec_buffer[0..], &tag) {
             Ok(_) => (),
             Err(_) => {
-                return Err(Error::new(ErrorKind::Other, "Decryption error"));
+                return Err(Error::new(ErrorKind::Other, "AES-GCM Decryption error"));
             }
         };
 
@@ -290,26 +304,26 @@ impl Cryptor for GcmContext {
     }
 
     fn encrypt(&mut self, password: &str, data: &Vec<u8>) -> std::io::Result<Vec<u8>> {
-        self.fill_random();
+        self.0.fill_random();
 
-        let aes_256_key = self.regenerate_key(password);
+        let aes_256_key = self.0.regenerate_key(password);
         let key = GenericArray::from_slice(aes_256_key.as_slice());
 
-        let nonce = Nonce::from_slice(self.nonce.as_slice());
+        let nonce = Nonce::from_slice(self.0.nonce.as_slice());
 
         let cipher: AesGcm<aes::Aes256, typenum::U12> = AesGcm::new(key);
 
         return match cipher.encrypt(&nonce, data.as_slice()) {
-            Err(_) => return Err(Error::new(ErrorKind::Other, "Encryption error")),
+            Err(_) => return Err(Error::new(ErrorKind::Other, "AES-GCM Encryption error")),
             Ok(d) => Ok(d)
         };
     }
 
     fn from_dyn_reader(&mut self, reader: &mut dyn Read)-> std::io::Result<Vec<u8>> {
-        return self.from_reader(reader);
+        return self.0.from_reader(reader);
     }
 
     fn to_dyn_writer(&self, writer: &mut dyn Write, data: &Vec<u8>) -> std::io::Result<()> {
-        return self.to_writer(writer, data);
+        return self.0.to_writer(writer, data);
     }        
 }

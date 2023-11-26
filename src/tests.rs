@@ -16,12 +16,9 @@ limitations under the License. */
 use std;
 
 #[cfg(test)]
-use crate::make_cryptor;
-
-
+use crate::chacha20;
 #[cfg(test)]
 use std::collections::HashMap;
-
 #[cfg(test)]
 use crate::fcrypt;
 #[cfg(test)]
@@ -47,12 +44,12 @@ use crate::obfuscate;
 #[cfg(test)]
 use crate::pwgen::BaseNGenerator;
 #[cfg(test)]
-use crate::fcrypt::Cryptor;
+use crate::jots::CryptorGen;
 
 
-#[test]
-pub fn test_fcrypt_enc_dec() {
-    let mut ctx = fcrypt::GcmContext::new();
+#[cfg(test)]
+pub fn test_fcrypt_enc_dec_generic(gen: CryptorGen) {
+    let mut ctx = gen(derivers::sha256_deriver, fcrypt::KdfId::Sha256);
     let data_raw: Vec<u8> = vec![0; 32];
 
     let cipher_text = match ctx.encrypt("this is a test", &data_raw) {
@@ -75,8 +72,19 @@ pub fn test_fcrypt_enc_dec() {
 }
 
 #[test]
-pub fn test_fcrypt_enc_dec_empty() {
-    let mut ctx = fcrypt::GcmContext::new();
+pub fn test_fcrypt_enc_dec_aes_gcm() {
+    test_fcrypt_enc_dec_generic(make_aes_gcm_cryptor);
+}
+
+#[test]
+pub fn test_fcrypt_enc_dec_chacha20() {
+    test_fcrypt_enc_dec_generic(make_chacha20_cryptor);
+}
+
+
+#[cfg(test)]
+pub fn test_fcrypt_enc_dec_empty_generic(gen: CryptorGen) {
+    let mut ctx = gen(derivers::sha256_deriver, fcrypt::KdfId::Sha256);
     let data_raw: Vec<u8> = Vec::new();
 
     let cipher_text = match ctx.encrypt("this is a test", &data_raw) {
@@ -99,8 +107,18 @@ pub fn test_fcrypt_enc_dec_empty() {
 }
 
 #[test]
-pub fn test_fcrypt_dec_failure() {
-    let mut ctx = fcrypt::GcmContext::new();
+pub fn test_fcrypt_enc_dec_empty_aes_gcm() {
+    test_fcrypt_enc_dec_empty_generic(make_aes_gcm_cryptor);
+}
+
+#[test]
+pub fn test_fcrypt_enc_dec_empty_chacha20() {
+    test_fcrypt_enc_dec_empty_generic(make_chacha20_cryptor);
+}
+
+#[cfg(test)]
+pub fn test_fcrypt_dec_failure_generic(gen: CryptorGen) {
+    let mut ctx = gen(derivers::sha256_deriver, fcrypt::KdfId::Sha256);
     let data_raw: Vec<u8> = vec![0; 32];
 
     let cipher_text = match ctx.encrypt("this is a test", &data_raw) {
@@ -115,12 +133,23 @@ pub fn test_fcrypt_dec_failure() {
 }
 
 #[test]
-pub fn test_fcrypt_enc_dec_with_json() {
+pub fn test_fcrypt_dec_failure_aes_gcm() {
+    test_fcrypt_dec_failure_generic(make_aes_gcm_cryptor);
+}
+
+#[test]
+pub fn test_fcrypt_dec_failure_chacha20() {
+    test_fcrypt_dec_failure_generic(make_chacha20_cryptor);
+}
+
+
+#[cfg(test)]
+pub fn test_fcrypt_enc_dec_with_json_generic(gen: CryptorGen) {
     let data_raw: Vec<u8> = vec![0; 32];
     let mut cipher_json: Vec<u8> = Vec::new();
 
     {
-        let mut ctx = fcrypt::GcmContext::new();
+        let mut ctx = gen(derivers::sha256_deriver, fcrypt::KdfId::Sha256);
     
         let cipher_text = match ctx.encrypt("this is a test", &data_raw) {
             Ok(c) => c,
@@ -131,14 +160,14 @@ pub fn test_fcrypt_enc_dec_with_json() {
             panic!("Unexpected ciphertext length {}", cipher_text.len());
         }
         
-        match ctx.to_writer(&mut cipher_json, &cipher_text) {
+        match ctx.to_dyn_writer(&mut cipher_json, &cipher_text) {
             Ok(_) => (),
             Err(e) => { panic!("Serialization failed {:?}", e); }          
         }
     }
 
-    let mut ctx2 = fcrypt::GcmContext::new();
-    let cipher_raw: Vec<u8> = match ctx2.from_reader(cipher_json.as_slice()) {
+    let mut ctx2 = gen(derivers::sha256_deriver, fcrypt::KdfId::Sha256);
+    let cipher_raw: Vec<u8> = match ctx2.from_dyn_reader(&mut cipher_json.as_slice()) {
         Ok(c) => c,
         Err(_) => { panic!("Deserialization failed"); }        
     };
@@ -153,6 +182,25 @@ pub fn test_fcrypt_enc_dec_with_json() {
     }
 }
 
+#[cfg(test)]
+pub fn make_chacha20_cryptor(d: fcrypt::KeyDeriver, i: fcrypt::KdfId) -> Box<dyn fcrypt::Cryptor> {
+    return Box::new(chacha20::ChaCha20Poly1305Context::new_with_kdf(d, i));
+}
+
+#[cfg(test)]
+pub fn make_aes_gcm_cryptor(d: fcrypt::KeyDeriver, i: fcrypt::KdfId) -> Box<dyn fcrypt::Cryptor> {
+    return Box::new(fcrypt::GcmContext::new_with_kdf(d, i));
+}
+
+#[test]
+pub fn test_fcrypt_enc_dec_with_json_aes_gcm() {
+    test_fcrypt_enc_dec_with_json_generic(make_aes_gcm_cryptor);
+}
+
+#[test]
+pub fn test_fcrypt_enc_dec_with_json_chacha20() {
+    test_fcrypt_enc_dec_with_json_generic(make_chacha20_cryptor);
+}
 
 #[test]
 pub fn test_jots_serialize_deserialize() {
@@ -165,7 +213,7 @@ pub fn test_jots_serialize_deserialize() {
     let d3 = String::from("data3"); 
     
     {
-        let mut j = jots::Jots::new_id(derivers::sha256_deriver, fcrypt::KdfId::Sha256, make_cryptor);
+        let mut j = jots::Jots::new_id(derivers::sha256_deriver, fcrypt::KdfId::Sha256, make_aes_gcm_cryptor);
         j.add(&t1, &d1);
         j.add(&t2, &d2);
         j.add(&t3, &d3);
@@ -180,7 +228,7 @@ pub fn test_jots_serialize_deserialize() {
         };
     }
 
-    let mut j2 = jots::Jots::new_id(derivers::sha256_deriver, fcrypt::KdfId::Sha256, make_cryptor);
+    let mut j2 = jots::Jots::new_id(derivers::sha256_deriver, fcrypt::KdfId::Sha256, make_aes_gcm_cryptor);
     match j2.from_reader(serialized.as_slice()) {
         Ok(_) => (),
         Err(e) => { panic!("Deserialization failed {:?}", e); }          
@@ -222,7 +270,7 @@ pub fn test_jots_iter() {
     let d2 = String::from("data2");   
     let d3 = String::from("data3"); 
     
-    let mut j = jots::Jots::new_id(derivers::sha256_deriver, fcrypt::KdfId::Sha256, make_cryptor);
+    let mut j = jots::Jots::new_id(derivers::sha256_deriver, fcrypt::KdfId::Sha256, make_aes_gcm_cryptor);
     j.add(&t1, &d1);
     j.add(&t2, &d2);
     j.add(&t3, &d3);
