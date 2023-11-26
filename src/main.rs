@@ -64,6 +64,7 @@ const ARG_OUTPUT_FILE: &str = "outputfile";
 const ARG_CONFIG_FILE: &str = "cfgfile";
 const ARG_KDF: &str = "kdf";
 pub const CFG_FILE_NAME: &str = ".rustpwman";
+pub const ENV_CHACHA20: &str = "PWMANCHACHA20";
 
 use fcrypt::DEFAULT_KDF_ID;
 
@@ -84,7 +85,12 @@ pub fn make_cryptor(d: fcrypt::KeyDeriver, i: fcrypt::KdfId) -> Box<dyn fcrypt::
     return Box::new(fcrypt::GcmContext::new_with_kdf(d, i));
 
     #[cfg(feature = "chacha20")]
-    return Box::new(chacha20::ChaCha20Poly1305Context::new_with_kdf(d, i));
+    {
+        match env::var(ENV_CHACHA20) {
+            Ok(_) => { return Box::new(chacha20::ChaCha20Poly1305Context::new_with_kdf(d, i)); },
+            Err(_) => { return Box::new(fcrypt::GcmContext::new_with_kdf(d, i)); }
+        }
+    }
 }
 
 impl RustPwMan {

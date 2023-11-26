@@ -219,7 +219,9 @@ Tip: You can pipe the output of `rustpwman gen` into a program that copies the d
 # Using `rustpwman` to en- decrypt files or the `enc` and `dec` commands
 
 `rustpwman enc` and `rustpwman dec` can be used to en- and decrypt arbitrary files even though their main purpose is to allow you to decrypt your password data under
-one PBKDF and reencrypt that data using another key derivation function in case you want to migrate from one PBKDF to another.
+one PBKDF or cipher and reencrypt that data using another key derivation function or cipher in case you want to migrate from one PBKDF or cipher to another. On top of 
+that the decrypted password data can be used to export all data from `pwman` in a form which can be processed by other software. Additionally if you are able to create
+a JSON file of the form described [below](#format-of-payload-data) you can import data from another password manager.
 
 # Optional features
 
@@ -298,8 +300,8 @@ has improved with respect to the previous test mentioned above.
 ## About the crypto
 
 As a default `rustpwman` encrypts its data at rest using AES-256-GCM with a 128 bit tag length and a 96 bit nonce. If the feature `chacha20` is active when `rustpwman` is built
-`ChaCha20Poly1305` is used as an alternative. Obviously a ChaCha20 encrypted file can not be decrypted by a `rustpwman` version which uses AES-GCM and vice versa. The encrypted 
-data file is a simple JSON data structure. This may serve as an example:
+ChaCha20Poly1305 can be used as an alternative if the environment variable `PWMANCHACHA20` is also set. Obviously a ChaCha20 encrypted file can not be decrypted by a `rustpwman` 
+version which uses AES-GCM only and vice versa. The encrypted data file is a simple JSON data structure. This may serve as an example:
 
 ```
 {
