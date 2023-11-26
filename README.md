@@ -220,8 +220,8 @@ Tip: You can pipe the output of `rustpwman gen` into a program that copies the d
 
 `rustpwman enc` and `rustpwman dec` can be used to en- and decrypt arbitrary files even though their main purpose is to allow you to decrypt your password data under
 one PBKDF or cipher and reencrypt that data using another key derivation function or cipher in case you want to migrate from one PBKDF or cipher to another. On top of 
-that the decrypted password data can be used to export all data from `pwman` in a form which can be processed by other software. Additionally if you are able to create
-a JSON file of the form described [below](#format-of-payload-data) you can import data from another password manager.
+that the decrypted password data can be used to export all data from `rustpwman` in a form which can be processed by other software. Additionally if you are able to 
+create a JSON file of the form described [below](#format-of-payload-data) you can import data from another password manager.
 
 # Optional features
 
