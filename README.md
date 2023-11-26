@@ -235,7 +235,7 @@ the cached password does not match the current password of the file which is to 
 
 Depending on the platform for which `rustpwman` is being built the feature is named `pwmanclientux` (Linux and MacOS) or `pwmanclientwin` (Windows).
 
-## Experimental WebDAV support
+## WebDAV support
 
 If you build `rustpwman` with the optional `webdav` feature enabled you can access password data files on WebDAV shares without explicitly mounting the share first. This `rustpwman` 
 feature has been successfully tested against a well known cloud storage provider using TLS. The credentials are read from the `.rustpwman` config file using the following entries:
@@ -297,8 +297,9 @@ has improved with respect to the previous test mentioned above.
 
 ## About the crypto
 
-`rustpwman` encrypts its data at rest using AES-256 in GCM mode with a 128 bit tag length and a 96 bit nonce. The encrypted data file is a simple JSON data structure. 
-This may serve as an example:
+As a default `rustpwman` encrypts its data at rest using AES-256-GCM with a 128 bit tag length and a 96 bit nonce. If the feature `chacha20` is active when `rustpwman` is built
+`ChaCha20Poly1305` is used as an alternative. Obviously a ChaCha20 encrypted file can not be decrypted by a `rustpwman` version which uses AES-GCM and vice versa. The encrypted 
+data file is a simple JSON data structure. This may serve as an example:
 
 ```
 {

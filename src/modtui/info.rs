@@ -65,6 +65,9 @@ fn make_feature_string() -> String {
     #[cfg(feature = "webdav")]
     msg_str.push_str("- webdav\n");
 
+    #[cfg(feature = "chacha20")]
+    msg_str.push_str("- ChaCha20Poly1305\n");
+
     if msg_str == "" {
         msg_str.push_str("-- None --");
     }

@@ -80,8 +80,11 @@ struct RustPwMan {
 }
 
 pub fn make_cryptor(d: fcrypt::KeyDeriver, i: fcrypt::KdfId) -> Box<dyn fcrypt::Cryptor> {
+    #[cfg(not(feature = "chacha20"))]
     return Box::new(fcrypt::GcmContext::new_with_kdf(d, i));
-    //return Box::new(chacha20::ChaCha20Poly1305Context::new_with_kdf(d, i));
+
+    #[cfg(feature = "chacha20")]
+    return Box::new(chacha20::ChaCha20Poly1305Context::new_with_kdf(d, i));
 }
 
 impl RustPwMan {
