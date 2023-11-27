@@ -41,15 +41,13 @@ impl Cryptor for ChaCha20Poly1305Context {
     }
 
     fn encrypt(&mut self, password: &str, data: &Vec<u8>) -> std::io::Result<Vec<u8>> {
-        let (key, nonce) = self.0.prepare_params_encrypt(password);        
+        let (key, nonce) = self.0.prepare_params_encrypt(password);
         let cipher = ChaCha20Poly1305::new(&key);
 
-        let cipher_text = match cipher.encrypt(&nonce, data.as_ref()) {
-            Ok(d) => d,
-            Err(_) => return Err(Error::new(ErrorKind::Other, "ChaCha20 Encryption error")),            
+        return match cipher.encrypt(&nonce, data.as_slice()) {
+            Err(_) => return Err(Error::new(ErrorKind::Other, "AES-GCM Encryption error")),
+            Ok(d) => Ok(d)
         };
-
-        return Ok(cipher_text);
     }
 
     fn from_dyn_reader(&mut self, reader: &mut dyn Read)-> std::io::Result<Vec<u8>> {
