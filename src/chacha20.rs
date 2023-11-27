@@ -33,7 +33,7 @@ impl Cryptor for ChaCha20Poly1305Context {
         let _ = match cipher.decrypt_in_place_detached(&nonce, &associated_data, &mut dec_buffer[0..], &tag) {
             Ok(_) => (),
             Err(_) => {
-                return Err(Error::new(ErrorKind::Other, "ChaCha20 Decryption error"));
+                return Err(Error::new(ErrorKind::Other, "ChaCha20 decryption error"));
             }
         };
 
@@ -45,7 +45,7 @@ impl Cryptor for ChaCha20Poly1305Context {
         let cipher = ChaCha20Poly1305::new(&key);
 
         return match cipher.encrypt(&nonce, data.as_slice()) {
-            Err(_) => return Err(Error::new(ErrorKind::Other, "AES-GCM Encryption error")),
+            Err(_) => return Err(Error::new(ErrorKind::Other, "ChaCha20 encryption error")),
             Ok(d) => Ok(d)
         };
     }
