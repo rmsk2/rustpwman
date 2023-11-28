@@ -315,7 +315,7 @@ impl Cryptor for GcmContext {
         let (key, nonce, tag, mut dec_buffer) = self.0.prepare_params_decrypt(password, data);
 
         let cipher: AesGcm<aes::Aes256, typenum::U12> = AesGcm::new(&key);
-        let _ = match cipher.decrypt_in_place_detached(&nonce, &associated_data, &mut dec_buffer[0..], &tag) {
+        let _ = match cipher.decrypt_in_place_detached(&nonce, &associated_data, dec_buffer.as_mut_slice(), &tag) {
             Ok(_) => (),
             Err(_) => {
                 return Err(Error::new(ErrorKind::Other, "AES-GCM Decryption error"));

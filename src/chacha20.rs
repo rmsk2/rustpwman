@@ -30,7 +30,7 @@ impl Cryptor for ChaCha20Poly1305Context {
         let (key, nonce, tag, mut dec_buffer) = self.0.prepare_params_decrypt(password, data);
 
         let cipher = ChaCha20Poly1305::new(&key);
-        let _ = match cipher.decrypt_in_place_detached(&nonce, &associated_data, &mut dec_buffer[0..], &tag) {
+        let _ = match cipher.decrypt_in_place_detached(&nonce, &associated_data, dec_buffer.as_mut_slice(), &tag) {
             Ok(_) => (),
             Err(_) => {
                 return Err(Error::new(ErrorKind::Other, "ChaCha20 decryption error"));
