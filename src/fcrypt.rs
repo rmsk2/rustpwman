@@ -34,7 +34,7 @@ type Arr32 = GenericArray<u8, U32>;
 type Arr16 = GenericArray<u8, U16>;
 type Arr12 = GenericArray<u8, U12>;
 
-pub const DEFAULT_TAG_SIZE: usize = 16;
+const DEFAULT_TAG_SIZE: usize = 16;
 const DEFAULT_NONCE_SIZE: usize = 12;
 const DEFAULT_SALT_SIZE: usize = 16;
 // bcrypt has an input length limitation.
