@@ -18,6 +18,8 @@ use std;
 #[cfg(test)]
 use crate::chacha20;
 #[cfg(test)]
+use crate::rijndael;
+#[cfg(test)]
 use std::collections::HashMap;
 #[cfg(test)]
 use crate::fcrypt;
@@ -189,7 +191,7 @@ pub fn make_chacha20_cryptor(d: fcrypt::KeyDeriver, i: fcrypt::KdfId) -> Box<dyn
 
 #[cfg(test)]
 pub fn make_aes_gcm_cryptor(d: fcrypt::KeyDeriver, i: fcrypt::KdfId) -> Box<dyn fcrypt::Cryptor> {
-    return Box::new(fcrypt::GcmContext::new_with_kdf(d, i));
+    return Box::new(rijndael::GcmContext::new_with_kdf(d, i));
 }
 
 #[test]
