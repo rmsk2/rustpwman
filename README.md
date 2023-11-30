@@ -266,6 +266,13 @@ that my abstraction of the storage backend is viable.
 Additional note: Under Linux you have to install the package `libssl-dev` when compiling with this feature as the TLS implementation of the `reqwest` library seems to 
 depend on it being present.
 
+## Support for the ChaCha20 Poly-1305 AEAD cipher
+
+When you build `rustpwman` with the `chacha20` feature you can use ChaCha20 Poly-1305 as an alternative cipher for password file encryption. This algorithm is activated
+by setting the environment variable `PWMANCHACHA20` to a value. If the variable is not set when `rustpwman` is started, then AES-256 GCM is used. Under Linux you can
+for instance use `PWMANCHACHA20=1 rustpwman gui -i input_file.enc` to set the environment varible and start `rustpwman` in one go. ChaCha20 Poly-1305 provides security 
+comparable to AES-256 GCM and so it comes down to a matter of taste which cipher you use.
+
 # Rustpwman under Windows
 
 ## Native
@@ -299,9 +306,9 @@ has improved with respect to the previous test mentioned above.
 
 ## About the crypto
 
-As a default `rustpwman` encrypts its data at rest using AES-256-GCM with a 128 bit tag length and a 96 bit nonce. If the feature `chacha20` is active when `rustpwman` is built
-ChaCha20Poly1305 can be used as an alternative if the environment variable `PWMANCHACHA20` is also set. Obviously a ChaCha20 encrypted file can not be decrypted by a `rustpwman` 
-version which uses AES-GCM only and vice versa. The encrypted data file is a simple JSON data structure. This may serve as an example:
+As a default `rustpwman` encrypts its data at rest using AES-256 GCM with a 128 bit tag length and a 96 bit nonce. If the feature `chacha20` is active when `rustpwman` is built
+ChaCha20 Poly-1305 can be used as an alternative. Obviously a ChaCha20 encrypted file can not be decrypted by a `rustpwman` version which uses AES-GCM only. The encrypted data 
+file is a simple JSON data structure. This may serve as an example:
 
 ```
 {
