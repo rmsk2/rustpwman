@@ -255,15 +255,15 @@ impl AeadContext {
         }       
     }
 
-    pub fn prepare_params_encrypt(&mut self, password: &str) -> (Box<Vec<u8>>, Box<Vec<u8>>) {
+    pub fn prepare_params_encrypt(&mut self, password: &str) -> (Vec<u8>, Vec<u8>) {
         self.fill_random();
 
         let raw_32_byte_key = self.regenerate_key(password);
 
-        return (Box::new(raw_32_byte_key), Box::new(self.nonce.clone()))
+        return (raw_32_byte_key, self.nonce.clone())
     }
 
-    pub fn prepare_params_decrypt(&mut self, password: &str, data: &Vec<u8>) -> (Box<Vec<u8>>, Box<Vec<u8>>, Box<Vec<u8>>, Box<Vec<u8>>) {
+    pub fn prepare_params_decrypt(&mut self, password: &str, data: &Vec<u8>) -> (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) {
         let raw_32_byte_key = self.regenerate_key(password);
 
         let data_len = data.len() - DEFAULT_TAG_SIZE;
@@ -275,7 +275,7 @@ impl AeadContext {
         let mut tag = vec![0; DEFAULT_TAG_SIZE];
         tag.copy_from_slice(&data[data_len..data.len()]);       
 
-        return (Box::new(raw_32_byte_key), Box::new(self.nonce.clone()), Box::new(tag), Box::new(dec_buffer));
+        return (raw_32_byte_key, self.nonce.clone(), tag, dec_buffer);
     }
 
     pub fn encrypt_aead<T: Aead + AeadInPlace + AeadCore<NonceSize = U12, TagSize = U16> + KeyInit>(&mut self, password: &str, data: &Vec<u8>, algo_name: &str) -> std::io::Result<Vec<u8>> {
@@ -309,7 +309,7 @@ impl AeadContext {
             }
         };
     
-        return Ok(*dec_buffer);  
+        return Ok(dec_buffer);  
     }
 }
 
