@@ -21,18 +21,13 @@ use std::io::{Error, ErrorKind};
 use rand::RngCore;
 
 use serde::{Serialize, Deserialize};
-use cipher::consts::{U32, U12, U16};
+use cipher::consts::{U12, U16};
 use cipher::generic_array::GenericArray;
 use base64;
-use aes_gcm::{Nonce, Tag};
 use crate::derivers;
 use crate::persist::Persister;
+use aead::{Aead, KeyInit, AeadInPlace, AeadCore, KeySizeUser};
 
-
-
-type Arr32 = GenericArray<u8, U32>;
-type Arr16 = GenericArray<u8, U16>;
-type Arr12 = GenericArray<u8, U12>;
 
 const DEFAULT_TAG_SIZE: usize = 16;
 const DEFAULT_NONCE_SIZE: usize = 12;
@@ -260,20 +255,16 @@ impl AeadContext {
         }       
     }
 
-    pub fn prepare_params_encrypt(&mut self, password: &str) -> (Arr32, Arr12) {
+    pub fn prepare_params_encrypt(&mut self, password: &str) -> (Box<Vec<u8>>, Box<Vec<u8>>) {
         self.fill_random();
 
         let raw_32_byte_key = self.regenerate_key(password);
-        let key: Arr32 = *GenericArray::from_slice(raw_32_byte_key.as_slice());
 
-        let nonce: Arr12 = *Nonce::from_slice(self.nonce.as_slice());
-
-        return (key, nonce)
+        return (Box::new(raw_32_byte_key), Box::new(self.nonce.clone()))
     }
 
-    pub fn prepare_params_decrypt(&mut self, password: &str, data: &Vec<u8>) -> (Arr32, Arr12, Arr16, Vec<u8>) {
+    pub fn prepare_params_decrypt(&mut self, password: &str, data: &Vec<u8>) -> (Box<Vec<u8>>, Box<Vec<u8>>, Box<Vec<u8>>, Box<Vec<u8>>) {
         let raw_32_byte_key = self.regenerate_key(password);
-        let key: Arr32 = *GenericArray::from_slice(&raw_32_byte_key.as_slice());
 
         let data_len = data.len() - DEFAULT_TAG_SIZE;
         let mut dec_buffer = Vec::new();
@@ -281,12 +272,45 @@ impl AeadContext {
             dec_buffer.push(data[i]);
         }
         
-        let nonce: Arr12 = *Nonce::from_slice(self.nonce.as_slice());
-        let tag: Arr16 = *Tag::from_slice(&data[data_len..data.len()]);        
+        let mut tag = vec![0; DEFAULT_TAG_SIZE];
+        tag.copy_from_slice(&data[data_len..data.len()]);       
 
-        return (key, nonce, tag, dec_buffer);
+        return (Box::new(raw_32_byte_key), Box::new(self.nonce.clone()), Box::new(tag), Box::new(dec_buffer));
     }
 
+    pub fn encrypt_aead<T: Aead + AeadInPlace + AeadCore<NonceSize = U12, TagSize = U16> + KeyInit>(&mut self, password: &str, data: &Vec<u8>, algo_name: &str) -> std::io::Result<Vec<u8>> {
+        let (key, nonce) = self.prepare_params_encrypt(password);
+        let nonce_help = GenericArray::<u8, <T as AeadCore>::NonceSize>::from_slice(nonce.as_slice());
+        let key_help = GenericArray::<u8, <T as KeySizeUser>::KeySize>::from_slice(key.as_slice());
+    
+        let cipher = T::new(&key_help);
+    
+        return match cipher.encrypt(nonce_help, data.as_slice()) {
+            Err(_) => return Err(Error::new(ErrorKind::Other, format!("{} {}", algo_name, "Encryption error"))),
+            Ok(d) => Ok(d)
+        };
+    }
+    
+    pub fn decrypt_aead<T: Aead + AeadInPlace + AeadCore<NonceSize = U12, TagSize = U16> + KeyInit>(&mut self, password: &str, data: &Vec<u8>, algo_name: &str) -> std::io::Result<Vec<u8>> {
+        self.check_min_size(data.len())?;
+        let associated_data: [u8; 0] = [];
+    
+        let (key, nonce, tag, mut dec_buffer) = self.prepare_params_decrypt(password, data);
+    
+        let nonce_help = GenericArray::<u8, <T as AeadCore>::NonceSize>::from_slice(nonce.as_slice());
+        let key_help = GenericArray::<u8, <T as KeySizeUser>::KeySize>::from_slice(key.as_slice());
+        let tag_help = GenericArray::<u8, <T as AeadCore>::TagSize>::from_slice(tag.as_slice());
+    
+        let cipher = T::new(&key_help);
+        let _ = match cipher.decrypt_in_place_detached(nonce_help, &associated_data, dec_buffer.as_mut_slice(), tag_help) {
+            Ok(_) => (),
+            Err(_) => {
+                return Err(Error::new(ErrorKind::Other, format!("{} {}", algo_name, "Decryption error")));
+            }
+        };
+    
+        return Ok(*dec_buffer);  
+    }
 }
 
 

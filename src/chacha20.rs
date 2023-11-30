@@ -1,10 +1,8 @@
-use std::io::{Error, ErrorKind};
 use std::io::Read;
 use std::io::Write;
 use crate::fcrypt::{Cryptor, AeadContext, KdfId, KeyDeriver};
 use crate::derivers;
 use chacha20poly1305::ChaCha20Poly1305;
-use chacha20poly1305::aead::{Aead, KeyInit, AeadInPlace};
 
 
 pub struct ChaCha20Poly1305Context(AeadContext);
@@ -22,30 +20,11 @@ impl ChaCha20Poly1305Context {
 
 impl Cryptor for ChaCha20Poly1305Context {
     fn decrypt(&mut self, password: &str, data: &Vec<u8>) -> std::io::Result<Vec<u8>> {
-        self.0.check_min_size(data.len())?;
-        let associated_data: [u8; 0] = [];
-
-        let (key, nonce, tag, mut dec_buffer) = self.0.prepare_params_decrypt(password, data);
-
-        let cipher = ChaCha20Poly1305::new(&key);
-        let _ = match cipher.decrypt_in_place_detached(&nonce, &associated_data, dec_buffer.as_mut_slice(), &tag) {
-            Ok(_) => (),
-            Err(_) => {
-                return Err(Error::new(ErrorKind::Other, "ChaCha20 decryption error"));
-            }
-        };
-
-        return Ok(dec_buffer);        
+        return self.0.decrypt_aead::<ChaCha20Poly1305>(password, data, "ChaCha20Poly1305");        
     }
 
     fn encrypt(&mut self, password: &str, data: &Vec<u8>) -> std::io::Result<Vec<u8>> {
-        let (key, nonce) = self.0.prepare_params_encrypt(password);
-        let cipher = ChaCha20Poly1305::new(&key);
-
-        return match cipher.encrypt(&nonce, data.as_slice()) {
-            Err(_) => return Err(Error::new(ErrorKind::Other, "ChaCha20 encryption error")),
-            Ok(d) => Ok(d)
-        };
+        return self.0.encrypt_aead::<ChaCha20Poly1305>(password, data, "ChaCha20Poly1305");
     }
 
     fn from_dyn_reader(&mut self, reader: &mut dyn Read)-> std::io::Result<Vec<u8>> {
