@@ -33,5 +33,9 @@ impl Cryptor for ChaCha20Poly1305Context {
 
     fn to_dyn_writer(&self, writer: &mut dyn Write, data: &Vec<u8>) -> std::io::Result<()> {
         return self.0.to_writer(writer, data);
-    }     
+    }
+
+    fn algo_name(&self) -> &'static str {
+        return "ChaCha20 Poly-1305";
+    }
 }

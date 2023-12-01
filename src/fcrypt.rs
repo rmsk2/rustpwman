@@ -49,6 +49,7 @@ pub trait Cryptor {
     fn decrypt(&mut self, pw: &str, data: &Vec<u8>) -> std::io::Result<Vec<u8>>;
     fn to_dyn_writer(&self, writer: &mut dyn Write, data: &Vec<u8>) -> std::io::Result<()>;
     fn from_dyn_reader(&mut self, reader: &mut dyn Read)-> std::io::Result<Vec<u8>>;
+    fn algo_name(&self) -> &'static str;
 
     fn to_file(&self, data: &Vec<u8>, file_name: &str) -> std::io::Result<()> {
         let file = File::create(file_name)?;
