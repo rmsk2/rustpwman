@@ -65,7 +65,7 @@ const ARG_OUTPUT_FILE: &str = "outputfile";
 const ARG_CONFIG_FILE: &str = "cfgfile";
 const ARG_KDF: &str = "kdf";
 pub const CFG_FILE_NAME: &str = ".rustpwman";
-pub const ENV_CHACHA20: &str = "PWMANCHACHA20";
+pub const ENV_CIPHER: &str = "PWMANCIPHER";
 
 use fcrypt::DEFAULT_KDF_ID;
 
@@ -83,13 +83,18 @@ struct RustPwMan {
 
 pub fn make_cryptor(d: fcrypt::KeyDeriver, i: fcrypt::KdfId) -> Box<dyn fcrypt::Cryptor> {
     #[cfg(not(feature = "chacha20"))]
-    return Box::new(rijndael::GcmContext::new_with_kdf(d, i));
+    return Box::new(rijndael::Gcm256Context::new_with_kdf(d, i));
 
     #[cfg(feature = "chacha20")]
     {
-        match env::var(ENV_CHACHA20) {
-            Ok(_) => { return Box::new(chacha20::ChaCha20Poly1305Context::new_with_kdf(d, i)); },
-            Err(_) => { return Box::new(rijndael::GcmContext::new_with_kdf(d, i)); }
+        match env::var(ENV_CIPHER) {
+            Ok(s) => {
+                let s2 = s.as_str();
+                match s2 {
+                    "AES192" => { return Box::new(rijndael::Gcm192Context::new_with_kdf(d, i)); },
+                    _ =>  { return Box::new(chacha20::ChaCha20Poly1305Context::new_with_kdf(d, i)); },
+            }},
+            Err(_) => { return Box::new(rijndael::Gcm256Context::new_with_kdf(d, i)); }
         }
     }
 }

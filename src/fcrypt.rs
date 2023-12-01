@@ -282,7 +282,7 @@ impl AeadContext {
     pub fn encrypt_aead<T: Aead + AeadInPlace + AeadCore<NonceSize = U12, TagSize = U16> + KeyInit>(&mut self, password: &str, data: &Vec<u8>, algo_name: &str) -> std::io::Result<Vec<u8>> {
         let (key, nonce) = self.prepare_params_encrypt(password);
         let nonce_help = GenericArray::<u8, <T as AeadCore>::NonceSize>::from_slice(nonce.as_slice());
-        let key_help = GenericArray::<u8, <T as KeySizeUser>::KeySize>::from_slice(key.as_slice());
+        let key_help = GenericArray::<u8, <T as KeySizeUser>::KeySize>::from_slice(&key[0..T::key_size()]);
     
         let cipher = T::new(&key_help);
     
@@ -299,7 +299,7 @@ impl AeadContext {
         let (key, nonce, tag, mut dec_buffer) = self.prepare_params_decrypt(password, data);
     
         let nonce_help = GenericArray::<u8, <T as AeadCore>::NonceSize>::from_slice(nonce.as_slice());
-        let key_help = GenericArray::<u8, <T as KeySizeUser>::KeySize>::from_slice(key.as_slice());
+        let key_help = GenericArray::<u8, <T as KeySizeUser>::KeySize>::from_slice(&key[0..T::key_size()]);
         let tag_help = GenericArray::<u8, <T as AeadCore>::TagSize>::from_slice(tag.as_slice());
     
         let cipher = T::new(&key_help);

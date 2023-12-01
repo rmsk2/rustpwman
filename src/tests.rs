@@ -114,6 +114,12 @@ pub fn test_fcrypt_enc_dec_empty_aes_gcm() {
 }
 
 #[test]
+pub fn test_fcrypt_enc_dec_empty_aes_192_gcm() {
+    test_fcrypt_enc_dec_empty_generic(make_aes192_gcm_cryptor);
+}
+
+
+#[test]
 pub fn test_fcrypt_enc_dec_empty_chacha20() {
     test_fcrypt_enc_dec_empty_generic(make_chacha20_cryptor);
 }
@@ -138,6 +144,12 @@ pub fn test_fcrypt_dec_failure_generic(gen: CryptorGen) {
 pub fn test_fcrypt_dec_failure_aes_gcm() {
     test_fcrypt_dec_failure_generic(make_aes_gcm_cryptor);
 }
+
+#[test]
+pub fn test_fcrypt_dec_failure_aes_192_gcm() {
+    test_fcrypt_dec_failure_generic(make_aes192_gcm_cryptor);
+}
+
 
 #[test]
 pub fn test_fcrypt_dec_failure_chacha20() {
@@ -191,13 +203,24 @@ pub fn make_chacha20_cryptor(d: fcrypt::KeyDeriver, i: fcrypt::KdfId) -> Box<dyn
 
 #[cfg(test)]
 pub fn make_aes_gcm_cryptor(d: fcrypt::KeyDeriver, i: fcrypt::KdfId) -> Box<dyn fcrypt::Cryptor> {
-    return Box::new(rijndael::GcmContext::new_with_kdf(d, i));
+    return Box::new(rijndael::Gcm256Context::new_with_kdf(d, i));
+}
+
+#[cfg(test)]
+pub fn make_aes192_gcm_cryptor(d: fcrypt::KeyDeriver, i: fcrypt::KdfId) -> Box<dyn fcrypt::Cryptor> {
+    return Box::new(rijndael::Gcm192Context::new_with_kdf(d, i));
 }
 
 #[test]
 pub fn test_fcrypt_enc_dec_with_json_aes_gcm() {
     test_fcrypt_enc_dec_with_json_generic(make_aes_gcm_cryptor);
 }
+
+#[test]
+pub fn test_fcrypt_enc_dec_with_json_aes_192_gcm() {
+    test_fcrypt_enc_dec_with_json_generic(make_aes192_gcm_cryptor);
+}
+
 
 #[test]
 pub fn test_fcrypt_enc_dec_with_json_chacha20() {
