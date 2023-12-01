@@ -266,13 +266,13 @@ that my abstraction of the storage backend is viable.
 Additional note: Under Linux you have to install the package `libssl-dev` when compiling with this feature as the TLS implementation of the `reqwest` library seems to 
 depend on it being present.
 
-## Support for the ChaCha20 Poly-1305 and AES-192 GCM ciphers
+## Support for ChaCha20 Poly-1305 and AES-192 GCM
 
 When you build `rustpwman` with the `chacha20` feature you can use ChaCha20 Poly-1305 or AES-192 GCM as an alternative cipher for password file encryption. These algorithms are 
 activated by setting the environment variable `PWMANCIPHER` to a value. If the variable is set to the value `AES192` then AES-192 GCM will be used. Any other value makes
 `rustpwman` using ChaCha20 Poly-1305. If the variable is not set when `rustpwman` is started, then AES-256 GCM is used. Under Linux you can for instance use 
 `PWMANCIPHER=CHACHA20 rustpwman gui -i input_file.enc` to set the environment varible and start `rustpwman` in one go. ChaCha20 Poly-1305 provides security comparable to 
-AES-256 GCM and so it comes down to a matter of taste which cipher you use. Even though AES-192 has a shorter key than AES-256 a key length of 192 bits should be still past 
+AES-256 GCM and so it comes down to a matter of taste which cipher you use. Even though AES-192 has a shorter key than AES-256 a key length of 192 bits should still be past 
 anyones paranoia level. There are even some (more theoretical) attacks which affect AES-192 less than AES-256 so if you want to use it, here it is. 
 
 # Rustpwman under Windows
