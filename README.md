@@ -283,11 +283,11 @@ The good news is that it works and it even works well. I have tested the `pancur
 uses a binding to a C library and requires an [installed C compiler](https://github.com/ihalila/pdcurses-sys) in order to build. On the other hand Rust itself is dependent on a C 
 compiler when used under Windows. 
 
-In order to build `rustpwman` with the password cache feature you have to use the command `cargo build --release --no-default-features --features pwmanclientwin`. 
+In order to build `rustpwman` with all optional features you have to use the command `cargo build --release --no-default-features --features pwmanclientwin,chacha20,webdav`. 
 Alternatively you can call the batch file `build_win.bat` which executes this command and calls `build_paste_utf8.bat` (see below). If you do not care about the 
-password cache use `cargo build --release --no-default-features`. You should additionally build the `paste_utf8.exe` tool by running `build_paste_utf8.bat` in a 
-Visual Studio developer prompt. This tool enables you to paste the clipboard contents while editing an entry and to copy an entry which contains non-ASCII characters 
-(in my case Umlauts) to the clipboard in such a way that the non ASCII characters are displayed correctly.
+password cache, WebDAV or the additional ciphers use `cargo build --release --no-default-features`. You should additionally build the `paste_utf8.exe` tool by 
+running `build_paste_utf8.bat` in a Visual Studio developer prompt. This tool enables you to paste the clipboard contents while editing an entry and to copy an entry which
+contains non-ASCII characters (in my case Umlauts) to the clipboard in such a way that the non ASCII characters are displayed correctly.
 
 This batch file also builds `winfilter.exe` from the rust source `winfilter.rs`. This tool copies its stdin to stdout while filtering out the Escape sequence `ESC[?1002l` from its 
 input (if it appears at the beginning of the stream). Therefore if you pipe the output of `rustpwman` through `winfilter.exe` you can cleanup `rustpwman`'s output in order to
@@ -301,8 +301,7 @@ is used if you right click on the title bar of the `pancurses` window.
 
 Version 1.0.0: As expected, building `rustpwman` for WSL works without problems after installing all dependencies like `git`, `gcc` and `libncurses`. The resulting application also works but there is a perceptible decrease in performance when compared to the native version which uses the `pancurses` backend.
 
-Version 1.2.8 and higher: Building and running `rustpwman` works. Performance is still not quite on the same level as the native version (TUI flickers a bit when updating the screen) but overall performance 
-has improved with respect to the previous test mentioned above.
+Version 1.2.8 and higher: Building and running `rustpwman` works. Performance is still not quite on the same level as the native version (TUI flickers a bit when updating the screen) but overall performance has improved with respect to the previous test mentioned above.
 
 # Some technical information
 
@@ -364,8 +363,8 @@ This section provides information about stuff which is in my view suboptimal and
 - At the moment I do not attempt to overwrite memory that holds sensitive information when `rustpwman` is closed. This may be a problem when `rustpwman` is used in an environment where an attacker can gain access to memory previously used by `rustpwman`, i.e. when sharing a machine with an attacker.
 - When the list of entries changes (after an add or delete) it may be possible that the entry selected after the change is not visible in the `ScrollView` on the left. I was not successfull in forcing cursive to scroll to the newly selected entry. This is most probably my fault and meanwhile an appropriate warning dialog is displayed.
 - I am fairly new to Rust. I guess it shows in the code.
-- On a MacBook Air 2018 using the touchpad to click elements in the TUI does not work. The problem does not manifest itself when using a mouse. Using the touchpad seems to work though on other models. I do not think that this is a hardware problem on my MacBook and I unfortunately have no idea why this happens.
-- On MacOS using the mouse scroll wheel or the Page Up/Down keys confuses cursive. This does not happen on Linux or Windows.
+- On a MacBook Air 2018 using the touchpad to click elements in the TUI does not work. The problem does not manifest itself when using a mouse. Using the touchpad seems to work though on other models. I unfortunately have no idea why this happens.
+- On MacOS using the mouse scroll wheel or the Page Up/Down keys to select an entry confuses cursive. This does not happen on Linux or Windows.
 - On Windows a spurious Escape sequence `ESC[?1002l` is printed to stdout when the TUI application stops. This does not happen on Linux or MacOS. By piping the output of `rustpwman` to `winfilter.exe` you can remove this unwanted data from the output.
 - In non `--release` builds scrypt with the chosen parameters is *extremely* slow
 
