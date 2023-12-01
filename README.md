@@ -309,8 +309,8 @@ has improved with respect to the previous test mentioned above.
 ## About the crypto
 
 As a default `rustpwman` encrypts its data at rest using AES-256 GCM with a 128 bit tag length and a 96 bit nonce. If the feature `chacha20` is active when `rustpwman` is built
-ChaCha20 Poly-1305 can be used as an alternative. Obviously a ChaCha20 encrypted file can not be decrypted by a `rustpwman` version which uses AES-GCM only. The encrypted data 
-file is a simple JSON data structure. This may serve as an example:
+then ChaCha20 Poly-1305 or AES-192 GCM can be used as an alternative. Obviously a ChaCha20 or AES-192 encrypted file can not be decrypted by a `rustpwman` version which uses 
+AES-256 GCM only. The encrypted data file is a simple JSON data structure. This may serve as an example:
 
 ```
 {
