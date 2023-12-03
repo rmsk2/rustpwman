@@ -302,8 +302,8 @@ impl AeadContext {
 }
 
 // The following two functions provide a generic implementation of AEAD en- and decryption on the basis of an AeadContext struct for all ciphers which 
-// implement the corresponing RustCrypto traits. They are therefore helper functions in order to implement the Cryptor trait in this case.
-pub fn encrypt_aead<T: Aead + AeadInPlace + AeadCore<NonceSize = U12, TagSize = U16> + KeyInit>(ctx: &mut AeadContext, password: &str, data: &Vec<u8>, algo_name: &str) -> std::io::Result<Vec<u8>> {
+// implement the corresponding RustCrypto traits. They are therefore helper functions in order to implement the Cryptor trait in this case.
+fn encrypt_aead<T: Aead + AeadInPlace + AeadCore<NonceSize = U12, TagSize = U16> + KeyInit>(ctx: &mut AeadContext, password: &str, data: &Vec<u8>, algo_name: &str) -> std::io::Result<Vec<u8>> {
     let (key, nonce) = ctx.prepare_params_encrypt(password);
     let nonce_help = GenericArray::<u8, <T as AeadCore>::NonceSize>::from_slice(nonce.as_slice());
     let key_help = GenericArray::<u8, <T as KeySizeUser>::KeySize>::from_slice(&key[0..T::key_size()]);
@@ -316,7 +316,7 @@ pub fn encrypt_aead<T: Aead + AeadInPlace + AeadCore<NonceSize = U12, TagSize = 
     };
 }
 
-pub fn decrypt_aead<T: Aead + AeadInPlace + AeadCore<NonceSize = U12, TagSize = U16> + KeyInit>(ctx: &mut AeadContext, password: &str, data: &Vec<u8>, algo_name: &str) -> std::io::Result<Vec<u8>> {
+fn decrypt_aead<T: Aead + AeadInPlace + AeadCore<NonceSize = U12, TagSize = U16> + KeyInit>(ctx: &mut AeadContext, password: &str, data: &Vec<u8>, algo_name: &str) -> std::io::Result<Vec<u8>> {
     ctx.check_min_size(data.len())?;
     let associated_data: [u8; 0] = [];
 
