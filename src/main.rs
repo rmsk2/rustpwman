@@ -25,8 +25,6 @@ mod clip;
 mod undo;
 mod persist;
 mod obfuscate;
-mod rijndael;
-mod chacha20;
 #[cfg(feature = "webdav")]
 mod webdav;
 #[cfg(feature = "pwmanclient")]
@@ -83,7 +81,7 @@ struct RustPwMan {
 
 pub fn make_cryptor(d: fcrypt::KeyDeriver, i: fcrypt::KdfId) -> Box<dyn fcrypt::Cryptor> {
     #[cfg(not(feature = "chacha20"))]
-    return Box::new(rijndael::Gcm256Context::new_with_kdf(d, i));
+    return fcrypt::make_aes_256_gcm_with_kdf(d, i);
 
     #[cfg(feature = "chacha20")]
     {
@@ -91,10 +89,10 @@ pub fn make_cryptor(d: fcrypt::KeyDeriver, i: fcrypt::KdfId) -> Box<dyn fcrypt::
             Ok(s) => {
                 let s2 = s.as_str();
                 match s2 {
-                    "AES192" => { return Box::new(rijndael::Gcm192Context::new_with_kdf(d, i)); },
-                    _ =>  { return Box::new(chacha20::ChaCha20Poly1305Context::new_with_kdf(d, i)); },
+                    "AES192" => { return fcrypt::make_aes_192_gcm_with_kdf(d, i); },
+                    _ =>  { return fcrypt::make_chacha20_poly_1305_with_kdf(d, i); },
             }},
-            Err(_) => { return Box::new(rijndael::Gcm256Context::new_with_kdf(d, i)); }
+            Err(_) => { return fcrypt::make_aes_256_gcm_with_kdf(d, i); }
         }
     }
 }

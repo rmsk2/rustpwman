@@ -12,6 +12,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#![allow(dead_code)]
+
+mod rijndael;
+mod chacha20;
+
 use std::fs::File;
 use std::io::BufReader;
 use std::io::Read;
@@ -44,6 +49,20 @@ const KDF_SHA256: &str = "sha256";
 
 pub const DEFAULT_KDF_ID: KdfId = KdfId::Argon2;
 
+pub fn make_aes_256_gcm_with_kdf(d: KeyDeriver, i: KdfId) -> Box<dyn Cryptor> {
+    return Box::new(rijndael::Gcm256Context::new_with_kdf(d, i));
+}
+
+pub fn make_aes_192_gcm_with_kdf(d: KeyDeriver, i: KdfId) -> Box<dyn Cryptor> {
+    return Box::new(rijndael::Gcm192Context::new_with_kdf(d, i));
+}
+
+pub fn make_chacha20_poly_1305_with_kdf(d: KeyDeriver, i: KdfId) -> Box<dyn Cryptor> {
+    return Box::new(chacha20::ChaCha20Poly1305Context::new_with_kdf(d, i));
+}
+
+// This trait describes a "thing" which knows how to en- and decrypt a byte vector and to serialize, deserialize,
+// load and save the encrypted data structure.
 pub trait Cryptor {
     fn encrypt(&mut self, pw: &str, data: &Vec<u8>) -> std::io::Result<Vec<u8>>;
     fn decrypt(&mut self, pw: &str, data: &Vec<u8>) -> std::io::Result<Vec<u8>>;
@@ -150,6 +169,8 @@ pub struct AeadContext {
     pub kdf_id: KdfId
 } 
 
+// This struct knows how to generarate, maintain, parse, serialze and deserialize a data structure which can be used to
+// implement a typical AEAD encryption scheme. It does not know how to perform the encryption itself.
 impl AeadContext {
     #![allow(dead_code)]
     pub fn new() -> AeadContext {
@@ -278,42 +299,43 @@ impl AeadContext {
 
         return (raw_32_byte_key, self.nonce.clone(), tag, dec_buffer);
     }
-
-    pub fn encrypt_aead<T: Aead + AeadInPlace + AeadCore<NonceSize = U12, TagSize = U16> + KeyInit>(&mut self, password: &str, data: &Vec<u8>, algo_name: &str) -> std::io::Result<Vec<u8>> {
-        let (key, nonce) = self.prepare_params_encrypt(password);
-        let nonce_help = GenericArray::<u8, <T as AeadCore>::NonceSize>::from_slice(nonce.as_slice());
-        let key_help = GenericArray::<u8, <T as KeySizeUser>::KeySize>::from_slice(&key[0..T::key_size()]);
-    
-        let cipher = T::new(&key_help);
-    
-        return match cipher.encrypt(nonce_help, data.as_slice()) {
-            Err(_) => return Err(Error::new(ErrorKind::Other, format!("{} {}", algo_name, "Encryption error"))),
-            Ok(d) => Ok(d)
-        };
-    }
-    
-    pub fn decrypt_aead<T: Aead + AeadInPlace + AeadCore<NonceSize = U12, TagSize = U16> + KeyInit>(&mut self, password: &str, data: &Vec<u8>, algo_name: &str) -> std::io::Result<Vec<u8>> {
-        self.check_min_size(data.len())?;
-        let associated_data: [u8; 0] = [];
-    
-        let (key, nonce, tag, mut dec_buffer) = self.prepare_params_decrypt(password, data);
-    
-        let nonce_help = GenericArray::<u8, <T as AeadCore>::NonceSize>::from_slice(nonce.as_slice());
-        let key_help = GenericArray::<u8, <T as KeySizeUser>::KeySize>::from_slice(&key[0..T::key_size()]);
-        let tag_help = GenericArray::<u8, <T as AeadCore>::TagSize>::from_slice(tag.as_slice());
-    
-        let cipher = T::new(&key_help);
-        let _ = match cipher.decrypt_in_place_detached(nonce_help, &associated_data, dec_buffer.as_mut_slice(), tag_help) {
-            Ok(_) => (),
-            Err(_) => {
-                return Err(Error::new(ErrorKind::Other, format!("{} {}", algo_name, "Decryption error")));
-            }
-        };
-    
-        return Ok(dec_buffer);  
-    }
 }
 
+// The following two functions provide a generic implementation of AEAD en- and decryption on the basis of an AeadContext struct for all ciphers which 
+// implement the corresponing RustCrypto traits. They are therefore helper functions in order to implement the Cryptor trait in this case.
+pub fn encrypt_aead<T: Aead + AeadInPlace + AeadCore<NonceSize = U12, TagSize = U16> + KeyInit>(ctx: &mut AeadContext, password: &str, data: &Vec<u8>, algo_name: &str) -> std::io::Result<Vec<u8>> {
+    let (key, nonce) = ctx.prepare_params_encrypt(password);
+    let nonce_help = GenericArray::<u8, <T as AeadCore>::NonceSize>::from_slice(nonce.as_slice());
+    let key_help = GenericArray::<u8, <T as KeySizeUser>::KeySize>::from_slice(&key[0..T::key_size()]);
+
+    let cipher = T::new(&key_help);
+
+    return match cipher.encrypt(nonce_help, data.as_slice()) {
+        Err(_) => return Err(Error::new(ErrorKind::Other, format!("{} {}", algo_name, "Encryption error"))),
+        Ok(d) => Ok(d)
+    };
+}
+
+pub fn decrypt_aead<T: Aead + AeadInPlace + AeadCore<NonceSize = U12, TagSize = U16> + KeyInit>(ctx: &mut AeadContext, password: &str, data: &Vec<u8>, algo_name: &str) -> std::io::Result<Vec<u8>> {
+    ctx.check_min_size(data.len())?;
+    let associated_data: [u8; 0] = [];
+
+    let (key, nonce, tag, mut dec_buffer) = ctx.prepare_params_decrypt(password, data);
+
+    let nonce_help = GenericArray::<u8, <T as AeadCore>::NonceSize>::from_slice(nonce.as_slice());
+    let key_help = GenericArray::<u8, <T as KeySizeUser>::KeySize>::from_slice(&key[0..T::key_size()]);
+    let tag_help = GenericArray::<u8, <T as AeadCore>::TagSize>::from_slice(tag.as_slice());
+
+    let cipher = T::new(&key_help);
+    let _ = match cipher.decrypt_in_place_detached(nonce_help, &associated_data, dec_buffer.as_mut_slice(), tag_help) {
+        Ok(_) => (),
+        Err(_) => {
+            return Err(Error::new(ErrorKind::Other, format!("{} {}", algo_name, "Decryption error")));
+        }
+    };
+
+    return Ok(dec_buffer);  
+}
 
 pub fn check_password(pw: &str) -> Option<Error> {
     if pw.as_bytes().len() > MAX_PW_SIZE_IN_BYTES {
