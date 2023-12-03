@@ -75,7 +75,7 @@ Shows an about dialog containing information about the author and the program ve
 
 ### File info
 
-Shows how many entries are present in this data file, how it is accessed and where it is located.
+Shows how many entries are present in this data file, how it is accessed, where it is located and how it is encrypted.
 
 ### Undo changes
 
