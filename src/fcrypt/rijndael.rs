@@ -30,7 +30,7 @@ impl Cryptor for Gcm256Context {
         return encrypt_aead::<AesGcm::<aes::Aes256, typenum::U12>>(&mut self.0, password, data, ALGO_AES256);
     }
 
-    fn from_dyn_reader(&mut self, reader: &mut dyn Read)-> std::io::Result<Vec<u8>> {
+    fn from_dyn_reader(&mut self, reader: &mut dyn Read) -> std::io::Result<Vec<u8>> {
         return self.0.from_reader(reader);
     }
 
@@ -65,7 +65,7 @@ impl Cryptor for Gcm192Context {
         return encrypt_aead::<AesGcm::<aes::Aes192, typenum::U12>>(&mut self.0, password, data, ALGO_AES192);
     }
 
-    fn from_dyn_reader(&mut self, reader: &mut dyn Read)-> std::io::Result<Vec<u8>> {
+    fn from_dyn_reader(&mut self, reader: &mut dyn Read) -> std::io::Result<Vec<u8>> {
         return self.0.from_reader(reader);
     }
 
