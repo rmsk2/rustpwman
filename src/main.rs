@@ -253,7 +253,7 @@ impl RustPwMan {
             Ok(p) => p
         };
     
-        let mut jots_file = jots::Jots::new(self.default_deriver, self.default_deriver_id, make_cryptor);
+        let mut jots_file = jots::Jots::new(self.default_deriver, self.default_deriver_id, Box::new(make_cryptor));
     
         let file = match File::open(&file_in) {
             Ok(f) => f,
@@ -286,7 +286,7 @@ impl RustPwMan {
         self.set_pbkdf_from_command_line(decrypt_matches);
         let (file_in, file_out) = RustPwMan::determine_in_out_files(decrypt_matches);
         
-        let mut jots_file = jots::Jots::new(self.default_deriver, self.default_deriver_id, make_cryptor);
+        let mut jots_file = jots::Jots::new(self.default_deriver, self.default_deriver_id, Box::new(make_cryptor));
     
         let pw = match rpassword::prompt_password("Password: ") {
             Err(_) => { 
@@ -388,9 +388,15 @@ impl RustPwMan {
                 }
 
                 let persist_closure = self.make_persist_creator(&u, &p, &s, &data_file_name);
+                
+                let cr_gen_gen = || -> jots::CryptorGen {
+                    return Box::new(|k: fcrypt::KeyDeriver, i: fcrypt::KdfId| -> Box<dyn fcrypt::Cryptor>  {
+                        return make_cryptor(k, i); 
+                    });
+                };
 
                 modtui::tuimain::main(data_file_name, self.default_sec_level, self.default_deriver, self.default_deriver_id, 
-                                      self.default_pw_gen, self.paste_command.clone(), self.copy_command.clone(), persist_closure);
+                                      self.default_pw_gen, self.paste_command.clone(), self.copy_command.clone(), persist_closure, Box::new(cr_gen_gen));
             },
             None => {
                 eprintln!("Password file name missing");

@@ -22,7 +22,7 @@ use cursive::views::Dialog;
 
 use crate::fcrypt::KeyDeriver;
 use crate::fcrypt;
-use crate::jots;
+use crate::jots::{self, CryptorGen};
 use crate::pwgen::GenerationStrategy;
 use super::AppState;
 use super::open;
@@ -31,14 +31,13 @@ use crate::persist;
 
 use super::main_window;
 use super::pwman_quit;
-use crate::make_cryptor;
 use super::pwentry;
 #[cfg(feature = "pwmanclient")]
 use super::cache;
 use super::init;
 
 pub fn main(data_file_name: String, default_sec_bits: usize, derive_func: KeyDeriver, deriver_id: fcrypt::KdfId, default_pw_gen: GenerationStrategy, 
-            paste_cmd: String, copy_cmd: String, make_default: persist::PersistCreator) {
+            paste_cmd: String, copy_cmd: String, make_default: persist::PersistCreator, crypt_gen: Box<dyn Fn() -> CryptorGen>) {
     let (tx, rx): (Sender<String>, Receiver<String>) = mpsc::channel();
 
     let capture_file_name = data_file_name.clone();
@@ -51,7 +50,7 @@ pub fn main(data_file_name: String, default_sec_bits: usize, derive_func: KeyDer
     // stuff to run after successfull password entry
     let pw_callback = Box::new(move |s: &mut Cursive, password: &String| {
         let p_cb = make_default(&capture_file_name);
-        let jots_store = jots::Jots::new(derive_func, deriver_id, make_cryptor);
+        let jots_store = jots::Jots::new(derive_func, deriver_id, crypt_gen());
         let f_name = capture_file_name.clone();
 
         let state = AppState::new(jots_store, &f_name, default_sec_bits, default_pw_gen, &paste_cmd, &copy_cmd, p_cb);

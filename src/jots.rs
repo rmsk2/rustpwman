@@ -27,7 +27,7 @@ use fcrypt::KdfId;
 use fcrypt::Cryptor;
 
 
-pub type CryptorGen = fn(d: KeyDeriver, i: KdfId) -> Box<dyn Cryptor>;
+pub type CryptorGen = Box<dyn Fn(KeyDeriver, KdfId) -> Box<dyn Cryptor>>;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct KvEntry {

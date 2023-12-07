@@ -1,6 +1,6 @@
 [package]
 name = "rustpwman"
-version = "1.9.7"
+version = "1.9.8"
 authors = ["Martin <rmsk2@gmx.de>"]
 edition = "2021"
 
@@ -46,7 +46,7 @@ default-features = false
 features = ["pancurses-backend"]
 
 [features]
-default = ["pwmanclientux"]
+default = ["pwmanclientux", "chacha20"]
 pwmanclient = []
 pwmanclientux = ["dep:users", "pwmanclient"]
 pwmanclientwin = ["dep:uds_windows", "pwmanclient"]
