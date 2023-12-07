@@ -62,6 +62,7 @@ const ARG_INPUT_FILE: &str = "inputfile";
 const ARG_OUTPUT_FILE: &str = "outputfile";
 const ARG_CONFIG_FILE: &str = "cfgfile";
 const ARG_KDF: &str = "kdf";
+const ARG_CIPHER: &str = "cipher";
 pub const CFG_FILE_NAME: &str = ".rustpwman";
 pub const ENV_CIPHER: &str = "PWMANCIPHER";
 
@@ -95,7 +96,7 @@ pub fn make_cryptor(id: &str, d: fcrypt::KeyDeriver, i: fcrypt::KdfId) -> Box<dy
             }
         }
 
-        match algo_id.as_str() {
+        match algo_id.to_uppercase().as_str() {
             "AES192" => { return fcrypt::make_aes_192_gcm_with_kdf(d, i); },
             "AES256" => { return fcrypt::make_aes_256_gcm_with_kdf(d, i); },
             "CHACHA20" =>  { return fcrypt::make_chacha20_poly_1305_with_kdf(d, i); },
@@ -260,8 +261,14 @@ impl RustPwMan {
             Ok(p) => p
         };
 
-        let cr_gen = Box::new(|k: fcrypt::KeyDeriver, i: fcrypt::KdfId| -> Box<dyn fcrypt::Cryptor>  {
-            return make_cryptor("", k, i); 
+        let a: Option<&String> = encrypt_matches.get_one(ARG_CIPHER);
+        let algo_id = match a {
+            Some(s) => String::from(s.as_str()),
+            None => String::from("")
+        };
+
+        let cr_gen = Box::new(move |k: fcrypt::KeyDeriver, i: fcrypt::KdfId| -> Box<dyn fcrypt::Cryptor>  {
+            return make_cryptor(algo_id.as_str(), k, i); 
         });
 
         let mut jots_file = jots::Jots::new(self.default_deriver, self.default_deriver_id, cr_gen);
@@ -297,8 +304,14 @@ impl RustPwMan {
         self.set_pbkdf_from_command_line(decrypt_matches);
         let (file_in, file_out) = RustPwMan::determine_in_out_files(decrypt_matches);
 
-        let cr_gen = Box::new(|k: fcrypt::KeyDeriver, i: fcrypt::KdfId| -> Box<dyn fcrypt::Cryptor>  {
-            return make_cryptor("", k, i); 
+        let a: Option<&String> = decrypt_matches.get_one(ARG_CIPHER);
+        let algo_id = match a {
+            Some(s) => String::from(s.as_str()),
+            None => String::from("")
+        };
+
+        let cr_gen = Box::new(move |k: fcrypt::KeyDeriver, i: fcrypt::KdfId| -> Box<dyn fcrypt::Cryptor>  {
+            return make_cryptor(algo_id.as_str(), k, i); 
         });        
         
         let mut jots_file = jots::Jots::new(self.default_deriver, self.default_deriver_id, cr_gen);
@@ -388,6 +401,19 @@ impl RustPwMan {
         let mut p = self.webdav_pw.clone();
         let s = self.webdav_server.clone();
 
+        let cip: Option<&String> = gui_matches.get_one(ARG_CIPHER);
+        let algo_id = match cip {
+            Some(s) => String::from(s.as_str()),
+            None => String::from("")
+        };
+
+        let cr_gen_gen = Box::new(move || -> jots::CryptorGen {
+            let h = algo_id.clone();
+            return Box::new(move |k: fcrypt::KeyDeriver, i: fcrypt::KdfId| -> Box<dyn fcrypt::Cryptor>  {
+                return make_cryptor(h.as_str(), k, i); 
+            });
+        });
+
         match a {
             Some(v) => {
                 let data_file_name : String = v.clone();
@@ -403,15 +429,9 @@ impl RustPwMan {
                 }
 
                 let persist_closure = self.make_persist_creator(&u, &p, &s, &data_file_name);
-                
-                let cr_gen_gen = || -> jots::CryptorGen {
-                    return Box::new(|k: fcrypt::KeyDeriver, i: fcrypt::KdfId| -> Box<dyn fcrypt::Cryptor>  {
-                        return make_cryptor("", k, i); 
-                    });
-                };
 
                 modtui::tuimain::main(data_file_name, self.default_sec_level, self.default_deriver, self.default_deriver_id, 
-                                      self.default_pw_gen, self.paste_command.clone(), self.copy_command.clone(), persist_closure, Box::new(cr_gen_gen));
+                                      self.default_pw_gen, self.paste_command.clone(), self.copy_command.clone(), persist_closure, cr_gen_gen);
             },
             None => {
                 eprintln!("Password file name missing");
@@ -503,6 +523,19 @@ pub fn add_kdf_param() -> clap::Arg {
     return arg.value_parser(possible_values);
 }
 
+pub fn add_cipher_param() -> clap::Arg {
+    let mut arg = Arg::new(ARG_CIPHER);
+
+    arg = arg.long(ARG_CIPHER);
+    arg = arg.short('c');
+    arg = arg.required(false);
+    arg = arg.num_args(1);
+    arg = arg.help("Use specific cipher");
+    let possible_values: Vec<&str> = vec!["aes192", "aes256", "chacha20"];
+
+    return arg.value_parser(possible_values);
+}
+
 fn main() {
     let mut app = Command::new("rustpwman")
         .version(VERSION_STRING)
@@ -523,7 +556,8 @@ fn main() {
                     .required(true)
                     .num_args(1)
                     .help("Encrypted output file"))                    
-                .arg(add_kdf_param()))
+                .arg(add_kdf_param())
+                .arg(add_cipher_param()))
         .subcommand(
             Command::new(COMMAND_DECRYPT)
                 .about("Decrypt file")        
@@ -539,7 +573,8 @@ fn main() {
                     .required(true)
                     .num_args(1)
                     .help("Name of plaintext file"))                    
-                .arg(add_kdf_param()))
+                .arg(add_kdf_param())
+                .arg(add_cipher_param()))
         .subcommand(
             Command::new(COMMAND_GUI)
                 .about("Open file in TUI")        
@@ -549,7 +584,8 @@ fn main() {
                     .required(true)
                     .num_args(1)
                     .help("Name of encrypted data file"))                   
-                .arg(add_kdf_param()))
+                .arg(add_kdf_param())
+                .arg(add_cipher_param()))
         .subcommand(
             Command::new(COMMAND_CONFIG)
                 .about("Change configuration")        
