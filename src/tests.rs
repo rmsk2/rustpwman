@@ -71,12 +71,12 @@ pub fn test_fcrypt_enc_dec_generic(gen: CryptorGen) {
 
 #[test]
 pub fn test_fcrypt_enc_dec_aes_gcm() {
-    test_fcrypt_enc_dec_generic(make_aes_gcm_cryptor);
+    test_fcrypt_enc_dec_generic(Box::new(make_aes_gcm_cryptor));
 }
 
 #[test]
 pub fn test_fcrypt_enc_dec_chacha20() {
-    test_fcrypt_enc_dec_generic(make_chacha20_cryptor);
+    test_fcrypt_enc_dec_generic(Box::new(make_chacha20_cryptor));
 }
 
 
@@ -106,18 +106,18 @@ pub fn test_fcrypt_enc_dec_empty_generic(gen: CryptorGen) {
 
 #[test]
 pub fn test_fcrypt_enc_dec_empty_aes_gcm() {
-    test_fcrypt_enc_dec_empty_generic(make_aes_gcm_cryptor);
+    test_fcrypt_enc_dec_empty_generic(Box::new(make_aes_gcm_cryptor));
 }
 
 #[test]
 pub fn test_fcrypt_enc_dec_empty_aes_192_gcm() {
-    test_fcrypt_enc_dec_empty_generic(make_aes192_gcm_cryptor);
+    test_fcrypt_enc_dec_empty_generic(Box::new(make_aes192_gcm_cryptor));
 }
 
 
 #[test]
 pub fn test_fcrypt_enc_dec_empty_chacha20() {
-    test_fcrypt_enc_dec_empty_generic(make_chacha20_cryptor);
+    test_fcrypt_enc_dec_empty_generic(Box::new(make_chacha20_cryptor));
 }
 
 #[cfg(test)]
@@ -138,18 +138,18 @@ pub fn test_fcrypt_dec_failure_generic(gen: CryptorGen) {
 
 #[test]
 pub fn test_fcrypt_dec_failure_aes_gcm() {
-    test_fcrypt_dec_failure_generic(make_aes_gcm_cryptor);
+    test_fcrypt_dec_failure_generic(Box::new(make_aes_gcm_cryptor));
 }
 
 #[test]
 pub fn test_fcrypt_dec_failure_aes_192_gcm() {
-    test_fcrypt_dec_failure_generic(make_aes192_gcm_cryptor);
+    test_fcrypt_dec_failure_generic(Box::new(make_aes192_gcm_cryptor));
 }
 
 
 #[test]
 pub fn test_fcrypt_dec_failure_chacha20() {
-    test_fcrypt_dec_failure_generic(make_chacha20_cryptor);
+    test_fcrypt_dec_failure_generic(Box::new(make_chacha20_cryptor));
 }
 
 
@@ -209,18 +209,18 @@ pub fn make_aes192_gcm_cryptor(d: fcrypt::KeyDeriver, i: fcrypt::KdfId) -> Box<d
 
 #[test]
 pub fn test_fcrypt_enc_dec_with_json_aes_gcm() {
-    test_fcrypt_enc_dec_with_json_generic(make_aes_gcm_cryptor);
+    test_fcrypt_enc_dec_with_json_generic(Box::new(make_aes_gcm_cryptor));
 }
 
 #[test]
 pub fn test_fcrypt_enc_dec_with_json_aes_192_gcm() {
-    test_fcrypt_enc_dec_with_json_generic(make_aes192_gcm_cryptor);
+    test_fcrypt_enc_dec_with_json_generic(Box::new(make_aes192_gcm_cryptor));
 }
 
 
 #[test]
 pub fn test_fcrypt_enc_dec_with_json_chacha20() {
-    test_fcrypt_enc_dec_with_json_generic(make_chacha20_cryptor);
+    test_fcrypt_enc_dec_with_json_generic(Box::new(make_chacha20_cryptor));
 }
 
 #[test]
@@ -234,7 +234,7 @@ pub fn test_jots_serialize_deserialize() {
     let d3 = String::from("data3"); 
     
     {
-        let mut j = jots::Jots::new_id(derivers::sha256_deriver, fcrypt::KdfId::Sha256, make_aes_gcm_cryptor);
+        let mut j = jots::Jots::new_id(derivers::sha256_deriver, fcrypt::KdfId::Sha256, Box::new(make_aes_gcm_cryptor));
         j.add(&t1, &d1);
         j.add(&t2, &d2);
         j.add(&t3, &d3);
@@ -249,7 +249,7 @@ pub fn test_jots_serialize_deserialize() {
         };
     }
 
-    let mut j2 = jots::Jots::new_id(derivers::sha256_deriver, fcrypt::KdfId::Sha256, make_aes_gcm_cryptor);
+    let mut j2 = jots::Jots::new_id(derivers::sha256_deriver, fcrypt::KdfId::Sha256, Box::new(make_aes_gcm_cryptor));
     match j2.from_reader(serialized.as_slice()) {
         Ok(_) => (),
         Err(e) => { panic!("Deserialization failed {:?}", e); }          
@@ -291,7 +291,7 @@ pub fn test_jots_iter() {
     let d2 = String::from("data2");   
     let d3 = String::from("data3"); 
     
-    let mut j = jots::Jots::new_id(derivers::sha256_deriver, fcrypt::KdfId::Sha256, make_aes_gcm_cryptor);
+    let mut j = jots::Jots::new_id(derivers::sha256_deriver, fcrypt::KdfId::Sha256, Box::new(make_aes_gcm_cryptor));
     j.add(&t1, &d1);
     j.add(&t2, &d2);
     j.add(&t3, &d3);

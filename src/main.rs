@@ -67,6 +67,7 @@ pub const ENV_CIPHER: &str = "PWMANCIPHER";
 
 use fcrypt::DEFAULT_KDF_ID;
 
+
 struct RustPwMan {
     default_deriver: fcrypt::KeyDeriver,
     default_deriver_id: fcrypt::KdfId,
@@ -79,20 +80,26 @@ struct RustPwMan {
     webdav_server: String
 }
 
-pub fn make_cryptor(d: fcrypt::KeyDeriver, i: fcrypt::KdfId) -> Box<dyn fcrypt::Cryptor> {
+pub fn make_cryptor(id: &str, d: fcrypt::KeyDeriver, i: fcrypt::KdfId) -> Box<dyn fcrypt::Cryptor> {
     #[cfg(not(feature = "chacha20"))]
     return fcrypt::make_aes_256_gcm_with_kdf(d, i);
 
     #[cfg(feature = "chacha20")]
     {
-        match env::var(ENV_CIPHER) {
-            Ok(s) => {
-                let s2 = s.as_str();
-                match s2 {
-                    "AES192" => { return fcrypt::make_aes_192_gcm_with_kdf(d, i); },
-                    _ =>  { return fcrypt::make_chacha20_poly_1305_with_kdf(d, i); },
-            }},
-            Err(_) => { return fcrypt::make_aes_256_gcm_with_kdf(d, i); }
+        let mut algo_id = String::from(id);
+
+        if algo_id == "" {
+            algo_id = match env::var(ENV_CIPHER) {
+                Ok(s) => String::from(s.as_str()),
+                Err(_) => String::from("AES256")
+            }
+        }
+
+        match algo_id.as_str() {
+            "AES192" => { return fcrypt::make_aes_192_gcm_with_kdf(d, i); },
+            "AES256" => { return fcrypt::make_aes_256_gcm_with_kdf(d, i); },
+            "CHACHA20" =>  { return fcrypt::make_chacha20_poly_1305_with_kdf(d, i); },
+            _ =>  { return fcrypt::make_chacha20_poly_1305_with_kdf(d, i); },
         }
     }
 }
@@ -252,8 +259,12 @@ impl RustPwMan {
             },
             Ok(p) => p
         };
-    
-        let mut jots_file = jots::Jots::new(self.default_deriver, self.default_deriver_id, Box::new(make_cryptor));
+
+        let cr_gen = Box::new(|k: fcrypt::KeyDeriver, i: fcrypt::KdfId| -> Box<dyn fcrypt::Cryptor>  {
+            return make_cryptor("", k, i); 
+        });
+
+        let mut jots_file = jots::Jots::new(self.default_deriver, self.default_deriver_id, cr_gen);
     
         let file = match File::open(&file_in) {
             Ok(f) => f,
@@ -285,8 +296,12 @@ impl RustPwMan {
     fn perform_decrypt_command(&mut self, decrypt_matches: &clap::ArgMatches) {
         self.set_pbkdf_from_command_line(decrypt_matches);
         let (file_in, file_out) = RustPwMan::determine_in_out_files(decrypt_matches);
+
+        let cr_gen = Box::new(|k: fcrypt::KeyDeriver, i: fcrypt::KdfId| -> Box<dyn fcrypt::Cryptor>  {
+            return make_cryptor("", k, i); 
+        });        
         
-        let mut jots_file = jots::Jots::new(self.default_deriver, self.default_deriver_id, Box::new(make_cryptor));
+        let mut jots_file = jots::Jots::new(self.default_deriver, self.default_deriver_id, cr_gen);
     
         let pw = match rpassword::prompt_password("Password: ") {
             Err(_) => { 
@@ -391,7 +406,7 @@ impl RustPwMan {
                 
                 let cr_gen_gen = || -> jots::CryptorGen {
                     return Box::new(|k: fcrypt::KeyDeriver, i: fcrypt::KdfId| -> Box<dyn fcrypt::Cryptor>  {
-                        return make_cryptor(k, i); 
+                        return make_cryptor("", k, i); 
                     });
                 };
 
