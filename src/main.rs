@@ -81,6 +81,7 @@ struct RustPwMan {
     webdav_server: String
 }
 
+#[allow(unused_variables)]
 pub fn make_cryptor(id: &str, d: fcrypt::KeyDeriver, i: fcrypt::KdfId) -> Box<dyn fcrypt::Cryptor> {
     #[cfg(not(feature = "chacha20"))]
     return fcrypt::make_aes_256_gcm_with_kdf(d, i);
