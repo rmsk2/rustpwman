@@ -269,16 +269,17 @@ depend on it being present.
 ## Support for ChaCha20 Poly-1305 and AES-192 GCM
 
 When you build `rustpwman` with the `chacha20` feature you can use ChaCha20 Poly-1305 or AES-192 GCM as an alternative cipher for password file encryption. These algorithms are 
-activated by setting the environment variable `PWMANCIPHER` to a value. If the variable is set to the value `AES192` then AES-192 GCM will be used. Any other value makes
-`rustpwman` using ChaCha20 Poly-1305. If the variable is not set when `rustpwman` is started, then AES-256 GCM is used. Under Linux and MacOS you can for instance use 
-`PWMANCIPHER=CHACHA20 rustpwman gui -i input_file.enc` to set the environment varible and start `rustpwman` in one go. ChaCha20 Poly-1305 provides security comparable to 
-AES-256 GCM and so it comes down to a matter of taste which cipher you use. Even though AES-192 has a shorter key than AES-256 a key length of 192 bits should still be past 
-anyones paranoia level and on top of that it is very unlikely that you use a password with a 192 bit or higher entropy to derive the encryption key used by `rustpwan` in the
-first place. There are even some (more theoretical) attacks which affect AES-192 less than AES-256 so if you want to use it, here it is.
+activated by setting the environment variable `PWMANCIPHER` to a value. If the variable is set to the value `AES192` or `AES256` then AES-192 or AES-256 GCM will be used. Any other 
+value makes `rustpwman` using ChaCha20 Poly-1305. If the variable is not set when `rustpwman` is started, then AES-256 GCM is used. Under Linux and MacOS you can for instance use 
+`PWMANCIPHER=CHACHA20 rustpwman gui -i input_file.enc` to set the environment varible and start `rustpwman` in one go. 
 
 As an alternative to setting an environment variable you can also use the `--cipher` or `-c` command line option and one of the parameters
 `aes256`, `aes192` or `chacha20` to determine the cipher which is used by `rustpwman`. This option works with the `enc`, `dec` and
-the `gui` command. 
+the `gui` command. This may serve as an example: `rustpwman gui -i input_file.enc -c chacha20`. 
+
+ChaCha20 Poly-1305 provides security comparable to AES-256 GCM and so it comes down to a matter of taste which cipher you use. Even though AES-192 has a shorter key than AES-256
+a key length of 192 bits should still be past anyones paranoia level. On top of that it is very unlikely that you use a password with a 192 bit or higher entropy to derive 
+the encryption key used by `rustpwan` in the first place. There are even some (more theoretical) attacks which affect AES-192 less than AES-256 so if you want to use it, here it is.
 
 # Rustpwman under Windows
 
