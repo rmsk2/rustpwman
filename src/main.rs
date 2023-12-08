@@ -524,13 +524,13 @@ pub fn add_kdf_param() -> clap::Arg {
 }
 
 pub fn add_cipher_param() -> clap::Arg {
-    let mut arg = Arg::new(ARG_CIPHER);
+    let arg = Arg::new(ARG_CIPHER)
+        .long(ARG_CIPHER)
+        .short('c')
+        .required(false)
+        .num_args(1)
+        .help("Use specific cipher");
 
-    arg = arg.long(ARG_CIPHER);
-    arg = arg.short('c');
-    arg = arg.required(false);
-    arg = arg.num_args(1);
-    arg = arg.help("Use specific cipher");
     let possible_values: Vec<&str> = vec!["aes192", "aes256", "chacha20"];
 
     return arg.value_parser(possible_values);
