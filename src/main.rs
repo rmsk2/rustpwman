@@ -64,6 +64,12 @@ const ARG_OUTPUT_FILE: &str = "outputfile";
 const ARG_CONFIG_FILE: &str = "cfgfile";
 const ARG_KDF: &str = "kdf";
 const ARG_CIPHER: &str = "cipher";
+#[cfg(not(feature = "chacha20"))]
+const SINGLE_CIPHER_DEFAULT: CipherId = CipherId::Aes256Gcm;
+#[cfg(feature = "chacha20")]
+const MULTIPLE_CIPHER_DEFAULT_ENV_NOT_SET: CipherId = CipherId::Aes256Gcm;
+#[cfg(feature = "chacha20")]
+const MULTIPLE_CIPHER_DEFAULT_ENV_SET: CipherId = CipherId::ChaCha20Poly1305;
 pub const CFG_FILE_NAME: &str = ".rustpwman";
 pub const ENV_CIPHER: &str = "PWMANCIPHER";
 
@@ -85,7 +91,7 @@ struct RustPwMan {
 #[allow(unused_variables)]
 pub fn make_cryptor(id: &str, d: fcrypt::KeyDeriver, i: fcrypt::KdfId) -> Box<dyn fcrypt::Cryptor> {
     #[cfg(not(feature = "chacha20"))]
-    return CipherId::Aes256Gcm.make(d, i);
+    return SINGLE_CIPHER_DEFAULT.make(d, i);
 
     #[cfg(feature = "chacha20")]
     {
@@ -94,7 +100,7 @@ pub fn make_cryptor(id: &str, d: fcrypt::KeyDeriver, i: fcrypt::KdfId) -> Box<dy
         if algo_id == "" {
             algo_id = match env::var(ENV_CIPHER) {
                 Ok(s) => String::from(s.as_str()),
-                Err(_) => String::from(CipherId::Aes256Gcm.to_str())
+                Err(_) => String::from(MULTIPLE_CIPHER_DEFAULT_ENV_NOT_SET.to_str())
             }
         }        
 
@@ -103,7 +109,7 @@ pub fn make_cryptor(id: &str, d: fcrypt::KeyDeriver, i: fcrypt::KdfId) -> Box<dy
         if let Some(cip_id) = CipherId::from_str(algo_id.as_str()) {
             return cip_id.make(d, i);
         } else {
-            return CipherId::ChaCha20Poly1305.make(d, i);
+            return MULTIPLE_CIPHER_DEFAULT_ENV_SET.make(d, i);
         }
     }
 }
