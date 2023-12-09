@@ -39,6 +39,7 @@ const OBFUSCATION_ENV_VAR: &str = "RUSTPWMAN_OBFUSCATION";
 use std::env;
 use dirs;
 use clap::{Arg, Command};
+use fcrypt::CipherId;
 use modtui::DEFAULT_PASTE_CMD;
 use modtui::DEFAULT_COPY_CMD;
 use persist::PersistCreator;
@@ -84,7 +85,7 @@ struct RustPwMan {
 #[allow(unused_variables)]
 pub fn make_cryptor(id: &str, d: fcrypt::KeyDeriver, i: fcrypt::KdfId) -> Box<dyn fcrypt::Cryptor> {
     #[cfg(not(feature = "chacha20"))]
-    return fcrypt::make_aes_256_gcm_with_kdf(d, i);
+    return CipherId::Aes256Gcm.make(d, i);
 
     #[cfg(feature = "chacha20")]
     {
@@ -93,15 +94,16 @@ pub fn make_cryptor(id: &str, d: fcrypt::KeyDeriver, i: fcrypt::KdfId) -> Box<dy
         if algo_id == "" {
             algo_id = match env::var(ENV_CIPHER) {
                 Ok(s) => String::from(s.as_str()),
-                Err(_) => String::from("AES256")
+                Err(_) => String::from(CipherId::Aes256Gcm.to_str())
             }
-        }
+        }        
 
-        match algo_id.to_uppercase().as_str() {
-            "AES192" => { return fcrypt::make_aes_192_gcm_with_kdf(d, i); },
-            "AES256" => { return fcrypt::make_aes_256_gcm_with_kdf(d, i); },
-            "CHACHA20" =>  { return fcrypt::make_chacha20_poly_1305_with_kdf(d, i); },
-            _ =>  { return fcrypt::make_chacha20_poly_1305_with_kdf(d, i); },
+        algo_id = algo_id.to_lowercase();
+
+        if let Some(cip_id) = CipherId::from_str(algo_id.as_str()) {
+            return cip_id.make(d, i);
+        } else {
+            return CipherId::ChaCha20Poly1305.make(d, i);
         }
     }
 }
@@ -532,7 +534,12 @@ pub fn add_cipher_param() -> clap::Arg {
         .num_args(1)
         .help("Use specific cipher");
 
-    let possible_values: Vec<&str> = vec!["aes192", "aes256", "chacha20"];
+    let ids: Vec<fcrypt::CipherId> = fcrypt::CipherId::get_known_ids();
+    let mut possible_values: Vec<&str> = Vec::new();
+
+    for i in ids {
+        possible_values.push(i.to_str());
+    }
 
     return arg.value_parser(possible_values);
 }

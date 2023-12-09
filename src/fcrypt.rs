@@ -46,8 +46,12 @@ const MAX_PW_SIZE_IN_BYTES: usize = 50;
 const KDF_SCRYPT: &str = "scrypt";
 const KDF_ARGON2: &str = "argon2";
 const KDF_SHA256: &str = "sha256"; 
+const CIP_AES256: &str = "aes256";
+const CIP_AES192: &str = "aes192";
+const CIP_CHACHA20: &str = "chacha20";
 
 pub const DEFAULT_KDF_ID: KdfId = KdfId::Argon2;
+
 
 pub fn make_aes_256_gcm_with_kdf(d: KeyDeriver, i: KdfId) -> Box<dyn Cryptor> {
     return Box::new(rijndael::Gcm256Context::new_with_kdf(d, i));
@@ -140,6 +144,43 @@ impl KdfId {
             KDF_SCRYPT => Some(KdfId::Scrypt),
             KDF_ARGON2 => Some(KdfId::Argon2),
             _ => None
+        }
+    }
+}
+
+pub enum CipherId {
+    Aes256Gcm,
+    Aes192Gcm,
+    ChaCha20Poly1305
+}
+
+impl CipherId {
+    pub fn to_str(self) -> &'static str {
+        match self {
+            CipherId::Aes192Gcm => CIP_AES192,
+            CipherId::Aes256Gcm => CIP_AES256,
+            CipherId::ChaCha20Poly1305 => CIP_CHACHA20,
+        }
+    }
+
+    pub fn from_str(name: &str) -> Option<Self> {
+        return match name {
+            CIP_AES192 => Some(CipherId::Aes192Gcm),
+            CIP_AES256 => Some(CipherId::Aes256Gcm),
+            CIP_CHACHA20 => Some(CipherId::ChaCha20Poly1305),
+            _ => None
+        }
+    }
+
+    pub fn get_known_ids() -> Vec<CipherId> {
+        return vec![CipherId::Aes192Gcm, CipherId::Aes256Gcm, CipherId::ChaCha20Poly1305];
+    }        
+
+    pub fn make(self, d: KeyDeriver, i: KdfId) -> Box<dyn Cryptor> {
+        match self {
+            CipherId::Aes192Gcm => return make_aes_192_gcm_with_kdf(d, i),
+            CipherId::Aes256Gcm => return make_aes_256_gcm_with_kdf(d, i),
+            CipherId::ChaCha20Poly1305 => return make_chacha20_poly_1305_with_kdf(d, i)
         }
     }
 }
