@@ -23,7 +23,6 @@ use super::AppState;
 use super::show_message;
 use crate::VERSION_STRING;
 use crate::fcrypt;
-use crate::derivers;
 
 
 pub fn show(s: &mut Cursive, state_for_info: Rc<RefCell<AppState>>) {
@@ -39,7 +38,8 @@ pub fn show(s: &mut Cursive, state_for_info: Rc<RefCell<AppState>>) {
 
     {
         let s = state_for_info.borrow();
-        algo_name = (s.store.cr_gen)(derivers::argon2id_deriver, fcrypt::KdfId::Argon2).algo_name();
+        let (deriver, id) = fcrypt::KdfId::Argon2.to_named_func();
+        algo_name = (s.store.cr_gen)(deriver, id).algo_name();
     }
 
     msg_str.push_str(format!("Entry count  : {}\n", num_entries).as_str());

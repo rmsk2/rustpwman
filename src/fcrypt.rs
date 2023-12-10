@@ -16,6 +16,7 @@ limitations under the License. */
 
 mod rijndael;
 mod chacha20;
+mod derivers;
 
 use std::fs::File;
 use std::io::BufReader;
@@ -29,7 +30,6 @@ use serde::{Serialize, Deserialize};
 use cipher::consts::{U12, U16};
 use cipher::generic_array::GenericArray;
 use base64;
-use crate::derivers;
 use crate::persist::Persister;
 use aead::{Aead, KeyInit, AeadInPlace, AeadCore, KeySizeUser};
 

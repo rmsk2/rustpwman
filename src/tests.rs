@@ -34,8 +34,6 @@ use crate::tomlconfig;
 #[cfg(test)]
 use std::env;
 #[cfg(test)]
-use crate::derivers;
-#[cfg(test)]
 use std::fs::remove_file;
 #[cfg(test)]
 use crate::obfuscate;
@@ -47,7 +45,8 @@ use crate::jots::CryptorGen;
 
 #[cfg(test)]
 pub fn test_fcrypt_enc_dec_generic(gen: CryptorGen) {
-    let mut ctx = gen(derivers::sha256_deriver, fcrypt::KdfId::Sha256);
+    let (d, i) = fcrypt::KdfId::Sha256.to_named_func();
+    let mut ctx = gen(d, i);
     let data_raw: Vec<u8> = vec![0; 32];
 
     let cipher_text = match ctx.encrypt("this is a test", &data_raw) {
@@ -82,7 +81,8 @@ pub fn test_fcrypt_enc_dec_chacha20() {
 
 #[cfg(test)]
 pub fn test_fcrypt_enc_dec_empty_generic(gen: CryptorGen) {
-    let mut ctx = gen(derivers::sha256_deriver, fcrypt::KdfId::Sha256);
+    let (d, i) = fcrypt::KdfId::Sha256.to_named_func();
+    let mut ctx = gen(d, i);
     let data_raw: Vec<u8> = Vec::new();
 
     let cipher_text = match ctx.encrypt("this is a test", &data_raw) {
@@ -122,7 +122,8 @@ pub fn test_fcrypt_enc_dec_empty_chacha20() {
 
 #[cfg(test)]
 pub fn test_fcrypt_dec_failure_generic(gen: CryptorGen) {
-    let mut ctx = gen(derivers::sha256_deriver, fcrypt::KdfId::Sha256);
+    let (d, i) = fcrypt::KdfId::Sha256.to_named_func();
+    let mut ctx = gen(d, i);
     let data_raw: Vec<u8> = vec![0; 32];
 
     let cipher_text = match ctx.encrypt("this is a test", &data_raw) {
@@ -157,9 +158,11 @@ pub fn test_fcrypt_dec_failure_chacha20() {
 pub fn test_fcrypt_enc_dec_with_json_generic(gen: CryptorGen) {
     let data_raw: Vec<u8> = vec![0; 32];
     let mut cipher_json: Vec<u8> = Vec::new();
+    let (d, i) = fcrypt::KdfId::Sha256.to_named_func();
 
     {
-        let mut ctx = gen(derivers::sha256_deriver, fcrypt::KdfId::Sha256);
+        
+        let mut ctx = gen(d, i);
     
         let cipher_text = match ctx.encrypt("this is a test", &data_raw) {
             Ok(c) => c,
@@ -176,7 +179,7 @@ pub fn test_fcrypt_enc_dec_with_json_generic(gen: CryptorGen) {
         }
     }
 
-    let mut ctx2 = gen(derivers::sha256_deriver, fcrypt::KdfId::Sha256);
+    let mut ctx2 = gen(d, i);
     let cipher_raw: Vec<u8> = match ctx2.from_dyn_reader(&mut cipher_json.as_slice()) {
         Ok(c) => c,
         Err(_) => { panic!("Deserialization failed"); }        
@@ -232,9 +235,10 @@ pub fn test_jots_serialize_deserialize() {
     let d1 = String::from("data1");
     let d2 = String::from("data2");   
     let d3 = String::from("data3"); 
-    
-    {
-        let mut j = jots::Jots::new_id(derivers::sha256_deriver, fcrypt::KdfId::Sha256, Box::new(make_aes_gcm_cryptor));
+    let (d, i) = fcrypt::KdfId::Sha256.to_named_func();
+
+    {        
+        let mut j = jots::Jots::new_id(d, i, Box::new(make_aes_gcm_cryptor));
         j.add(&t1, &d1);
         j.add(&t2, &d2);
         j.add(&t3, &d3);
@@ -249,7 +253,7 @@ pub fn test_jots_serialize_deserialize() {
         };
     }
 
-    let mut j2 = jots::Jots::new_id(derivers::sha256_deriver, fcrypt::KdfId::Sha256, Box::new(make_aes_gcm_cryptor));
+    let mut j2 = jots::Jots::new_id(d, i, Box::new(make_aes_gcm_cryptor));
     match j2.from_reader(serialized.as_slice()) {
         Ok(_) => (),
         Err(e) => { panic!("Deserialization failed {:?}", e); }          
@@ -291,7 +295,8 @@ pub fn test_jots_iter() {
     let d2 = String::from("data2");   
     let d3 = String::from("data3"); 
     
-    let mut j = jots::Jots::new_id(derivers::sha256_deriver, fcrypt::KdfId::Sha256, Box::new(make_aes_gcm_cryptor));
+    let (d, i) = fcrypt::KdfId::Sha256.to_named_func();
+    let mut j = jots::Jots::new_id(d, i, Box::new(make_aes_gcm_cryptor));
     j.add(&t1, &d1);
     j.add(&t2, &d2);
     j.add(&t3, &d3);
@@ -328,7 +333,8 @@ pub fn test_sha256_key_gen() {
     let password: &str = "Dies ist ein Test";
 
     let salt_vec: Vec<u8> = salt.as_bytes().to_vec();
-    let key = derivers::sha256_deriver(&salt_vec, password);
+    let (d, _) = fcrypt::KdfId::Sha256.to_named_func();
+    let key = d(&salt_vec, password);
     let res = vec_to_hex(&key);
 
     assert_eq!(res, "8bbb8e596fdeb564b5ded3d60af1cf790a326309ada0045cc61d07fd982876d2");

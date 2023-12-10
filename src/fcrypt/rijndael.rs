@@ -2,9 +2,9 @@ use std::io::Read;
 use std::io::Write;
 use crate::fcrypt::{Cryptor, AeadContext, KdfId, KeyDeriver};
 use crate::fcrypt::{decrypt_aead, encrypt_aead};
-use crate::derivers;
 use cipher::generic_array::typenum;
 use aes_gcm::AesGcm;
+use super::derivers;
 
 pub struct Gcm256Context(AeadContext);
 const ALGO_AES256: &str = "AES-256 GCM";

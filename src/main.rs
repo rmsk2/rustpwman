@@ -14,7 +14,6 @@ limitations under the License. */
 
 mod tests;
 mod fcrypt;
-mod derivers;
 mod jots;
 mod pwgen;
 mod modtui;

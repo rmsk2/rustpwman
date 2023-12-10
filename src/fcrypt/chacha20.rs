@@ -1,7 +1,7 @@
 use std::io::Read;
 use std::io::Write;
 use crate::fcrypt::{Cryptor, AeadContext, KdfId, KeyDeriver};
-use crate::derivers;
+use super::derivers;
 use chacha20poly1305::ChaCha20Poly1305;
 use crate::fcrypt::{decrypt_aead, encrypt_aead};
 
