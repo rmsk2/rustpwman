@@ -53,18 +53,6 @@ const CIP_CHACHA20: &str = "chacha20";
 pub const DEFAULT_KDF_ID: KdfId = KdfId::Argon2;
 
 
-pub fn make_aes_256_gcm_with_kdf(d: KeyDeriver, i: KdfId) -> Box<dyn Cryptor> {
-    return Box::new(rijndael::Gcm256Context::new_with_kdf(d, i));
-}
-
-pub fn make_aes_192_gcm_with_kdf(d: KeyDeriver, i: KdfId) -> Box<dyn Cryptor> {
-    return Box::new(rijndael::Gcm192Context::new_with_kdf(d, i));
-}
-
-pub fn make_chacha20_poly_1305_with_kdf(d: KeyDeriver, i: KdfId) -> Box<dyn Cryptor> {
-    return Box::new(chacha20::ChaCha20Poly1305Context::new_with_kdf(d, i));
-}
-
 // This trait describes a "thing" which knows how to en- and decrypt a byte vector and to serialize, deserialize,
 // load and save the encrypted data structure.
 pub trait Cryptor {
@@ -173,14 +161,17 @@ impl CipherId {
     }
 
     pub fn get_known_ids() -> Vec<CipherId> {
+        #[cfg(not(feature = "chacha20"))]
+        return vec![CipherId::Aes256Gcm];
+        #[cfg(feature = "chacha20")]
         return vec![CipherId::Aes192Gcm, CipherId::Aes256Gcm, CipherId::ChaCha20Poly1305];
     }        
 
     pub fn make(self, d: KeyDeriver, i: KdfId) -> Box<dyn Cryptor> {
         match self {
-            CipherId::Aes192Gcm => return make_aes_192_gcm_with_kdf(d, i),
-            CipherId::Aes256Gcm => return make_aes_256_gcm_with_kdf(d, i),
-            CipherId::ChaCha20Poly1305 => return make_chacha20_poly_1305_with_kdf(d, i)
+            CipherId::Aes192Gcm => return Box::new(rijndael::Gcm192Context::new_with_kdf(d, i)),
+            CipherId::Aes256Gcm => return Box::new(rijndael::Gcm256Context::new_with_kdf(d, i)),
+            CipherId::ChaCha20Poly1305 => return Box::new(chacha20::ChaCha20Poly1305Context::new_with_kdf(d, i))
         }
     }
 }

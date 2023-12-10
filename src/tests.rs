@@ -194,17 +194,17 @@ pub fn test_fcrypt_enc_dec_with_json_generic(gen: CryptorGen) {
 
 #[cfg(test)]
 pub fn make_chacha20_cryptor(d: fcrypt::KeyDeriver, i: fcrypt::KdfId) -> Box<dyn fcrypt::Cryptor> {
-    return fcrypt::make_chacha20_poly_1305_with_kdf(d, i);
+    return fcrypt::CipherId::ChaCha20Poly1305.make(d, i);
 }
 
 #[cfg(test)]
 pub fn make_aes_gcm_cryptor(d: fcrypt::KeyDeriver, i: fcrypt::KdfId) -> Box<dyn fcrypt::Cryptor> {
-    return fcrypt::make_aes_256_gcm_with_kdf(d, i);
+    return fcrypt::CipherId::Aes256Gcm.make(d, i);
 }
 
 #[cfg(test)]
 pub fn make_aes192_gcm_cryptor(d: fcrypt::KeyDeriver, i: fcrypt::KdfId) -> Box<dyn fcrypt::Cryptor> {
-    return fcrypt::make_aes_192_gcm_with_kdf(d, i);
+    return fcrypt::CipherId::Aes192Gcm.make(d, i);
 }
 
 #[test]
