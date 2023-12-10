@@ -2,7 +2,8 @@
 
 `rustpwman` is a simple password manager written in Rust using the [cursive TUI library](https://github.com/gyscos/cursive). You may wonder why someone writes a TUI 
 application in 2023. The main reason is portability without creating a dependency to any of the usual GUI toolkits. `rustpwman` should work on MacOS, Linux and Windows and 
-it should compile without the necessity to install more or less exotic (or maybe even toxic) toolchains. Additionally I like the retro appeal of it.
+it should compile without the necessity to install more or less exotic (or maybe even toxic) toolchains. Additionally I like the retro appeal of it and it can be used
+over SSH.
 
 The basic concept of `rustpwman` is to manage a set of entries which have a value or content. The entries are presented in a flat list and no further structuring is offered at 
 the moment. In order to start the program use
@@ -38,7 +39,6 @@ Commands:
 Options:
   -h, --help     Print help information
   -V, --version  Print version information
-
 ```
 
 Use `rustpwman <command> -h` to get additional help for each command.
@@ -56,22 +56,22 @@ Selecting this entry saves the encrypted data file using the password that was s
 
 ### Change password
 
-Using this entry allows to select a new password. After a new password has been selected the encrypted data file is saved automatically. The new password is also used in 
-subsequent save operations. If `rustpwman` is compiled with the pwmanclient feature then the password cache is also automatically cleared, as the cached password is now 
-incorrect.
+Using this entry allows to select a new password which is used to encrypt the data file. After a new password has been selected the data file is saved 
+automatically. The new password is also used in subsequent save operations. If `rustpwman` is compiled with the `pwmanclient`` feature then the password
+cache is also automatically cleared, as the cached password is now incorrect.
 
 ### Cache password
 
 Via this entry the password of the container can be cached in [`pwman`](https://github.com/rmsk2/pwman). This item is only present if `rustpwman` is compiled with the 
-pwmanclient feature for the correct platform (see 'Optional Features' below).
+`pwmanclient` feature for the correct platform (see 'Optional Features' below).
 
 ### Clear cached password
 
-When selecting this entry `rustpwman` attempts to remove a cached password from `pwman`. This item is only present if `rustpwman` is compiled with the pwmanclient feature.
+When selecting this entry `rustpwman` attempts to remove a cached password from `pwman`. This item is only present if `rustpwman` is compiled with the `pwmanclient` feature.
 
 ### About
 
-Shows an about dialog containing information about the author and the program version.
+Shows an about dialog containing information about the author, the program version and the set of activated build features.
 
 ### File info
 
@@ -90,7 +90,7 @@ a look at the section [A note about using the clipboard](#a-note-about-using-the
 
 Tip: You can pipe the output of `rustpwman` to a program that places the data it reads via stdin in the clipboard. This works even under Windows which offers the `clip` 
 command for this purpose. Under Linux `xsel` can be used and MacOS provides the `pbcopy` command. When you use `clip` under Windows you have to be aware that non ASCII
-characters may not be displayed correctly when pasting the data copied by `clip.exe`. Alternatively you can use the `Copy to clipboard` menu entry for this purpose or
+characters may not be displayed correctly when pasting the data copied by `clip.exe`. Alternatively you can use the `Copy to clipboard` menu entry for this purpose or 
 use `paste_utf8.exe -c ` (see below) instead of `clip.exe`.
 
 ### Quit
@@ -305,9 +305,9 @@ is used if you right click on the title bar of the `pancurses` window.
 
 ## Windows Subsystem for Linux (WSL)
 
-Version 1.0.0: As expected, building `rustpwman` for WSL works without problems after installing all dependencies like `git`, `gcc` and `libncurses`. The resulting application also works but there is a perceptible decrease in performance when compared to the native version which uses the `pancurses` backend.
-
-Version 1.2.8 and higher: Building and running `rustpwman` works. Performance is still not quite on the same level as the native version (TUI flickers a bit when updating the screen) but overall performance has improved with respect to the previous test mentioned above.
+As expected, building `rustpwman` for WSL works without problems after installing all dependencies like `git`, `gcc`, `libssl-dev` and `libncurses`. The resulting 
+application also works but there is a perceptible decrease in performance (TUI flickers a bit when updating the screen) when compared to the native version which uses the 
+`pancurses` backend.
 
 # Some technical information
 
