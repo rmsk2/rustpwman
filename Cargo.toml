@@ -12,7 +12,7 @@ sha2 = "0.10"
 md-5 = "0.10"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-serde_bytes = "0.11.7"
+serde_bytes = "0.11"
 aes-gcm = "0.10"
 chacha20poly1305 = "0.10"
 cipher = "0.4"
@@ -20,25 +20,25 @@ aes = "0.8"
 cfb8 = "0.8"
 aead = "0.5"
 base64 = "0.13"
-rand = "0.8.5"
+rand = "0.8"
 scrypt = "0.11"
 clap = "4.0"
 rpassword = "7.0"
 argon2 = "0.4"
-toml = "0.5.9"
+toml = "0.5"
 dirs = "4.0"
 num-bigint = "0.4"
 itertools = "0.12"
-uds_windows =  {version ="1.0.2", optional = true}
-users = {version = "0.11.0", optional = true}
+uds_windows =  {version ="1.0", optional = true}
+users = {version = "0.11", optional = true}
 reqwest = {version = "0.11", optional = true, features = ["blocking"]}
 
 [target.'cfg(unix)'.dependencies]
 cursive = "0.20"
 
 [target.'cfg(windows)'.dependencies]
-pancurses = "0.17.0"
-pdcurses-sys = "0.7.1"
+pancurses = "0.17"
+pdcurses-sys = "0.7"
 
 [target.'cfg(windows)'.dependencies.cursive]
 version = "0.20"
