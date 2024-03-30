@@ -1,9 +1,18 @@
 # rustpwman
 
 `rustpwman` is a simple password manager written in Rust using the [cursive TUI library](https://github.com/gyscos/cursive). You may wonder why someone writes a TUI 
-application in 2023. The main reason is portability without creating a dependency to any of the usual GUI toolkits. `rustpwman` should work on MacOS, Linux and Windows and 
+application in 2023. The main reason is portability without creating a dependency to any of the usual GUI toolkits. `rustpwman` should work on macOS, Linux and Windows and 
 it should compile without the necessity to install more or less exotic (or maybe even toxic) toolchains. Additionally I like the retro appeal of it and it can be used
 over SSH.
+
+# Building the software
+
+Under Linux and macOS use `cargo build --release` to build with all features enabled. Under Windows you should call the batch file `build_win.bat` from a 
+Visual Studio Developer prompt for this purpose. On top of that there is a separate section in this README that deals with building under Windows. If you want
+a minimal set of features (and therefore a minimal set of dependencies) you can use `cargo build --release --no-default-features` under Linux, macOS and Windows.
+In this case the password cache, support for WebDAV and additional crypto algorithms are not available.
+
+# How to run the software
 
 The basic concept of `rustpwman` is to manage a set of entries which have a value or content. The entries are presented in a flat list and no further structuring is offered at 
 the moment. In order to start the program use
@@ -260,8 +269,8 @@ user has to enter the password twice and then the obfuscated version is printed 
 config file. Alternatively the password can be obfuscated via the `rustpwman cfg` command. It has to be noted that this system of obfuscation 
 only stops the most casual of attackers.
 
-As any WebDAV share can be mounted in such a way that it appears as a local drive I am not a 100% sure whether this feature is worth the additional about 50 dependencies but it demonstrates 
-that my abstraction of the storage backend is viable. 
+Even though any WebDAV share can be mounted in such a way that it appears as a local drive this feature is in my view worth the additional about 50 dependencies, as it
+saves you the mouse clicks to actually mount the WebDAV share.
 
 Additional note: Under Linux you have to install the package `libssl-dev` when compiling with this feature as the TLS implementation of the `reqwest` library seems to 
 depend on it being present.
