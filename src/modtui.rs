@@ -448,7 +448,7 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
                 .content("")
                 .with_name(TEXT_AREA_MAIN)
                 .fixed_width(100)
-                .min_height(40)
+                .min_height(50)
         )
         .title("Contents of entry")
         .with_name(PANEL_AREA_MAIN))      
