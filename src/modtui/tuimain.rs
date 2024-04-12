@@ -48,12 +48,12 @@ pub fn main(data_file_name: String, default_sec_bits: usize, derive_func: KeyDer
     let p = make_default(&data_file_name);    
 
     // stuff to run after successfull password entry
-    let pw_callback = Box::new(move |s: &mut Cursive, password: &String| {
+    let pw_callback = Box::new(move |s: &mut Cursive, password: &String, pw_cached: bool| {
         let p_cb = make_default(&capture_file_name);
         let jots_store = jots::Jots::new(derive_func, deriver_id, crypt_gen());
         let f_name = capture_file_name.clone();
 
-        let state = AppState::new(jots_store, &f_name, default_sec_bits, default_pw_gen, &paste_cmd, &copy_cmd, p_cb);
+        let state = AppState::new(jots_store, &f_name, default_sec_bits, default_pw_gen, &paste_cmd, &copy_cmd, p_cb, pw_cached);
 
         // No else branch is neccessary as open_file performs error handling
         if let Some(state_after_open) = open::storage(s, password, state) {
@@ -95,7 +95,7 @@ fn show_unable_to_check_error(siv: &mut Cursive, msg: &str, sender: Rc<Sender<St
 }
 
 #[cfg(feature = "pwmanclient")]
-fn setup_password_entry_with_pwman(siv: &mut Cursive, sender: Rc<Sender<String>>, pw_callback: Box<dyn Fn(&mut Cursive, &String)>, p: &Box<dyn Persister>) {
+fn setup_password_entry_with_pwman(siv: &mut Cursive, sender: Rc<Sender<String>>, pw_callback: Box<dyn Fn(&mut Cursive, &String, bool)>, p: &Box<dyn Persister>) {
     let does_exist = match p.does_exist() {
         Ok(b) => b,
         Err(_) => {
@@ -139,7 +139,7 @@ fn setup_password_entry_with_pwman(siv: &mut Cursive, sender: Rc<Sender<String>>
 
 
 #[cfg(not(feature = "pwmanclient"))]
-fn setup_password_entry_without_pwman(siv: &mut Cursive, sender: Rc<Sender<String>>, pw_callback: Box<dyn Fn(&mut Cursive, &String)>, p: &Box<dyn Persister>) {
+fn setup_password_entry_without_pwman(siv: &mut Cursive, sender: Rc<Sender<String>>, pw_callback: Box<dyn Fn(&mut Cursive, &String, bool)>, p: &Box<dyn Persister>) {
     let does_exist = match p.does_exist() {
         Ok(b) => b,
         Err(_) => {

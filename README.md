@@ -82,9 +82,10 @@ When selecting this entry `rustpwman` attempts to remove a cached password from 
 
 Shows an about dialog containing information about the author, the program version and the set of activated build features.
 
-### File info
+### Info
 
-Shows how many entries are present in this data file, how it is accessed, where it is located and how it is encrypted.
+Shows how many entries are present in this data file, how it is accessed, where it is located and how it is encrypted. Additionally it is shown whether the password
+is currently cached or not.
 
 ### Undo changes
 

@@ -30,6 +30,7 @@ pub fn show(s: &mut Cursive, state_for_info: Rc<RefCell<AppState>>) {
     let mut msg_str = String::from("");
     let info2: String;
     let algo_name: &str;
+    let password_chached: bool;
     
     info2 = match state_for_info.borrow().persister.get_canonical_path() {
         Ok(m) => m,
@@ -40,15 +41,17 @@ pub fn show(s: &mut Cursive, state_for_info: Rc<RefCell<AppState>>) {
         let s = state_for_info.borrow();
         let (deriver, id) = fcrypt::KdfId::Argon2.to_named_func();
         algo_name = (s.store.cr_gen)(deriver, id).algo_name();
+        password_chached = s.pw_is_chached;
     }
 
     msg_str.push_str(format!("Entry count  : {}\n", num_entries).as_str());
     msg_str.push_str(format!("Location     : {}\n", info2).as_str());
     msg_str.push_str(format!("Access method: {}\n", state_for_info.borrow().persister.get_type()).as_str());
     msg_str.push_str(format!("Cipher       : {}\n", algo_name).as_str());
+    msg_str.push_str(format!("PW chached   : {}\n", password_chached).as_str());
 
     let res = Dialog::new()
-    .title("Rustpwman file info")
+    .title("Rustpwman info")
     .padding_lrtb(2, 2, 1, 1)
     .content(
         TextView::new(msg_str))

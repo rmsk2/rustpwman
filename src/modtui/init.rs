@@ -31,7 +31,7 @@ static PW_EDIT1: &str = "pwedit1";
 static PW_EDIT2: &str = "pwedit2";
 static DLG_INIT: &str = "pwinit";
 
-fn verify_passwords(s: &mut Cursive, ok_cb: &Box<dyn Fn(&mut Cursive, &String)>) {
+fn verify_passwords(s: &mut Cursive, ok_cb: &Box<dyn Fn(&mut Cursive, &String, bool)>) {
     verify_passwords_with_names(s, ok_cb, PW_EDIT1, PW_EDIT2, DLG_INIT);
 }
 
@@ -62,7 +62,7 @@ pub fn show_pw_select_error(siv: &mut Cursive, msg: &str, edit1: &'static str, e
     );
 }
 
-fn verify_passwords_with_names(s: &mut Cursive, ok_cb: &Box<dyn Fn(&mut Cursive, &String)>, edit1: &'static str, edit2: &'static str, dlg: &'static str) {
+fn verify_passwords_with_names(s: &mut Cursive, ok_cb: &Box<dyn Fn(&mut Cursive, &String, bool)>, edit1: &'static str, edit2: &'static str, dlg: &'static str) {
     let pw1_text = match s.call_on_name(edit1, |view: &mut EditView| {view.get_content()}) {
         Some(s) => s,
         None => { show_message(s, "Unable to read password"); return }
@@ -88,10 +88,10 @@ fn verify_passwords_with_names(s: &mut Cursive, ok_cb: &Box<dyn Fn(&mut Cursive,
         return;        
     }
 
-    ok_cb(s, &pw2_text);
+    ok_cb(s, &pw2_text, false);
 }
 
-pub fn dialog(sndr: Rc<Sender<String>>, ok_cb: Box<dyn Fn(&mut Cursive, &String)>) -> impl View {
+pub fn dialog(sndr: Rc<Sender<String>>, ok_cb: Box<dyn Fn(&mut Cursive, &String, bool)>) -> impl View {
     let sender = sndr.clone();
     
     let verify = move |s: &mut Cursive| {

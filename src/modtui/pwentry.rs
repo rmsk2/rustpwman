@@ -28,7 +28,7 @@ use crate::fcrypt;
 const NAME_PWEDIT : &str = "pwedit";
 const NAME_PWDIALOG: &str = "pwdialog";
 
-pub fn dialog(sndr: Rc<Sender<String>>, ok_cb_with_state: Box<dyn Fn(&mut Cursive, &String)>) -> impl View {
+pub fn dialog(sndr: Rc<Sender<String>>, ok_cb_with_state: Box<dyn Fn(&mut Cursive, &String, bool)>) -> impl View {
     let sender = sndr.clone();
 
     let ok_cb = move |s: &mut Cursive| {
@@ -42,7 +42,7 @@ pub fn dialog(sndr: Rc<Sender<String>>, ok_cb_with_state: Box<dyn Fn(&mut Cursiv
             return;        
         }        
 
-        ok_cb_with_state(s, &pw_text);
+        ok_cb_with_state(s, &pw_text, false);
     };
 
     let res = Dialog::new()

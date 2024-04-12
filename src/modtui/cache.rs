@@ -81,6 +81,7 @@ pub fn password(s: &mut Cursive, state_for_write_cache: Rc<RefCell<AppState>>) {
 
     match client.set_password(&password) {
         Ok(_) => {
+            state_for_write_cache.borrow_mut().pw_is_chached = true;
             show_message(s, "Password successfully cached");
             return;
         },
@@ -112,6 +113,7 @@ pub fn uncache_password(s: &mut Cursive, state_for_write_cache: Rc<RefCell<AppSt
 
     match client.reset_password() {
         Ok(_) => {
+            state_for_write_cache.borrow_mut().pw_is_chached = false;
             show_message(s, "Cache cleared");
             return;
         },
@@ -133,12 +135,12 @@ pub fn uncache_password(s: &mut Cursive, _state_for_write_cache: Rc<RefCell<AppS
 }
 
 #[cfg(feature = "pwmanclient")]
-pub fn confirmation_dialog(sndr: Rc<Sender<String>>, password: String, client: Box<dyn PWManClient>, ok_cb_with_state: Box<dyn Fn(&mut Cursive, &String)>) -> Dialog {
+pub fn confirmation_dialog(sndr: Rc<Sender<String>>, password: String, client: Box<dyn PWManClient>, ok_cb_with_state: Box<dyn Fn(&mut Cursive, &String, bool)>) -> Dialog {
     let sender = sndr.clone();
     let sender2 = sndr.clone();
 
     let ok_cb = move |s: &mut Cursive| {
-        ok_cb_with_state(s, &password);
+        ok_cb_with_state(s, &password, true);
     };
 
     let res = Dialog::new()

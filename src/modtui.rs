@@ -74,11 +74,12 @@ pub struct AppState {
     copy_command: String,
     persister: Box<dyn Persister>,
     last_custom_selection: String,
+    pw_is_chached: bool,
 }
 
 impl AppState {
     pub fn new(s: jots::Jots, f_name: &String, default_sec: usize, default_gen: GenerationStrategy, 
-               paste_cmd: &String, copy_cmd: &String, p: Box<dyn Persister>) -> Self {
+               paste_cmd: &String, copy_cmd: &String, p: Box<dyn Persister>, is_pw_cached: bool) -> Self {
         return AppState {
             store: s,
             password: None,
@@ -88,7 +89,8 @@ impl AppState {
             paste_command: paste_cmd.clone(),
             copy_command: copy_cmd.clone(),
             persister: p,
-            last_custom_selection: String::from("")
+            last_custom_selection: String::from(""),
+            pw_is_chached: is_pw_cached
         }
     }
 
@@ -349,7 +351,7 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
         .leaf("About ...", |s| {
             info::about(s)
         })
-        .leaf("File info ...", move |s| {
+        .leaf("Info ...", move |s| {
             info::show(s, state_temp_info.clone());
         })   
         .leaf("Undo changes ...", move |s| {
