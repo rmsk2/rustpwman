@@ -1,7 +1,7 @@
 # rustpwman
 
 `rustpwman` is a simple password manager written in Rust using the [cursive TUI library](https://github.com/gyscos/cursive). You may wonder why someone writes a TUI 
-application in 2023. The main reason is portability without creating a dependency to any of the usual GUI toolkits. `rustpwman` should work on macOS, Linux and Windows and 
+application in 2024. The main reason is portability without creating a dependency to any of the usual GUI toolkits. `rustpwman` should work on macOS, Linux and Windows and 
 it should compile without the necessity to install more or less exotic (or maybe even toxic) toolchains. Additionally I like the retro appeal of it and it can be used
 over SSH.
 
