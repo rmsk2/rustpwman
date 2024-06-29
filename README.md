@@ -329,9 +329,9 @@ AES-256 GCM only. The encrypted data file is a simple JSON data structure. This 
 
 ```
 {
-  "PbKdf": "sha256",
-  "Salt": "/qcBaihI/4wV1A==",
-  "Nonce": "t8RCYaLY3Bsisl5K",
+  "PbKdf": "argon2",
+  "Salt": "+w1dzd7gyIaR/iBvJJCU5Q==",
+  "Nonce": "GqPy617WwqiP2Aha",
   "Data": "4YM5XNvMou3TukBnYCRCMoAhia2jaoBfyRIr+aGJ0dTrZTtiah4dm6W8gKnmt95/mDPBx2E+5Hy8cxz
   ef4vOM0vTjy/2H9EFgpO5m7onxJTzBOgjqtnE4lH6vLiYJ+FN6GW+68Y1X7OgifCln8nP4D++u4vJnZEYgiAMB7Y
   rjdvP7Evp4fHcx6/B/LM1ga7Cg4T57/a8SG7wK7hlBY+CUoVH9HKjzEZAMPyuyai/ZQMjgG1w9Bpn5zNnjntTn/K
