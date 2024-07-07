@@ -13,8 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 
-use std::rc::Rc;
-use std::cell::RefCell;
+use std::sync::{Arc, Mutex};
 
 use cursive::Cursive;
 use cursive::views::{Dialog, LinearLayout, TextView, EditView};
@@ -33,7 +32,7 @@ static PW_EDIT2_CH: &str = "pwchedit2";
 static DLG_PW_CH: &str = "pwchangedlg";
 
 
-pub fn change(s: &mut Cursive, state_for_pw_change: Rc<RefCell<AppState>>) {
+pub fn change(s: &mut Cursive, state_for_pw_change: Arc<Mutex<AppState>>) {
     let res = Dialog::new()
         .title("Rustpwman change password")
         .padding_lrtb(2, 2, 1, 1)
@@ -81,7 +80,7 @@ pub fn change(s: &mut Cursive, state_for_pw_change: Rc<RefCell<AppState>>) {
 
             let new_pw: String = (&pw1_text).to_string();
 
-            state_for_pw_change.borrow_mut().password = Some(new_pw);
+            state_for_pw_change.lock().unwrap().password = Some(new_pw);
             save::storage(s, state_for_pw_change.clone());
             s.pop_layer();
 

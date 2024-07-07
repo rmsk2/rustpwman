@@ -13,9 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 
-use std::rc::Rc;
 use std::sync::mpsc::{Sender, Receiver};
 use std::sync::mpsc;
+use std::sync::Arc;
 
 use cursive::Cursive;
 use cursive::views::Dialog;
@@ -37,12 +37,12 @@ use super::cache;
 use super::init;
 
 pub fn main(data_file_name: String, default_sec_bits: usize, derive_func: KeyDeriver, deriver_id: fcrypt::KdfId, default_pw_gen: GenerationStrategy, 
-            paste_cmd: String, copy_cmd: String, make_default: persist::PersistCreator, crypt_gen: Box<dyn Fn() -> CryptorGen>) {
+            paste_cmd: String, copy_cmd: String, make_default: persist::PersistCreator, crypt_gen: Box<dyn Fn() -> CryptorGen + Send + Sync>) {
     let (tx, rx): (Sender<String>, Receiver<String>) = mpsc::channel();
 
     let capture_file_name = data_file_name.clone();
     let mut siv = cursive::default();
-    let sender = Rc::new(tx);
+    let sender = Arc::new(tx);
     let sender_main = sender.clone();
 
     let p = make_default(&data_file_name);    
@@ -83,7 +83,7 @@ pub fn main(data_file_name: String, default_sec_bits: usize, derive_func: KeyDer
     
 }
 
-fn show_unable_to_check_error(siv: &mut Cursive, msg: &str, sender: Rc<Sender<String>>) {
+fn show_unable_to_check_error(siv: &mut Cursive, msg: &str, sender: Arc<Sender<String>>) {
     siv.add_layer(
         Dialog::text(msg)
             .title("Rustpwman")
@@ -95,7 +95,7 @@ fn show_unable_to_check_error(siv: &mut Cursive, msg: &str, sender: Rc<Sender<St
 }
 
 #[cfg(feature = "pwmanclient")]
-fn setup_password_entry_with_pwman(siv: &mut Cursive, sender: Rc<Sender<String>>, pw_callback: Box<dyn Fn(&mut Cursive, &String, bool)>, p: &Box<dyn Persister>) {
+fn setup_password_entry_with_pwman(siv: &mut Cursive, sender: Arc<Sender<String>>, pw_callback: Box<dyn Fn(&mut Cursive, &String, bool) + Send + Sync>, p: &Box<dyn Persister + Send + Sync>) {
     let does_exist = match p.does_exist() {
         Ok(b) => b,
         Err(_) => {
@@ -139,7 +139,7 @@ fn setup_password_entry_with_pwman(siv: &mut Cursive, sender: Rc<Sender<String>>
 
 
 #[cfg(not(feature = "pwmanclient"))]
-fn setup_password_entry_without_pwman(siv: &mut Cursive, sender: Rc<Sender<String>>, pw_callback: Box<dyn Fn(&mut Cursive, &String, bool)>, p: &Box<dyn Persister>) {
+fn setup_password_entry_without_pwman(siv: &mut Cursive, sender: Arc<Sender<String>>, pw_callback: Box<dyn Fn(&mut Cursive, &String, bool) + Send + Sync>, p: &Box<dyn Persister + Send + Sync>) {
     let does_exist = match p.does_exist() {
         Ok(b) => b,
         Err(_) => {

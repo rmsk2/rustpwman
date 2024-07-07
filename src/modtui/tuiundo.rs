@@ -13,9 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 
-use std::rc::Rc;
-use std::cell::RefCell;
-
+use std::sync::{Arc, Mutex};
 use cursive::Cursive;
 use cursive::views::{Dialog, TextView, Panel, ListView};
 use cursive::traits::*;
@@ -30,13 +28,13 @@ const NUM_SCROLL_ELEMENTS: usize = 10;
 const LIST_VIEW: &str = "undolist";
 const SCROLL_VIEW: &str = "undoscroll";
 
-fn handle_undo(s: &mut Cursive, state_for_undo: Rc<RefCell<AppState>>) {
-    if !state_for_undo.borrow().store.is_dirty() {
+fn handle_undo(s: &mut Cursive, state_for_undo: Arc<Mutex<AppState>>) {
+    if !state_for_undo.lock().unwrap().store.is_dirty() {
         show_message(s, "Nothing to undo");
         return;
     }
 
-    let res = state_for_undo.borrow_mut().store.undo();
+    let res = state_for_undo.lock().unwrap().store.undo();
 
     visualize_if_modified(s, state_for_undo.clone());
     redraw_tui(s, state_for_undo.clone());
@@ -48,26 +46,26 @@ fn handle_undo(s: &mut Cursive, state_for_undo: Rc<RefCell<AppState>>) {
     s.call_on_name(LIST_VIEW, |view: &mut ListView| { view.remove_child(view.len()-1) });
 }
 
-fn handle_undo_all(s: &mut Cursive, state_for_undo_all: Rc<RefCell<AppState>>) {
-    if !state_for_undo_all.borrow().store.is_dirty() {
+fn handle_undo_all(s: &mut Cursive, state_for_undo_all: Arc<Mutex<AppState>>) {
+    if !state_for_undo_all.lock().unwrap().store.is_dirty() {
         show_message(s, "Nothing to undo");
         return;
     }    
     
-    while state_for_undo_all.borrow().store.is_dirty() {
+    while state_for_undo_all.lock().unwrap().store.is_dirty() {
         handle_undo(s, state_for_undo_all.clone());
     }   
 }
 
-pub fn undo(s: &mut Cursive, state_for_undo: Rc<RefCell<AppState>>) {
-    if !state_for_undo.borrow().store.is_dirty() {
+pub fn undo(s: &mut Cursive, state_for_undo: Arc<Mutex<AppState>>) {
+    if !state_for_undo.lock().unwrap().store.is_dirty() {
         show_message(s, "Nothing to undo");
         return;
     }
 
     let state_for_undo_all = state_for_undo.clone();
 
-    let comments = state_for_undo.borrow().store.undoer.get_comments();
+    let comments = state_for_undo.lock().unwrap().store.undoer.get_comments();
 
     let mut list_view = ListView::new();
     

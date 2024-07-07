@@ -13,13 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 
-use std::rc::Rc;
-use std::cell::RefCell;
+
 use std::fs;
 
 use cursive::Cursive;
 use cursive::views::{Dialog, LinearLayout, TextView, EditView};
 use cursive::traits::*;
+use std::sync::{Arc, Mutex};
 
 use super::AppState;
 use super::show_message;
@@ -30,7 +30,7 @@ use super::visualize_if_modified;
 
 const EDIT_FILE_NAME: &str = "editfile";
 
-pub fn entry(s: &mut Cursive, state_for_add_entry: Rc<RefCell<AppState>>) {
+pub fn entry(s: &mut Cursive, state_for_add_entry: Arc<Mutex<AppState>>) {
     let entry_name = match get_selected_entry_name(s) {
         Some(name) => name,
         None => {
@@ -83,7 +83,7 @@ pub fn entry(s: &mut Cursive, state_for_add_entry: Rc<RefCell<AppState>>) {
             }
         };
 
-        state_for_add_entry.borrow_mut().store.modify(&entry_name, &value);
+        state_for_add_entry.lock().unwrap().store.modify(&entry_name, &value);
         s.pop_layer();
         visualize_if_modified(s, state_for_add_entry.clone());
         display_entry(s, state_for_add_entry.clone(), &entry_name, true);

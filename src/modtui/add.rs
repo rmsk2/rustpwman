@@ -13,9 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 
-use std::rc::Rc;
-use std::cell::RefCell;
-
+use std::sync::{Arc, Mutex};
 use cursive::Cursive;
 use cursive::views::{Dialog, LinearLayout, TextView, EditView};
 use cursive::traits::*;
@@ -29,7 +27,7 @@ use super::visualize_if_modified;
 
 const EDIT_NAME: &str = "nameedit";
 
-pub fn entry(s: &mut Cursive, state_for_add_entry: Rc<RefCell<AppState>>) {
+pub fn entry(s: &mut Cursive, state_for_add_entry: Arc<Mutex<AppState>>) {
     let res = Dialog::new()
     .title("Rustpwman enter new entry name")
     .padding_lrtb(2, 2, 1, 1)
@@ -56,13 +54,13 @@ pub fn entry(s: &mut Cursive, state_for_add_entry: Rc<RefCell<AppState>>) {
             None => { show_message(s, "Unable to read new entry name"); return }
         }; 
 
-        if state_for_add_entry.borrow().store.entry_exists(&entry_name) {
+        if state_for_add_entry.lock().unwrap().store.entry_exists(&entry_name) {
             show_message(s, "An entry with that name already exists"); 
             return;
         }
 
         let new_text = String::from("New entry\n");
-        if !state_for_add_entry.borrow_mut().store.add(&entry_name, &new_text) {
+        if !state_for_add_entry.lock().unwrap().store.add(&entry_name, &new_text) {
             show_message(s, "Adding new entry failed"); 
             return;
         }

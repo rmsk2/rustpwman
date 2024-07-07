@@ -51,12 +51,11 @@ use cursive::Cursive;
 use cursive::menu::Tree;
 use cursive::align::HAlign;
 use cursive::event::Key;
-use cursive::reexports::enumset;
 use cursive::theme;
+use cursive::theme::Effects;
 use cursive::theme::{ColorType, Effect, Color, PaletteColor};
+use std::sync::{Arc, Mutex};
 
-use std::rc::Rc;
-use std::cell::RefCell;
 use std::sync::mpsc::Sender;
 use std::io::{Error, ErrorKind};
 
@@ -72,14 +71,14 @@ pub struct AppState {
     default_generator: GenerationStrategy,
     paste_command: String,
     copy_command: String,
-    persister: Box<dyn Persister>,
+    persister: Box<dyn Persister + Send + Sync>, 
     last_custom_selection: String,
     pw_is_chached: bool,
 }
 
 impl AppState {
     pub fn new(s: jots::Jots, f_name: &String, default_sec: usize, default_gen: GenerationStrategy, 
-               paste_cmd: &String, copy_cmd: &String, p: Box<dyn Persister>, is_pw_cached: bool) -> Self {
+               paste_cmd: &String, copy_cmd: &String, p: Box<dyn Persister + Send + Sync>, is_pw_cached: bool) -> Self {
         return AppState {
             store: s,
             password: None,
@@ -110,7 +109,7 @@ impl AppState {
     }   
 }
 
-fn do_quit(s: &mut Cursive, sender: Rc<Sender<String>>, message: String) {
+fn do_quit(s: &mut Cursive, sender: Arc<Sender<String>>, message: String) {
     match sender.send(message) {
         Ok(_) => (),
         Err(_) => ()
@@ -134,7 +133,7 @@ fn do_quit(s: &mut Cursive, sender: Rc<Sender<String>>, message: String) {
     }
 }*/
 
-fn pwman_quit_with_state(s: &mut Cursive, sender: Rc<Sender<String>>, message: String, dirty_bit: bool, app_state: Option<Rc<RefCell<AppState>>>) {
+fn pwman_quit_with_state(s: &mut Cursive, sender: Arc<Sender<String>>, message: String, dirty_bit: bool, app_state: Option<Arc<Mutex<AppState>>>) {
     let msg = message.clone();
     let msg2 = message.clone();
     let sndr = sender.clone();
@@ -164,7 +163,7 @@ fn pwman_quit_with_state(s: &mut Cursive, sender: Rc<Sender<String>>, message: S
     }
 } 
 
-fn ask_for_save(s: &mut Cursive, sender: Rc<Sender<String>>, message: String, app_state: Rc<RefCell<AppState>>) {
+fn ask_for_save(s: &mut Cursive, sender: Arc<Sender<String>>, message: String, app_state: Arc<Mutex<AppState>>) {
     s.add_layer(
         Dialog::text("Save file and quit?")
             .title("Rustpwman")
@@ -172,7 +171,9 @@ fn ask_for_save(s: &mut Cursive, sender: Rc<Sender<String>>, message: String, ap
                 s.pop_layer(); 
                 save::storage(s, app_state.clone());
 
-                if !app_state.borrow().store.is_dirty() {
+                let h = app_state.lock().unwrap();
+
+                if !(*h).store.is_dirty() {
                     do_quit(s, sender.clone(), message.clone());
                 }
             })
@@ -182,7 +183,7 @@ fn ask_for_save(s: &mut Cursive, sender: Rc<Sender<String>>, message: String, ap
         )           
 }
 
-fn pwman_quit(s: &mut Cursive, sender: Rc<Sender<String>>, message: String)
+fn pwman_quit(s: &mut Cursive, sender: Arc<Sender<String>>, message: String)
 {
     pwman_quit_with_state(s, sender, message, false, None);
 }
@@ -197,7 +198,7 @@ fn show_message(siv: &mut Cursive, msg: &str) {
     );
 }
 
-fn display_entry(siv: &mut Cursive, state: Rc<RefCell<AppState>>, entry_name: &String, do_select: bool) {
+fn display_entry(siv: &mut Cursive, state: Arc<Mutex<AppState>>, entry_name: &String, do_select: bool) {
     if entry_name == "" {
         return;
     }
@@ -206,7 +207,8 @@ fn display_entry(siv: &mut Cursive, state: Rc<RefCell<AppState>>, entry_name: &S
     let pos: usize;
 
     {
-        let store = &state.borrow().store;
+        let h = state.lock().unwrap();
+        let store = &(*h).store;
 
         let positions = 0..store.into_iter().count();
         let find_res = store.into_iter().zip(positions).find(|i| entry_name == (*i).0 );
@@ -229,7 +231,7 @@ fn display_entry(siv: &mut Cursive, state: Rc<RefCell<AppState>>, entry_name: &S
     }
 }
 
-fn redraw_tui(siv: &mut Cursive, state: Rc<RefCell<AppState>>) {
+fn redraw_tui(siv: &mut Cursive, state: Arc<Mutex<AppState>>) {
     let mut count = 0;
     let mut initial_entry = String::from("");
 
@@ -238,7 +240,8 @@ fn redraw_tui(siv: &mut Cursive, state: Rc<RefCell<AppState>>) {
     siv.call_on_name(TEXT_AREA_TITLE, |view: &mut TextArea| { view.set_content(""); });
 
     {
-        let store = &state.borrow().store;
+        let h = state.lock().unwrap();
+        let store = &(*h).store;
 
         for i in store {
             if count == 0 {
@@ -278,30 +281,40 @@ fn get_selected_entry_name(s: &mut Cursive) -> Option<String> {
 }
 
 fn get_special_styles() -> (theme::Style, theme::Style) {
+    let mut eff_simple = Effects::empty();
+    eff_simple.insert(Effect::Simple);
+
+    let mut eff_reverse = Effects::empty();
+    eff_reverse.insert(Effect::Reverse);
+
+
     let danger_style = theme::Style {
-        effects: enumset::enum_set!(Effect::Reverse),
+        effects: eff_reverse,
         color: ColorStyle::new(ColorType::Color(Color::Rgb(255,0,0)), ColorType::Color(Color::Rgb(255, 255, 255))),
     };
 
     let reverse_style = theme::Style {
-        effects: enumset::enum_set!(Effect::Simple),
+        effects: eff_simple,
         color: ColorStyle::new(ColorType::Color(Color::Rgb(255, 255, 255)), PaletteColor::Background),
     };
 
     return (danger_style, reverse_style);    
 }
 
-fn visualize_if_modified(siv: &mut Cursive, state: Rc<RefCell<AppState>>) {
-    if state.borrow().store.is_dirty() {
+fn visualize_if_modified(siv: &mut Cursive, state: Arc<Mutex<AppState>>) {
+    let h = state.lock().unwrap();
+    let store = &(*h).store;
+
+    if store.is_dirty() {
         siv.call_on_name("EntrySelectPanel", |view: &mut Panel<NamedView<ScrollView<ResizedView<NamedView<SelectView>>>>>| { view.set_title("Entries *"); } );
     } else {
         siv.call_on_name("EntrySelectPanel", |view: &mut Panel<NamedView<ScrollView<ResizedView<NamedView<SelectView>>>>>| { view.set_title("Entries"); } );
     }
 }
 
-fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
+fn main_window(s: &mut Cursive, state: AppState, sndr: Arc<Sender<String>>) {
     let select_view = SelectView::new();
-    let shared_state: Rc<RefCell<AppState>> = Rc::new(RefCell::new(state));
+    let shared_state: Arc<Mutex<AppState>> = Arc::new(Mutex::new(state));
 
     let state_temp_add = shared_state.clone();
     let state_temp_save = shared_state.clone();
@@ -364,16 +377,19 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Rc<Sender<String>>) {
                 None => { show_message(s, "Unable to read entry name"); return }
             };
 
-            let value = match state_temp_print.borrow().store.get(&key) {
+            let h = state_temp_print.lock().unwrap();
+            let store = &(*h).store;
+
+            let value = match store.get(&key) {
                 Some(v) => v,
                 None => { show_message(s, "Unable to read entry value"); return } 
             };
 
             let out_str = format!("-------- {} --------\n{}", key, value);
 
-            pwman_quit_with_state(s, sender2.clone(), out_str, state_temp_print.borrow().store.is_dirty(), Some(state_temp_quit_print.clone())) 
+            pwman_quit_with_state(s, sender2.clone(), out_str, store.is_dirty(), Some(state_temp_quit_print.clone())) 
         })            
-        .leaf("Quit", move |s| pwman_quit_with_state(s, sender.clone(), String::from(""), shared_state.borrow().store.is_dirty(), Some(state_temp_quit.clone()) )
+        .leaf("Quit", move |s| pwman_quit_with_state(s, sender.clone(), String::from(""), shared_state.lock().unwrap().store.is_dirty(), Some(state_temp_quit.clone()) )
     );
 
     // Ok this is really, really hacky but it works. I would have preferred to be able to simply exclude some lines from

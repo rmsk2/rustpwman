@@ -13,8 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 
-use std::rc::Rc;
-use std::cell::RefCell;
+use std::sync::{Arc, Mutex};
 #[cfg(feature = "pwmanclient")]
 use std::sync::mpsc::Sender;
 
@@ -35,7 +34,7 @@ use cursive::Cursive;
 use cursive::views::{Dialog, LinearLayout, TextView};
 
 #[cfg(feature = "pwmanclientux")]
-pub fn make_pwman_client(file_name: String) -> std::io::Result<Box<dyn PWManClient>>{
+pub fn make_pwman_client(file_name: String) -> std::io::Result<Box<dyn PWManClient + Send + Sync>>{
     match UDSClient::new(file_name) {
         Ok(c) => return Ok(Box::new(c)),
         Err(e) => return Err(e)
@@ -51,9 +50,9 @@ pub fn make_pwman_client(file_name: String) -> std::io::Result<Box<dyn PWManClie
 }
 
 #[cfg(feature = "pwmanclient")]
-pub fn password(s: &mut Cursive, state_for_write_cache: Rc<RefCell<AppState>>) {
-    let pw_option = state_for_write_cache.borrow().password.clone();
-    let file_name = match state_for_write_cache.borrow().persister.get_canonical_path() {
+pub fn password(s: &mut Cursive, state_for_write_cache: Arc<Mutex<AppState>>) {
+    let pw_option = state_for_write_cache.lock().unwrap().password.clone();
+    let file_name = match state_for_write_cache.lock().unwrap().persister.get_canonical_path() {
         Ok(s) => s,
         Err(_) => {
             show_message(s, "Unable to determine canonical storage identity");    
@@ -81,7 +80,7 @@ pub fn password(s: &mut Cursive, state_for_write_cache: Rc<RefCell<AppState>>) {
 
     match client.set_password(&password) {
         Ok(_) => {
-            state_for_write_cache.borrow_mut().pw_is_chached = true;
+            state_for_write_cache.lock().unwrap().pw_is_chached = true;
             show_message(s, "Password successfully cached");
             return;
         },
@@ -93,8 +92,8 @@ pub fn password(s: &mut Cursive, state_for_write_cache: Rc<RefCell<AppState>>) {
 }
 
 #[cfg(feature = "pwmanclient")]
-pub fn uncache_password(s: &mut Cursive, state_for_write_cache: Rc<RefCell<AppState>>) {
-    let file_name = match state_for_write_cache.borrow().persister.get_canonical_path() {
+pub fn uncache_password(s: &mut Cursive, state_for_write_cache: Arc<Mutex<AppState>>) {
+    let file_name = match state_for_write_cache.lock().unwrap().persister.get_canonical_path() {
         Ok(s) => s,
         Err(_) => {
             show_message(s, "Unable to determine canonical storage identity");    
@@ -113,7 +112,7 @@ pub fn uncache_password(s: &mut Cursive, state_for_write_cache: Rc<RefCell<AppSt
 
     match client.reset_password() {
         Ok(_) => {
-            state_for_write_cache.borrow_mut().pw_is_chached = false;
+            state_for_write_cache.lock().unwrap().pw_is_chached = false;
             show_message(s, "Cache cleared");
             return;
         },
@@ -125,17 +124,17 @@ pub fn uncache_password(s: &mut Cursive, state_for_write_cache: Rc<RefCell<AppSt
 }
 
 #[cfg(not(feature = "pwmanclient"))]
-pub fn password(s: &mut Cursive, _state_for_write_cache: Rc<RefCell<AppState>>) {
+pub fn password(s: &mut Cursive, _state_for_write_cache: Arc<Mutex<AppState>>) {
     show_message(s, "Sorry this feature is not available in this build") 
 }
 
 #[cfg(not(feature = "pwmanclient"))]
-pub fn uncache_password(s: &mut Cursive, _state_for_write_cache: Rc<RefCell<AppState>>) {
+pub fn uncache_password(s: &mut Cursive, _state_for_write_cache: Arc<Mutex<AppState>>) {
     show_message(s, "Sorry this feature is not available in this build") 
 }
 
 #[cfg(feature = "pwmanclient")]
-pub fn confirmation_dialog(sndr: Rc<Sender<String>>, password: String, client: Box<dyn PWManClient>, ok_cb_with_state: Box<dyn Fn(&mut Cursive, &String, bool)>) -> Dialog {
+pub fn confirmation_dialog(sndr: Arc<Sender<String>>, password: String, client: Box<dyn PWManClient + Send + Sync>, ok_cb_with_state: Box<dyn Fn(&mut Cursive, &String, bool) + Send + Sync>) -> Dialog {
     let sender = sndr.clone();
     let sender2 = sndr.clone();
 

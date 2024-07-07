@@ -13,8 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 
-use std::rc::Rc;
-use std::cell::RefCell;
+use std::sync::{Arc, Mutex};
 
 use cursive::Cursive;
 use cursive::views::{Dialog, LinearLayout, TextView, EditView};
@@ -29,7 +28,7 @@ use super::visualize_if_modified;
 
 const RENAME_EDIT_NAME: &str = "renamedit";
 
-pub fn entry(s: &mut Cursive, state_for_rename_entry: Rc<RefCell<AppState>>) {
+pub fn entry(s: &mut Cursive, state_for_rename_entry: Arc<Mutex<AppState>>) {
     let old_entry_name = match get_selected_entry_name(s) {
         Some(name) => name,
         None => {
@@ -66,17 +65,17 @@ pub fn entry(s: &mut Cursive, state_for_rename_entry: Rc<RefCell<AppState>>) {
         }; 
 
 
-        if !state_for_rename_entry.borrow().store.entry_exists(&old_entry_name) {
+        if !state_for_rename_entry.lock().unwrap().store.entry_exists(&old_entry_name) {
             show_message(s, "Old entry does not exist"); 
             return;
         }
 
-        if state_for_rename_entry.borrow().store.entry_exists(&new_entry_name) {
+        if state_for_rename_entry.lock().unwrap().store.entry_exists(&new_entry_name) {
             show_message(s, "An entry with the new name already exists"); 
             return;
         }
 
-        if !state_for_rename_entry.borrow_mut().store.rename(&old_entry_name, &new_entry_name) {
+        if !state_for_rename_entry.lock().unwrap().store.rename(&old_entry_name, &new_entry_name) {
             show_message(s, "Renaming entry failed"); 
             return;            
         }

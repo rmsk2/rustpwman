@@ -30,7 +30,7 @@ pub struct WebDavPersister {
 
 #[cfg(feature = "webdav")]
 impl WebDavPersister {
-    pub fn new(u: &String, p: &String, s: &String, s_id: &String) -> Box<dyn Persister> {
+    pub fn new(u: &String, p: &String, s: &String, s_id: &String) -> Box<dyn Persister + Send + Sync> {
         let res = WebDavPersister {
             user_id: u.clone(),
             password: p.clone(),

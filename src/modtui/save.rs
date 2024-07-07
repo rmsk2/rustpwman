@@ -13,8 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 
-use std::rc::Rc;
-use std::cell::RefCell;
+use std::sync::{Arc, Mutex};
 
 use cursive::Cursive;
 
@@ -22,11 +21,11 @@ use super::AppState;
 use super::show_message;
 use super::visualize_if_modified;
 
-pub fn storage(s: &mut Cursive, state_temp_save: Rc<RefCell<AppState>>) {
+pub fn storage(s: &mut Cursive, state_temp_save: Arc<Mutex<AppState>>) {
     // force release of mutable reference to state_temp_save before
     // calling visualize_if_modified
     {
-        let mut mut_state = state_temp_save.borrow_mut();
+        let mut mut_state = state_temp_save.lock().unwrap();
 
         if let Err(e) = mut_state.persist_store() {
             show_message(s, &format!("Unable to save: {:?}", e)); 

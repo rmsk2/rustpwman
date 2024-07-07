@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 
-use std::rc::Rc;
 use std::sync::mpsc::Sender;
+use std::sync::Arc;
 
 use cursive::Cursive;
 use cursive::views::{Dialog, LinearLayout, TextView, EditView, DialogFocus};
@@ -28,7 +28,7 @@ use crate::fcrypt;
 const NAME_PWEDIT : &str = "pwedit";
 const NAME_PWDIALOG: &str = "pwdialog";
 
-pub fn dialog(sndr: Rc<Sender<String>>, ok_cb_with_state: Box<dyn Fn(&mut Cursive, &String, bool)>) -> impl View {
+pub fn dialog(sndr: Arc<Sender<String>>, ok_cb_with_state: Box<dyn Fn(&mut Cursive, &String, bool) + Send + Sync>) -> impl View {
     let sender = sndr.clone();
 
     let ok_cb = move |s: &mut Cursive| {

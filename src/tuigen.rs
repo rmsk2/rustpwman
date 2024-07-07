@@ -12,8 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-use std::cell::Cell;
-use std::rc::Rc;
+use std::sync::{Arc, Mutex};
 use cursive::traits::*;
 use cursive::views::{Dialog, LinearLayout, TextView, TextArea, SliderView, RadioGroup, DialogFocus};
 use cursive::Cursive;
@@ -50,10 +49,10 @@ pub fn generate_main(sec_level: usize, pw_gen_strategy: pwgen::GenerationStrateg
     let mut siv = cursive::default();
     let mut strategy_group: RadioGroup<pwgen::GenerationStrategy> = RadioGroup::new();
 
-    let selected_sec_level = Rc::new(Cell::new(sec_level));
-    let selected_strategy = Rc::new(Cell::new(pw_gen_strategy));
-    let selected_num_pws = Rc::new(Cell::new(NUM_PW_DEFAULT));
-    let was_cancelled = Rc::new(Cell::new(true));
+    let selected_sec_level = Arc::new(Mutex::new(sec_level));
+    let selected_strategy = Arc::new(Mutex::new(pw_gen_strategy));
+    let selected_num_pws = Arc::new(Mutex::new(NUM_PW_DEFAULT));
+    let was_cancelled = Arc::new(Mutex::new(true));
 
     let level = selected_sec_level.clone();
     let strategy = selected_strategy.clone();
@@ -131,13 +130,13 @@ pub fn generate_main(sec_level: usize, pw_gen_strategy: pwgen::GenerationStrateg
             }
         };        
 
-        level.replace(h);
-        num_pws.replace(h3);
+        *level.lock().unwrap() = h;
+        *num_pws.lock().unwrap() = h3;
 
         let h2 = *(&strategy_group.selection()).clone();
-        strategy.replace(h2);
+        *strategy.lock().unwrap() = h2;
 
-        wc2.replace(false);
+        *wc2.lock().unwrap() = false;
         
         s.pop_layer();
         s.quit();
@@ -152,12 +151,15 @@ pub fn generate_main(sec_level: usize, pw_gen_strategy: pwgen::GenerationStrateg
 
     siv.run();
 
+    let do_cancel = *was_cancelled.lock().unwrap();
 
-    if !was_cancelled.get() {
-        let mut generator = selected_strategy.get().to_creator()();
+    if !do_cancel {
+        let mut generator = selected_strategy.lock().unwrap().to_creator()();
+        let num_pws = *selected_num_pws.lock().unwrap();
+        let sel_level = *selected_sec_level.lock().unwrap();
 
-        for _n in 0..selected_num_pws.get()+1 {
-            let pw = match generator.gen_password(selected_sec_level.get()) {
+        for _n in 0..num_pws + 1 {
+            let pw = match generator.gen_password(sel_level) {
                 Some(s) => s,
                 None => {eprintln!("Unable to generate password"); return;}
             };

@@ -13,9 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 
-use std::rc::Rc;
 use std::collections::HashSet;
-use std::cell::RefCell;
+use std::sync::{Arc, Mutex};
 use std::collections::HashMap;
 use cursive::Cursive;
 use cursive::views::{Dialog, LinearLayout, TextView, TextArea, SliderView, RadioGroup, RadioButton, Checkbox, HideableView, EditView, Panel, PaddedView};
@@ -151,7 +150,7 @@ fn on_change_charset(s: &mut Cursive, new_value: bool, st: SelectionType) {
 }
 
 
-fn on_ok_clicked(s: &mut Cursive, state_for_gen_pw: Rc<RefCell<AppState>>, strategy_group: &RadioGroup<GenerationStrategy>) {
+fn on_ok_clicked(s: &mut Cursive, state_for_gen_pw: Arc<Mutex<AppState>>, strategy_group: &RadioGroup<GenerationStrategy>) {
     let rand_bytes = match s.call_on_name(SLIDER_SEC_NAME, |view: &mut SliderView| { view.get_value() }) {
         Some(v) => v,
         None => { show_message(s, "Unable to determine security level"); return }
@@ -159,7 +158,7 @@ fn on_ok_clicked(s: &mut Cursive, state_for_gen_pw: Rc<RefCell<AppState>>, strat
 
     let new_pw: String;                    
     let selected_strategy = strategy_group.selection();
-    let current_chars: Rc<String>;
+    let current_chars: Arc<String>;
 
     let mut generator = selected_strategy.to_creator()();
 
@@ -179,7 +178,7 @@ fn on_ok_clicked(s: &mut Cursive, state_for_gen_pw: Rc<RefCell<AppState>>, strat
         generator.set_custom(&custom_chars);
 
         {
-            state_for_gen_pw.borrow_mut().last_custom_selection = String::from(custom_chars.as_str());
+            state_for_gen_pw.lock().unwrap().last_custom_selection = String::from(custom_chars.as_str());
         }
     }
 
@@ -251,9 +250,9 @@ fn create_custom_select(last_selection: &String) -> Box<dyn View> {
     )).title("Custom character selection"));
 }
 
-pub fn generate_password(s: &mut Cursive, state_for_gen_pw: Rc<RefCell<AppState>>) {
-    let sec_bits = state_for_gen_pw.borrow().get_default_bits();
-    let default_strategy = state_for_gen_pw.borrow().default_generator;
+pub fn generate_password(s: &mut Cursive, state_for_gen_pw: Arc<Mutex<AppState>>) {
+    let sec_bits = state_for_gen_pw.lock().unwrap().get_default_bits();
+    let default_strategy = state_for_gen_pw.lock().unwrap().default_generator;
 
     let mut strategy_group: RadioGroup<GenerationStrategy> = RadioGroup::new();
     let mut radio_buttons: Vec<(GenerationStrategy, RadioButton<GenerationStrategy>)> = Vec::new();
@@ -287,8 +286,8 @@ pub fn generate_password(s: &mut Cursive, state_for_gen_pw: Rc<RefCell<AppState>
     }
 
     strategy_group.set_on_change(on_strategy_changed);
-    let custom_select = create_custom_select(&state_for_gen_pw.borrow().last_custom_selection);
-    let h = state_for_gen_pw.borrow().last_custom_selection.clone();
+    let custom_select = create_custom_select(&state_for_gen_pw.lock().unwrap().last_custom_selection);
+    let h = state_for_gen_pw.lock().unwrap().last_custom_selection.clone();
     let for_measurement = h.as_str();
 
     let res = Dialog::new()

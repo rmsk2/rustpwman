@@ -13,17 +13,15 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 
-use std::rc::Rc;
-use std::cell::RefCell;
+use std::sync::{Arc, Mutex};
 
 use cursive::Cursive;
 use cursive::views::{Dialog, LinearLayout, TextView, TextArea, Panel};
 use cursive::traits::*;
-use cursive::theme;
+use cursive::theme::{self, Effects};
 use cursive::theme::{Effect, PaletteColor};
 use cursive::theme::ColorStyle;
 
-use cursive::reexports::enumset;
 use super::AppState;
 use super::show_message;
 use super::get_selected_entry_name;
@@ -62,7 +60,7 @@ pub fn insert_into_entry(s: &mut Cursive, new_pw: String) {
 
 }
 
-pub fn entry(s: &mut Cursive, state_for_edit_entry: Rc<RefCell<AppState>>, entry_name_external: Option<Rc<String>>) {
+pub fn entry(s: &mut Cursive, state_for_edit_entry: Arc<Mutex<AppState>>, entry_name_external: Option<Arc<String>>) {
     let entry_to_edit: String;
     let mut show_scroll_message = false;
     
@@ -79,7 +77,7 @@ pub fn entry(s: &mut Cursive, state_for_edit_entry: Rc<RefCell<AppState>>, entry
         }
     }
 
-    let content = match state_for_edit_entry.borrow().store.get(&entry_to_edit) {
+    let content = match state_for_edit_entry.lock().unwrap().store.get(&entry_to_edit) {
         Some(c) => c,
         None => { show_message(s, "Unable to read value of entry"); return }
     };
@@ -87,8 +85,12 @@ pub fn entry(s: &mut Cursive, state_for_edit_entry: Rc<RefCell<AppState>>, entry
     let state_for_gen_pw = state_for_edit_entry.clone();
     let state_for_paste = state_for_edit_entry.clone();
 
+    let mut eff = Effects::empty();
+    eff.insert(Effect::Simple);
+
     let name_style = theme::Style {
-        effects: enumset::enum_set!(Effect::Simple),
+        //effects: enumset::enum_set!(Effect::Simple),
+        effects: eff,
         color: ColorStyle::new(PaletteColor::View, PaletteColor::TitleSecondary),
     };
 
@@ -128,7 +130,7 @@ pub fn entry(s: &mut Cursive, state_for_edit_entry: Rc<RefCell<AppState>>, entry
             None => { show_message(s, "Unable to read entry text"); return }
         }; 
 
-        state_for_edit_entry.borrow_mut().store.modify(&entry_to_edit, &entry_text);
+        state_for_edit_entry.lock().unwrap().store.modify(&entry_to_edit, &entry_text);
         visualize_if_modified(s, state_for_edit_entry.clone());
         display_entry(s, state_for_edit_entry.clone(), &entry_to_edit, true);
 
@@ -146,7 +148,7 @@ pub fn entry(s: &mut Cursive, state_for_edit_entry: Rc<RefCell<AppState>>, entry
         let paste_cmd: &String;
 
         {
-            let app_state = &state_for_paste.borrow();
+            let app_state = &state_for_paste.lock().unwrap();
             paste_cmd = &app_state.paste_command;
 
             pasted_txt = match clip::get_clipboard(&paste_cmd.as_str()) {

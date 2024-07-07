@@ -20,11 +20,11 @@ use std::collections::VecDeque;
 pub struct UndoEntry<T, S> 
 {
     pub comment: String,
-    pub f: Box<dyn FnMut(& mut HashMap<T,S>) -> bool>,
+    pub f: Box<dyn FnMut(& mut HashMap<T,S>) -> bool + Send + Sync>,
 }
 
 impl<T, S> UndoEntry<T, S> {
-    pub fn new(c: &String, func: Box<dyn FnMut(&mut HashMap<T, S>) -> bool>) -> UndoEntry<T, S> {
+    pub fn new(c: &String, func: Box<dyn FnMut(&mut HashMap<T, S>) -> bool + Send + Sync>) -> UndoEntry<T, S> {
         return UndoEntry::<T, S> {
             comment: c.clone(),
             f: func,
@@ -70,7 +70,7 @@ impl<T, S> UndoRepo<T, S> {
         return res;
     }
 
-    pub fn push(&mut self, c: &String, func: Box<dyn FnMut(&mut HashMap<T, S>) -> bool>) {
+    pub fn push(&mut self, c: &String, func: Box<dyn FnMut(&mut HashMap<T, S>) -> bool + Send + Sync>) {
         self.stack.push_back(UndoEntry::new(c, func));
     }
 

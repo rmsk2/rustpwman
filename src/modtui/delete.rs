@@ -13,9 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 
-use std::rc::Rc;
-use std::cell::RefCell;
-
+use std::sync::{Arc, Mutex};
 use cursive::Cursive;
 use cursive::views::{Dialog, LinearLayout, TextView};
 
@@ -27,7 +25,7 @@ use super::get_special_styles;
 use super::visualize_if_modified;
 
 
-pub fn entry(s: &mut Cursive, state_temp_del: Rc<RefCell<AppState>>) { 
+pub fn entry(s: &mut Cursive, state_temp_del: Arc<Mutex<AppState>>) { 
     let (danger_style, reverse_style) = get_special_styles();    
 
     match get_selected_entry_name(s) {
@@ -50,7 +48,7 @@ pub fn entry(s: &mut Cursive, state_temp_del: Rc<RefCell<AppState>>) {
             )
             .button("Cancel", |s| { s.pop_layer(); })            
             .button("OK", move |s| {
-                state_temp_del.borrow_mut().store.delete(&name);
+                state_temp_del.lock().unwrap().store.delete(&name);
                 visualize_if_modified(s, state_temp_del.clone());
                 redraw_tui(s, state_temp_del.clone());
                 s.pop_layer();

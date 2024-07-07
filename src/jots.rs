@@ -27,7 +27,7 @@ use fcrypt::KdfId;
 use fcrypt::Cryptor;
 
 
-pub type CryptorGen = Box<dyn Fn(KeyDeriver, KdfId) -> Box<dyn Cryptor>>;
+pub type CryptorGen = Box<dyn Fn(KeyDeriver, KdfId) -> Box<dyn Cryptor>  + Send + Sync>;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct KvEntry {
@@ -289,7 +289,7 @@ impl Jots {
         return Ok(());
     }
 
-    pub fn retrieve(&mut self, p: &mut Box<dyn Persister>, password: &str) -> std::io::Result<()> {
+    pub fn retrieve(&mut self, p: &mut Box<dyn Persister + Send + Sync>, password: &str) -> std::io::Result<()> {
         let mut ctx = (self.cr_gen)(self.kdf, self.kdf_id);
 
         let data = ctx.retrieve(p)?;
@@ -320,7 +320,7 @@ impl Jots {
         return Ok(());
     }
 
-    pub fn persist(&mut self, p: &mut Box<dyn Persister>, password: &str) -> std::io::Result<()> {
+    pub fn persist(&mut self, p: &mut Box<dyn Persister + Send + Sync>, password: &str) -> std::io::Result<()> {
         let mut ctx = (self.cr_gen)(self.kdf, self.kdf_id);
         let mut serialized: Vec<u8> = Vec::new();
 

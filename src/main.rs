@@ -381,11 +381,11 @@ impl RustPwMan {
         {
             let test_str = format!("{}{}", s, s_id).to_lowercase();
             if test_str.starts_with("http") {
-                persist_closure = Box::new(move |store_id: &String| -> Box<dyn Persister> {
+                persist_closure = Box::new(move |store_id: &String| -> Box<dyn Persister + Send + Sync> {
                     return webdav::WebDavPersister::new(&u, &p, &s, store_id);
                 });
             } else {
-                persist_closure = Box::new(move |store_id: &String| -> Box<dyn Persister> {
+                persist_closure = Box::new(move |store_id: &String| -> Box<dyn Persister+ Send + Sync> {
                     return persist::FilePersister::new(store_id);
                 });
             }
@@ -393,7 +393,7 @@ impl RustPwMan {
 
         #[cfg(not(feature = "webdav"))]
         {
-            persist_closure = Box::new(move |store_id: &String| -> Box<dyn Persister> {
+            persist_closure = Box::new(move |store_id: &String| -> Box<dyn Persister + Send + Sync> {
                 return persist::FilePersister::new(store_id);
             });
         }

@@ -20,7 +20,7 @@ use std::io::BufWriter;
 use std::io::{Error, ErrorKind};
 use std::path::PathBuf;
 
-pub type PersistCreator = Box<dyn Fn(&String) -> Box<dyn Persister>>;
+pub type PersistCreator = Box<dyn Fn(&String) -> Box<dyn Persister + Send + Sync> + Send + Sync>;
 
 pub trait Persister {
     fn does_exist(&self) -> std::io::Result<bool>;
@@ -35,7 +35,7 @@ pub struct FilePersister {
 }
 
 impl FilePersister {
-    pub fn new(file_name: &String) -> Box<dyn Persister> {
+    pub fn new(file_name: &String) -> Box<dyn Persister + Send + Sync> {
         let res = FilePersister {
             file_name: file_name.clone(),
         };
