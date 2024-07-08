@@ -42,7 +42,7 @@ pub fn make_pwman_client(file_name: String) -> std::io::Result<Box<dyn PWManClie
 }
 
 #[cfg(feature = "pwmanclientwin")]
-pub fn make_pwman_client(file_name: String) -> std::io::Result<Box<dyn PWManClient>>{
+pub fn make_pwman_client(file_name: String) -> std::io::Result<Box<dyn PWManClient + Send + Sync>>{
     match UDSClientWin::new(file_name) {
         Ok(c) => return Ok(Box::new(c)),
         Err(e) => return Err(e)
