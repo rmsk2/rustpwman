@@ -171,9 +171,9 @@ fn ask_for_save(s: &mut Cursive, sender: Arc<Sender<String>>, message: String, a
                 s.pop_layer(); 
                 save::storage(s, app_state.clone());
 
-                let h = app_state.lock().unwrap();
+                let is_dirty = app_state.lock().unwrap().store.is_dirty();
 
-                if !(*h).store.is_dirty() {
+                if !is_dirty {
                     do_quit(s, sender.clone(), message.clone());
                 }
             })
@@ -302,10 +302,9 @@ fn get_special_styles() -> (theme::Style, theme::Style) {
 }
 
 fn visualize_if_modified(siv: &mut Cursive, state: Arc<Mutex<AppState>>) {
-    let h = state.lock().unwrap();
-    let store = &(*h).store;
+    let is_dirty = state.lock().unwrap().store.is_dirty();
 
-    if store.is_dirty() {
+    if is_dirty {
         siv.call_on_name("EntrySelectPanel", |view: &mut Panel<NamedView<ScrollView<ResizedView<NamedView<SelectView>>>>>| { view.set_title("Entries *"); } );
     } else {
         siv.call_on_name("EntrySelectPanel", |view: &mut Panel<NamedView<ScrollView<ResizedView<NamedView<SelectView>>>>>| { view.set_title("Entries"); } );
@@ -377,17 +376,24 @@ fn main_window(s: &mut Cursive, state: AppState, sndr: Arc<Sender<String>>) {
                 None => { show_message(s, "Unable to read entry name"); return }
             };
 
-            let h = state_temp_print.lock().unwrap();
-            let store = &(*h).store;
+            let dirty_flag: bool;
+            let out_str: String;
+            
+            // Create artificial scope to ensure unlock of Mutex
+            {
+                let h = state_temp_print.lock().unwrap();
+                let store = &(*h).store;
+    
+                let value = match store.get(&key) {
+                    Some(v) => v,
+                    None => { show_message(s, "Unable to read entry value"); return } 
+                };
+    
+                out_str = format!("-------- {} --------\n{}", key, value);
+                dirty_flag = store.is_dirty();
+            }
 
-            let value = match store.get(&key) {
-                Some(v) => v,
-                None => { show_message(s, "Unable to read entry value"); return } 
-            };
-
-            let out_str = format!("-------- {} --------\n{}", key, value);
-
-            pwman_quit_with_state(s, sender2.clone(), out_str, store.is_dirty(), Some(state_temp_quit_print.clone())) 
+            pwman_quit_with_state(s, sender2.clone(), out_str, dirty_flag, Some(state_temp_quit_print.clone())) 
         })            
         .leaf("Quit", move |s| pwman_quit_with_state(s, sender.clone(), String::from(""), shared_state.lock().unwrap().store.is_dirty(), Some(state_temp_quit.clone()) )
     );
