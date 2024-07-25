@@ -30,7 +30,7 @@ use serde::{Serialize, Deserialize};
 use cipher::consts::{U12, U16};
 use cipher::generic_array::GenericArray;
 use base64;
-use crate::persist::Persister;
+use crate::persist::SendSyncPersister;
 use aead::{Aead, KeyInit, AeadInPlace, AeadCore, KeySizeUser};
 
 
@@ -69,7 +69,7 @@ pub trait Cryptor {
         return self.to_dyn_writer(&mut w, data);
     }
 
-    fn persist(&self, data: &Vec<u8>, p: &mut Box<dyn Persister + Send + Sync>) -> std::io::Result<()> {
+    fn persist(&self, data: &Vec<u8>, p: &mut SendSyncPersister) -> std::io::Result<()> {
         let mut res_data: Vec<u8> = vec![];
         self.to_dyn_writer(&mut res_data, data)?;
 
@@ -83,7 +83,7 @@ pub trait Cryptor {
         return self.from_dyn_reader(&mut reader);
     }
 
-    fn retrieve(&mut self, p: &mut Box<dyn Persister + Send + Sync>) -> std::io::Result<Vec<u8>> {
+    fn retrieve(&mut self, p: &mut SendSyncPersister) -> std::io::Result<Vec<u8>> {
         let data = *p.retrieve()?;
 
         return self.from_dyn_reader(&mut data.as_slice());

@@ -20,7 +20,7 @@ use std::io::BufReader;
 use std::io::BufWriter;
 use std::io::{Error, ErrorKind};
 use crate::fcrypt;
-use crate::persist::Persister;
+use crate::persist::SendSyncPersister;
 use crate::undo::UndoRepo;
 use fcrypt::KeyDeriver;
 use fcrypt::KdfId;
@@ -289,7 +289,7 @@ impl Jots {
         return Ok(());
     }
 
-    pub fn retrieve(&mut self, p: &mut Box<dyn Persister + Send + Sync>, password: &str) -> std::io::Result<()> {
+    pub fn retrieve(&mut self, p: &mut SendSyncPersister, password: &str) -> std::io::Result<()> {
         let mut ctx = (self.cr_gen)(self.kdf, self.kdf_id);
 
         let data = ctx.retrieve(p)?;
@@ -320,7 +320,7 @@ impl Jots {
         return Ok(());
     }
 
-    pub fn persist(&mut self, p: &mut Box<dyn Persister + Send + Sync>, password: &str) -> std::io::Result<()> {
+    pub fn persist(&mut self, p: &mut SendSyncPersister, password: &str) -> std::io::Result<()> {
         let mut ctx = (self.cr_gen)(self.kdf, self.kdf_id);
         let mut serialized: Vec<u8> = Vec::new();
 

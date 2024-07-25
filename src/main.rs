@@ -42,7 +42,7 @@ use fcrypt::CipherId;
 use modtui::DEFAULT_PASTE_CMD;
 use modtui::DEFAULT_COPY_CMD;
 use persist::PersistCreator;
-use persist::Persister;
+use persist::SendSyncPersister;
 use std::fs::File;
 use std::io::BufReader;
 use std::io::BufWriter;
@@ -381,11 +381,11 @@ impl RustPwMan {
         {
             let test_str = format!("{}{}", s, s_id).to_lowercase();
             if test_str.starts_with("http") {
-                persist_closure = Box::new(move |store_id: &String| -> Box<dyn Persister + Send + Sync> {
+                persist_closure = Box::new(move |store_id: &String| -> SendSyncPersister {
                     return webdav::WebDavPersister::new(&u, &p, &s, store_id);
                 });
             } else {
-                persist_closure = Box::new(move |store_id: &String| -> Box<dyn Persister+ Send + Sync> {
+                persist_closure = Box::new(move |store_id: &String| -> SendSyncPersister {
                     return persist::FilePersister::new(store_id);
                 });
             }
@@ -393,7 +393,7 @@ impl RustPwMan {
 
         #[cfg(not(feature = "webdav"))]
         {
-            persist_closure = Box::new(move |store_id: &String| -> Box<dyn Persister + Send + Sync> {
+            persist_closure = Box::new(move |store_id: &String| -> SendSyncPersister {
                 return persist::FilePersister::new(store_id);
             });
         }

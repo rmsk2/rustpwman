@@ -14,6 +14,8 @@ limitations under the License. */
 
 
 #[cfg(feature = "webdav")]
+use crate::persist::SendSyncPersister;
+#[cfg(feature = "webdav")]
 use crate::persist::Persister;
 #[cfg(feature = "webdav")]
 use reqwest::{Method, Url, StatusCode};
@@ -30,7 +32,7 @@ pub struct WebDavPersister {
 
 #[cfg(feature = "webdav")]
 impl WebDavPersister {
-    pub fn new(u: &String, p: &String, s: &String, s_id: &String) -> Box<dyn Persister + Send + Sync> {
+    pub fn new(u: &String, p: &String, s: &String, s_id: &String) -> SendSyncPersister {
         let res = WebDavPersister {
             user_id: u.clone(),
             password: p.clone(),

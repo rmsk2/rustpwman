@@ -26,7 +26,7 @@ use crate::jots::{self, CryptorGen};
 use crate::pwgen::GenerationStrategy;
 use super::AppState;
 use super::open;
-use crate::persist::Persister;
+use crate::persist::SendSyncPersister;
 use crate::persist;
 
 use super::main_window;
@@ -95,7 +95,7 @@ fn show_unable_to_check_error(siv: &mut Cursive, msg: &str, sender: Arc<Sender<S
 }
 
 #[cfg(feature = "pwmanclient")]
-fn setup_password_entry_with_pwman(siv: &mut Cursive, sender: Arc<Sender<String>>, pw_callback: Box<dyn Fn(&mut Cursive, &String, bool) + Send + Sync>, p: &Box<dyn Persister + Send + Sync>) {
+fn setup_password_entry_with_pwman(siv: &mut Cursive, sender: Arc<Sender<String>>, pw_callback: Box<dyn Fn(&mut Cursive, &String, bool) + Send + Sync>, p: &SendSyncPersister) {
     let does_exist = match p.does_exist() {
         Ok(b) => b,
         Err(_) => {
@@ -139,7 +139,7 @@ fn setup_password_entry_with_pwman(siv: &mut Cursive, sender: Arc<Sender<String>
 
 
 #[cfg(not(feature = "pwmanclient"))]
-fn setup_password_entry_without_pwman(siv: &mut Cursive, sender: Arc<Sender<String>>, pw_callback: Box<dyn Fn(&mut Cursive, &String, bool) + Send + Sync>, p: &Box<dyn Persister + Send + Sync>) {
+fn setup_password_entry_without_pwman(siv: &mut Cursive, sender: Arc<Sender<String>>, pw_callback: Box<dyn Fn(&mut Cursive, &String, bool) + Send + Sync>, p: &SendSyncPersister) {
     let does_exist = match p.does_exist() {
         Ok(b) => b,
         Err(_) => {

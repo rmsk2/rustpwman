@@ -28,13 +28,16 @@ use crate::pwman_client_ux::UDSClient;
 use crate::pwman_client_win::UDSClientWin;
 #[cfg(feature = "pwmanclient")]
 use crate::pwman_client::PWManClient;
+#[cfg(feature = "pwmanclient")]
+use crate::pwman_client::SendSyncPwManClient;
+
 
 use cursive::Cursive;
 #[cfg(feature = "pwmanclient")]
 use cursive::views::{Dialog, LinearLayout, TextView};
 
 #[cfg(feature = "pwmanclientux")]
-pub fn make_pwman_client(file_name: String) -> std::io::Result<Box<dyn PWManClient + Send + Sync>>{
+pub fn make_pwman_client(file_name: String) -> std::io::Result<SendSyncPwManClient>{
     match UDSClient::new(file_name) {
         Ok(c) => return Ok(Box::new(c)),
         Err(e) => return Err(e)
@@ -42,7 +45,7 @@ pub fn make_pwman_client(file_name: String) -> std::io::Result<Box<dyn PWManClie
 }
 
 #[cfg(feature = "pwmanclientwin")]
-pub fn make_pwman_client(file_name: String) -> std::io::Result<Box<dyn PWManClient + Send + Sync>>{
+pub fn make_pwman_client(file_name: String) -> std::io::Result<SendSyncPwManClient>{
     match UDSClientWin::new(file_name) {
         Ok(c) => return Ok(Box::new(c)),
         Err(e) => return Err(e)
@@ -134,7 +137,7 @@ pub fn uncache_password(s: &mut Cursive, _state_for_write_cache: Arc<Mutex<AppSt
 }
 
 #[cfg(feature = "pwmanclient")]
-pub fn confirmation_dialog(sndr: Arc<Sender<String>>, password: String, client: Box<dyn PWManClient + Send + Sync>, ok_cb_with_state: Box<dyn Fn(&mut Cursive, &String, bool) + Send + Sync>) -> Dialog {
+pub fn confirmation_dialog(sndr: Arc<Sender<String>>, password: String, client: SendSyncPwManClient, ok_cb_with_state: Box<dyn Fn(&mut Cursive, &String, bool) + Send + Sync>) -> Dialog {
     let sender = sndr.clone();
     let sender2 = sndr.clone();
 

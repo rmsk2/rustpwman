@@ -43,7 +43,7 @@ const PW_WIDTH: usize = 35;
 pub const DEFAULT_PASTE_CMD: &str = "xsel -ob";
 pub const DEFAULT_COPY_CMD: &str = "xsel -ib";
 
-use crate::persist::Persister;
+use crate::persist::SendSyncPersister;
 use cursive::theme::ColorStyle;
 use cursive::traits::*;
 use cursive::views::{Dialog, LinearLayout, SelectView, TextArea, Panel, NamedView, ScrollView, ResizedView};
@@ -71,14 +71,14 @@ pub struct AppState {
     default_generator: GenerationStrategy,
     paste_command: String,
     copy_command: String,
-    persister: Box<dyn Persister + Send + Sync>, 
+    persister: SendSyncPersister, 
     last_custom_selection: String,
     pw_is_chached: bool,
 }
 
 impl AppState {
     pub fn new(s: jots::Jots, f_name: &String, default_sec: usize, default_gen: GenerationStrategy, 
-               paste_cmd: &String, copy_cmd: &String, p: Box<dyn Persister + Send + Sync>, is_pw_cached: bool) -> Self {
+               paste_cmd: &String, copy_cmd: &String, p: SendSyncPersister, is_pw_cached: bool) -> Self {
         return AppState {
             store: s,
             password: None,

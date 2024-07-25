@@ -166,3 +166,4 @@ pub trait PWManClient {
     }    
 }
 
+pub type SendSyncPwManClient = Box<dyn PWManClient + Send + Sync>;
