@@ -12,6 +12,10 @@ Visual Studio Developer prompt for this purpose. On top of that there is a separ
 a minimal set of features (and therefore a minimal set of dependencies) you can use `cargo build --release --no-default-features` under Linux, macOS and Windows.
 In this case the password cache, support for WebDAV and additional crypto algorithms are not available.
 
+At the moment some dependencies of `cursive` will not compile with the as of today most current version 1.80 of `rustc` (specifically a library called `time` in version 
+0.3.34). Additionally the official version 0.21 of `cursive` also does not build in my environment which uses `rustc` 1.77.1. Therefore I am using a fixed older revision 
+of  `cursive` which seems to work for me.
+
 # How to run the software
 
 The basic concept of `rustpwman` is to manage a set of entries which have a value or content. The entries are presented in a flat list and no further structuring is offered at 
