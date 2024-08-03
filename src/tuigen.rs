@@ -159,7 +159,7 @@ pub fn generate_main(sec_level: usize, pw_gen_strategy: pwgen::GenerationStrateg
         let sel_level = *selected_sec_level.lock().unwrap();
 
         for _n in 0..num_pws + 1 {
-            let pw = match generator.gen_password(sel_level) {
+            let pw = match generator.gen_password(sel_level + 1) {
                 Some(s) => s,
                 None => {eprintln!("Unable to generate password"); return;}
             };
