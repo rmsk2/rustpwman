@@ -34,8 +34,7 @@ users = {version = "0.11", optional = true}
 reqwest = {version = "0.11", optional = true, features = ["blocking"]}
 
 [target.'cfg(unix)'.dependencies.cursive]
-git = "https://github.com/gyscos/cursive"
-rev = "4f5ebdc9"
+version = "0.21"
 default-features = false
 features = ["ncurses-backend"]
 
@@ -44,8 +43,7 @@ pancurses = "0.17"
 pdcurses-sys = "0.7"
 
 [target.'cfg(windows)'.dependencies.cursive]
-git = "https://github.com/gyscos/cursive"
-rev = "4f5ebdc9"
+version = "0.21"
 default-features = false
 features = ["pancurses-backend"]
 
