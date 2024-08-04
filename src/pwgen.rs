@@ -15,7 +15,7 @@ limitations under the License. */
 #![allow(dead_code)]
 
 use rand::RngCore;
-use base64;
+use base64::prelude::*;
 use std::io::{Error, ErrorKind};
 use rand::Rng;
 use num_bigint::BigUint;
@@ -124,7 +124,7 @@ impl PasswordGenerator for B64Generator {
             Ok(b) => b 
         };
 
-        let mut help = base64::encode(buf);
+        let mut help = BASE64_STANDARD.encode(buf);
         help = help.replace("=", "");
         help = help.replace("/", "$");
         help = help.replace("+", "!");

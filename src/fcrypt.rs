@@ -29,7 +29,7 @@ use rand::RngCore;
 use serde::{Serialize, Deserialize};
 use cipher::consts::{U12, U16};
 use cipher::generic_array::GenericArray;
-use base64;
+use base64::prelude::*;
 use crate::persist::SendSyncPersister;
 use aead::{Aead, KeyInit, AeadInPlace, AeadCore, KeySizeUser};
 
@@ -233,14 +233,14 @@ impl AeadContext {
             return Err(Error::new(ErrorKind::Other, format!("Key derivation function mismatch. {} was used not {}", &json_struct.pbkdf, &self.kdf_id.to_string())));
         }
 
-        let salt = match base64::decode(&json_struct.salt) {
+        let salt = match BASE64_STANDARD.decode(&json_struct.salt) {
             Ok(s) => s,
             Err(_) => {
                 return Err(Error::new(ErrorKind::Other, "Base64 decode error"));
             }
         };
 
-        let nonce = match base64::decode(&json_struct.nonce) {
+        let nonce = match BASE64_STANDARD.decode(&json_struct.nonce) {
             Ok(s) => s,
             Err(_) => {
                 return Err(Error::new(ErrorKind::Other, "Base64 decode error"));
@@ -254,7 +254,7 @@ impl AeadContext {
         self.salt = salt;
         self.nonce = nonce;
 
-        let data = match base64::decode(&json_struct.data) {
+        let data = match BASE64_STANDARD.decode(&json_struct.data) {
             Ok(s) => s,
             Err(_) => {
                 return Err(Error::new(ErrorKind::Other, "Base64 decode error"));
@@ -271,9 +271,9 @@ impl AeadContext {
     pub fn to_writer<T: Write>(&self, writer: T, data: &Vec<u8>) -> std::io::Result<()> {
         let j = CryptedJson {
             pbkdf: self.kdf_id.to_string(),
-            salt: base64::encode(&self.salt),
-            nonce: base64::encode(&self.nonce),
-            data: base64::encode(data)
+            salt: BASE64_STANDARD.encode(&self.salt),
+            nonce: BASE64_STANDARD.encode(&self.nonce),
+            data: BASE64_STANDARD.encode(data)
         };
 
         serde_json::to_writer_pretty(writer, &j)?;

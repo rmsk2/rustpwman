@@ -12,6 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+//use core::slice::SlicePattern;
 #[cfg(test)]
 use std;
 
@@ -25,6 +26,8 @@ use crate::jots;
 use crate::pwgen::PasswordGenerator;
 #[cfg(test)]
 use crate::undo;
+#[cfg(test)]
+use argon2::AssociatedData;
 #[cfg(test)]
 use scrypt::scrypt;
 #[cfg(test)]
@@ -372,18 +375,23 @@ pub fn test_argon2id_params() {
     let salt: [u8; 16] = [0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02];
     let secret: [u8; 8] = [0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03];
     let ad_data: [u8; 12] = [0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04];
+    let ad_data2 = match AssociatedData::new(ad_data.as_slice()) {
+        Ok(d) => d,
+        _ => panic!("Unable to set associated data")
+    };
+
 
     let mut params_builder = argon2::ParamsBuilder::new();
     params_builder
-    .m_cost(32).unwrap()
-    .t_cost(3).unwrap()
-    .p_cost(4).unwrap()
-    .data(&ad_data).unwrap()
-    .output_len(32).unwrap();
+    .m_cost(32)
+    .t_cost(3)
+    .p_cost(4)
+    .data(ad_data2)
+    .output_len(32);
 
     let mut aes_key: [u8; 32] = [0; 32];
     
-    let ctx = argon2::Argon2::new_with_secret(&secret, argon2::Algorithm::Argon2id, argon2::Version::V0x13, params_builder.params().unwrap()).unwrap();
+    let ctx = argon2::Argon2::new_with_secret(&secret, argon2::Algorithm::Argon2id, argon2::Version::V0x13, params_builder.build().unwrap()).unwrap();
     ctx.hash_password_into(&password, &salt, &mut aes_key).unwrap();
 
     let verified: [u8; 32] = [

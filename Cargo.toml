@@ -1,6 +1,6 @@
 [package]
 name = "rustpwman"
-version = "2.0.3"
+version = "2.0.4"
 authors = ["Martin <rmsk2@gmx.de>"]
 edition = "2021"
 
@@ -19,19 +19,19 @@ cipher = "0.4"
 aes = "0.8"
 cfb8 = "0.8"
 aead = "0.5"
-base64 = "0.13"
+base64 = "0.22"
 rand = "0.8"
 scrypt = "0.11"
-clap = "4.0"
-rpassword = "7.0"
-argon2 = "0.4"
-toml = "0.5"
-dirs = "4.0"
+clap = "4.5"
+rpassword = "7.3"
+argon2 = "0.5"
+toml = "0.8"
+dirs = "5.0"
 num-bigint = "0.4"
-itertools = "0.12"
+itertools = "0.13"
 uds_windows =  {version ="1.0", optional = true}
 users = {version = "0.11", optional = true}
-reqwest = {version = "0.11", optional = true, features = ["blocking"]}
+reqwest = {version = "0.12", optional = true, features = ["blocking"]}
 
 [target.'cfg(target_os = "linux")'.dependencies.cursive]
 version = "0.21"
