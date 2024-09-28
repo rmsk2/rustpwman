@@ -1,6 +1,6 @@
 [package]
 name = "rustpwman"
-version = "2.0.4"
+version = "2.0.5"
 authors = ["Martin <rmsk2@gmx.de>"]
 edition = "2021"
 
@@ -51,9 +51,10 @@ default-features = false
 features = ["pancurses-backend"]
 
 [features]
-default = ["pwmanclientux", "chacha20", "webdav"]
+default = ["pwmanclientux", "chacha20", "webdav", "writebackup"]
 pwmanclient = []
 pwmanclientux = ["dep:users", "pwmanclient"]
 pwmanclientwin = ["dep:uds_windows", "pwmanclient"]
 webdav = ["dep:reqwest"]
 chacha20 = []
+writebackup = []

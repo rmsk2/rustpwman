@@ -70,7 +70,11 @@ const MULTIPLE_CIPHER_DEFAULT_ENV_NOT_SET: CipherId = CipherId::Aes256Gcm;
 #[cfg(feature = "chacha20")]
 const MULTIPLE_CIPHER_DEFAULT_ENV_SET: CipherId = CipherId::ChaCha20Poly1305;
 pub const CFG_FILE_NAME: &str = ".rustpwman";
+#[cfg(feature = "writebackup")]
+pub const BACKUP_FILE_NAME: &str = "rustpwman_last.enc";
 pub const ENV_CIPHER: &str = "PWMANCIPHER";
+#[cfg(feature = "writebackup")]
+pub const ENV_BKP: &str = "PWMANBKP";
 
 use fcrypt::DEFAULT_KDF_ID;
 
@@ -150,6 +154,19 @@ impl RustPwMan {
         home_dir.push(CFG_FILE_NAME);
         
         return Some(home_dir);
+    }
+
+    #[cfg(feature = "writebackup")]
+    pub fn get_backup_file_name() -> Option<std::path::PathBuf> {
+        let file_name = match env::var(ENV_BKP) {
+            Ok(s) => String::from(s.as_str()),
+            Err(_) => String::from(BACKUP_FILE_NAME)
+        };
+        
+        let mut path = std::path::PathBuf::new();
+        path.push(file_name);
+    
+        return Some(path);
     }
 
     fn load_config(&mut self) {

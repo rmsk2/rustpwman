@@ -13,6 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 
+#[cfg(feature = "writebackup")]
+use std::fs;
 use std::sync::mpsc::{Sender, Receiver};
 use std::sync::mpsc;
 use std::sync::Arc;
@@ -35,6 +37,23 @@ use super::pwentry;
 #[cfg(feature = "pwmanclient")]
 use super::cache;
 use super::init;
+#[cfg(feature = "writebackup")]
+use crate::RustPwMan;
+
+
+#[cfg(feature = "writebackup")]
+pub fn write_backup_file(data: &Vec<u8>) -> std::io::Result<()> {
+    let backup_file = match RustPwMan::get_backup_file_name() {
+        None => {
+            return Err(std::io::Error::new(std::io::ErrorKind::Other, "Unable to determine path of backup file"))
+        },
+        Some(p) => p
+    };
+
+    fs::write(backup_file, data)?;
+
+    return Ok(())
+}
 
 pub fn main(data_file_name: String, default_sec_bits: usize, derive_func: KeyDeriver, deriver_id: fcrypt::KdfId, default_pw_gen: GenerationStrategy, 
             paste_cmd: String, copy_cmd: String, make_default: persist::PersistCreator, crypt_gen: Box<dyn Fn() -> CryptorGen + Send + Sync>) {
@@ -50,7 +69,18 @@ pub fn main(data_file_name: String, default_sec_bits: usize, derive_func: KeyDer
     // stuff to run after successfull password entry
     let pw_callback = Box::new(move |s: &mut Cursive, password: &String, pw_cached: bool| {
         let p_cb = make_default(&capture_file_name);
-        let jots_store = jots::Jots::new(derive_func, deriver_id, crypt_gen());
+        let mut jots_store = jots::Jots::new(derive_func, deriver_id, crypt_gen());
+        
+        #[cfg(feature = "writebackup")]
+        {
+            jots_store.backup_cb = Some(write_backup_file);
+        }
+
+        #[cfg(not(feature = "writebackup"))]
+        {
+            jots_store.backup_cb = None;
+        }        
+        
         let f_name = capture_file_name.clone();
 
         let state = AppState::new(jots_store, &f_name, default_sec_bits, default_pw_gen, &paste_cmd, &copy_cmd, p_cb, pw_cached);

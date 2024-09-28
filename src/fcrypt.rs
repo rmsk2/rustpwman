@@ -83,10 +83,12 @@ pub trait Cryptor {
         return self.from_dyn_reader(&mut reader);
     }
 
-    fn retrieve(&mut self, p: &mut SendSyncPersister) -> std::io::Result<Vec<u8>> {
+    fn retrieve(&mut self, p: &mut SendSyncPersister) -> std::io::Result<(Vec<u8>, Vec<u8>)> {
         let data = *p.retrieve()?;
 
-        return self.from_dyn_reader(&mut data.as_slice());
+        let parsed_data = self.from_dyn_reader(&mut data.as_slice())?;
+
+        return Ok((parsed_data, data));
     } 
 }
 

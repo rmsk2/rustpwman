@@ -28,6 +28,7 @@ use fcrypt::Cryptor;
 
 
 pub type CryptorGen = Box<dyn Fn(KeyDeriver, KdfId) -> Box<dyn Cryptor>  + Send + Sync>;
+pub type BackupCallback = fn(&Vec<u8>) -> std::io::Result<()>;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct KvEntry {
@@ -85,7 +86,8 @@ pub struct Jots {
     pub kdf_id: fcrypt::KdfId,
     pub dirty: bool,
     pub undoer: UndoRepo<String, String>,
-    pub cr_gen: CryptorGen
+    pub cr_gen: CryptorGen,
+    pub backup_cb: Option<BackupCallback>
 }
 
 impl Jots {
@@ -96,7 +98,8 @@ impl Jots {
             kdf_id: kdf_id,
             dirty: false,
             undoer: UndoRepo::<String, String>::new(),
-            cr_gen: g
+            cr_gen: g,
+            backup_cb: None
         };
     }
 
@@ -292,7 +295,13 @@ impl Jots {
     pub fn retrieve(&mut self, p: &mut SendSyncPersister, password: &str) -> std::io::Result<()> {
         let mut ctx = (self.cr_gen)(self.kdf, self.kdf_id);
 
-        let data = ctx.retrieve(p)?;
+        let (data, raw_data) = ctx.retrieve(p)?;
+
+        if let Some(cb) = self.backup_cb {
+            // ignore result
+            _ = cb(&raw_data);
+        }
+
         let plain_data = match ctx.decrypt(password, &data) {
             Err(e) => { return Err(Error::new(ErrorKind::Other, format!("{:?}", e))); },
             Ok(d) => d

@@ -78,6 +78,9 @@ fn make_feature_string() -> String {
     #[cfg(feature = "chacha20")]
     msg_str.push_str("- ChaCha20Poly1305\n");
 
+    #[cfg(feature = "writebackup")]
+    msg_str.push_str("- writebackup\n");
+
     if msg_str == "" {
         msg_str.push_str("-- None --");
     }
