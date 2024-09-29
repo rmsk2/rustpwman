@@ -10,7 +10,7 @@ over SSH.
 Under Linux and macOS use `cargo build --release` to build with all features enabled. Under Windows you should call the batch file `build_win.bat` from a 
 Visual Studio Developer prompt for this purpose. On top of that there is a separate section in this README that deals with building under Windows. If you want
 a minimal set of features (and therefore a minimal set of dependencies) you can use `cargo build --release --no-default-features` under Linux, macOS and Windows.
-In this case the password cache, support for WebDAV and additional crypto algorithms are not available.
+In this case the password cache, support for WebDAV, additional crypto algorithms and the automatic local backup feature are not available.
 
 If you have an older version of this repo on your  machine you need to perform a `cargo update` after pulling this release otherwise the official version 0.21 of 
 cursive will not build. I am also using the as of today most current version 1.80 of `rustc`. 
