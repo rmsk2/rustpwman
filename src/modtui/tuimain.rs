@@ -50,9 +50,7 @@ pub fn write_backup_file(data: &Vec<u8>) -> std::io::Result<()> {
         Some(p) => p
     };
 
-    fs::write(backup_file, data)?;
-
-    return Ok(())
+    return fs::write(backup_file, data);
 }
 
 pub fn main(data_file_name: String, default_sec_bits: usize, derive_func: KeyDeriver, deriver_id: fcrypt::KdfId, default_pw_gen: GenerationStrategy, 
