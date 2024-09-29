@@ -309,7 +309,7 @@ The good news is that it works and it even works well. I have tested the `pancur
 uses a binding to a C library and requires an [installed C compiler](https://github.com/ihalila/pdcurses-sys) in order to build. On the other hand Rust itself is dependent on a C 
 compiler when used under Windows. 
 
-In order to build `rustpwman` with all optional features you have to use the command `cargo build --release --no-default-features --features pwmanclientwin,chacha20,webdav`. 
+In order to build `rustpwman` with all optional features you have to use the command `cargo build --release --no-default-features --features pwmanclientwin,chacha20,webdav,writebackup`. 
 Alternatively you can call the batch file `build_win.bat` which executes this command and calls `build_paste_utf8.bat` (see below). If you do not care about the 
 password cache, WebDAV or the additional ciphers use `cargo build --release --no-default-features`. You should additionally build the `paste_utf8.exe` tool by 
 running `build_paste_utf8.bat` in a Visual Studio developer prompt. This tool enables you to paste the clipboard contents while editing an entry and to copy an entry which
