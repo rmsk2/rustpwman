@@ -26,6 +26,8 @@ pub fn window(s: &mut Cursive, state: AppState, sndr: Arc<Sender<String>>) {
     let msg = "ToDo: Implement export feature";
     let sndr_ok = sndr.clone();
     let sndr_cancel = sndr.clone();
+    let shared_state: Arc<Mutex<AppState>> = Arc::new(Mutex::new(state));
+    let state_ok = shared_state.clone();
 
     s.add_layer(
         Dialog::text(msg)
@@ -35,8 +37,16 @@ pub fn window(s: &mut Cursive, state: AppState, sndr: Arc<Sender<String>>) {
                 pwman_quit(s, sndr_ok.clone(), String::from(""))
             })
             .button("Ok", move |s| {
+                let test: String;
+                
+                // Artificial scope to enforce unlock()
+                {
+                    let st = state_ok.lock().unwrap();
+                    test = st.copy_command.clone();
+                }
+
                 s.pop_layer();
-                pwman_quit(s, sndr_cancel.clone(), String::from(""))
+                pwman_quit(s, sndr_cancel.clone(), test)
             }),
     );   
 }
