@@ -24,13 +24,19 @@ use super::pwman_quit;
 
 pub fn window(s: &mut Cursive, state: AppState, sndr: Arc<Sender<String>>) {
     let msg = "ToDo: Implement export feature";
+    let sndr_ok = sndr.clone();
+    let sndr_cancel = sndr.clone();
 
     s.add_layer(
         Dialog::text(msg)
             .title("Rustpwman")
+            .button("Cancel", move |s| {
+                s.pop_layer();
+                pwman_quit(s, sndr_ok.clone(), String::from(""))
+            })
             .button("Ok", move |s| {
                 s.pop_layer();
-                pwman_quit(s, sndr.clone(), String::from(""))
+                pwman_quit(s, sndr_cancel.clone(), String::from(""))
             }),
     );   
 }
