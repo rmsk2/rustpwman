@@ -28,6 +28,7 @@ mod tuiundo;
 mod copy;
 mod open;
 mod info;
+mod export;
 pub mod tuimain;
 
 pub const PW_MAX_SEC_LEVEL: usize = 24;

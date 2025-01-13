@@ -37,7 +37,7 @@ const OBFUSCATION_ENV_VAR: &str = "RUSTPWMAN_OBFUSCATION";
 
 use std::env;
 use dirs;
-use clap::{Arg, Command};
+use clap::{Arg, Command, ArgAction};
 use fcrypt::CipherId;
 use modtui::DEFAULT_PASTE_CMD;
 use modtui::DEFAULT_COPY_CMD;
@@ -63,6 +63,7 @@ const ARG_OUTPUT_FILE: &str = "outputfile";
 const ARG_CONFIG_FILE: &str = "cfgfile";
 const ARG_KDF: &str = "kdf";
 const ARG_CIPHER: &str = "cipher";
+const ARG_EXPORT: &str = "export";
 #[cfg(not(feature = "chacha20"))]
 const SINGLE_CIPHER_DEFAULT: CipherId = CipherId::Aes256Gcm;
 #[cfg(feature = "chacha20")]
@@ -456,7 +457,7 @@ impl RustPwMan {
                 let persist_closure = self.make_persist_creator(&u, &p, &s, &data_file_name);
 
                 modtui::tuimain::main(data_file_name, self.default_sec_level, self.default_deriver, self.default_deriver_id, 
-                                      self.default_pw_gen, self.paste_command.clone(), self.copy_command.clone(), persist_closure, cr_gen_gen);
+                                      self.default_pw_gen, self.paste_command.clone(), self.copy_command.clone(), persist_closure, cr_gen_gen, gui_matches.get_flag(ARG_EXPORT));
             },
             None => {
                 eprintln!("Password file name missing");
@@ -615,7 +616,12 @@ fn main() {
                     .num_args(1)
                     .help("Name of encrypted data file"))                   
                 .arg(add_kdf_param())
-                .arg(add_cipher_param()))
+                .arg(add_cipher_param())
+                .arg(Arg::new(ARG_EXPORT)
+                     .long(ARG_EXPORT)
+                     .required(false)
+                     .action(ArgAction::SetTrue)
+                     .help("Start in export mode")))
         .subcommand(
             Command::new(COMMAND_CONFIG)
                 .about("Change configuration")        

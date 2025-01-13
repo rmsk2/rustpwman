@@ -37,6 +37,7 @@ use super::pwentry;
 #[cfg(feature = "pwmanclient")]
 use super::cache;
 use super::init;
+use super::export;
 #[cfg(feature = "writebackup")]
 use crate::RustPwMan;
 
@@ -54,7 +55,7 @@ pub fn write_backup_file(data: &Vec<u8>) -> std::io::Result<()> {
 }
 
 pub fn main(data_file_name: String, default_sec_bits: usize, derive_func: KeyDeriver, deriver_id: fcrypt::KdfId, default_pw_gen: GenerationStrategy, 
-            paste_cmd: String, copy_cmd: String, make_default: persist::PersistCreator, crypt_gen: Box<dyn Fn() -> CryptorGen + Send + Sync>) {
+            paste_cmd: String, copy_cmd: String, make_default: persist::PersistCreator, crypt_gen: Box<dyn Fn() -> CryptorGen + Send + Sync>, export: bool) {
     let (tx, rx): (Sender<String>, Receiver<String>) = mpsc::channel();
 
     let capture_file_name = data_file_name.clone();
@@ -86,16 +87,25 @@ pub fn main(data_file_name: String, default_sec_bits: usize, derive_func: KeyDer
         // No else branch is neccessary as open_file performs error handling
         if let Some(state_after_open) = open::storage(s, password, state) {
             s.pop_layer(); // Close password, file init or confirmation dialog
-            main_window(s, state_after_open, sender_main.clone());
+            if !export {
+                main_window(s, state_after_open, sender_main.clone());
+            } else {
+                export::window(s, state_after_open, sender_main.clone());
+            }            
         }
     });
 
-    // Add a layer for the password entry dialog
-    #[cfg(feature = "pwmanclient")]
-    setup_password_entry_with_pwman(&mut siv, sender, pw_callback, &p);
+    if !export {
+        // Add a layer for the password entry dialog
+        #[cfg(feature = "pwmanclient")]
+        setup_password_entry_with_pwman(&mut siv, sender, pw_callback, &p);
 
-    #[cfg(not(feature = "pwmanclient"))]
-    setup_password_entry_without_pwman(&mut siv, sender, pw_callback, &p);
+        #[cfg(not(feature = "pwmanclient"))]
+        setup_password_entry_without_pwman(&mut siv, sender, pw_callback, &p);
+    } else {
+        // force user to enter the password
+        setup_password_entry_without_pwman(&mut siv, sender, pw_callback, &p);
+    }
 
     // run password entry dialog
     siv.run();
@@ -165,8 +175,6 @@ fn setup_password_entry_with_pwman(siv: &mut Cursive, sender: Arc<Sender<String>
     }
 }
 
-
-#[cfg(not(feature = "pwmanclient"))]
 fn setup_password_entry_without_pwman(siv: &mut Cursive, sender: Arc<Sender<String>>, pw_callback: Box<dyn Fn(&mut Cursive, &String, bool) + Send + Sync>, p: &SendSyncPersister) {
     let does_exist = match p.does_exist() {
         Ok(b) => b,
