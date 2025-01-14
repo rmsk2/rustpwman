@@ -136,7 +136,7 @@ pub fn window(s: &mut Cursive, state: AppState, sndr: Arc<Sender<String>>) {
 
         let data :String = create_html(&state.store);
 
-        // Create artificial scope to make sure files is dropped and thereby closed as early as possible
+        // Create artificial scope to make sure file is dropped and thereby closed as early as possible
         {
             let mut f = match fs::File::create(&file_name.as_str()) {
                 Ok(opened) => {

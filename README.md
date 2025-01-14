@@ -109,7 +109,14 @@ use `paste_utf8.exe -c ` (see below) instead of `clip.exe`.
 ### Quit
 
 Through this menu entry the program can be closed. Before ending the program it is checked if there are unsaved changes. If there are then the user is warned correspondingly and has the 
-possibility to not end the program in order to save the changed state. 
+possibility to not end the program in order to save the changed state.
+
+### Exporting the contents as HTML
+
+When using `rustpwman gui` with the `--export` option it is possible to export the whole contents of the password file in plaintext HTML format. The
+purpose of this feature is to create an offline backup in a human readable format which can either be stored digitally or in printed form.
+When utilizing this feature the user is forced to enter the password of the data file independent of a possibly cached password. After a 
+successfull data export the program is stopped.
 
 ## The Entry menu
 
