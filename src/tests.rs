@@ -334,7 +334,6 @@ pub fn test_jots_iter_empty() {
     assert_eq!(count, -1);
 }
 
-
 #[cfg(test)]
 fn vec_to_hex(buf: &Vec<u8>) -> String {
     let mut result = String::from("");
