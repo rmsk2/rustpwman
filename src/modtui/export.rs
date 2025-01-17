@@ -110,9 +110,7 @@ fn check_cached_password(p: &SendSyncPersister, ref_pw: &Option<String>) -> bool
 
     // If there is no pwman client, then there is no cached password
     let pwman_client = match cache::make_pwman_client(store_id) {
-        Ok(c) => {
-            c
-        },
+        Ok(c) => c,
         Err(_) => {                
             return false;
         }
