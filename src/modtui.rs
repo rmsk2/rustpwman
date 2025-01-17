@@ -312,9 +312,8 @@ fn visualize_if_modified(siv: &mut Cursive, state: Arc<Mutex<AppState>>) {
     }
 }
 
-fn main_window(s: &mut Cursive, state: AppState, sndr: Arc<Sender<String>>) {
+fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Sender<String>>) {
     let select_view = SelectView::new();
-    let shared_state: Arc<Mutex<AppState>> = Arc::new(Mutex::new(state));
 
     let state_temp_add = shared_state.clone();
     let state_temp_save = shared_state.clone();

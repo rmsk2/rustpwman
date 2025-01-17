@@ -14,15 +14,18 @@ limitations under the License. */
 
 use std::fs;
 use std::io::Write;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::sync::mpsc::Sender;
 
 use cursive::Cursive;
 use cursive::views::{Dialog, LinearLayout, TextView, EditView};
 use cursive::traits::*;
+#[cfg(feature = "pwmanclient")]
+use super::cache;
+#[cfg(feature = "pwmanclient")]
+use crate::persist::SendSyncPersister;
 
-
-use super::AppState;
+use super::{main_window, AppState};
 use super::pwman_quit;
 use super::show_message;
 use crate::jots;
@@ -65,16 +68,65 @@ const FOOTER: &str = r#"
 </html>
 "#;
 
-fn success_message(siv: &mut Cursive, msg: &str, sndr: Arc<Sender<String>>) {
+fn success_message(siv: &mut Cursive, msg: &str, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Sender<String>>) {
     siv.add_layer(
         Dialog::text(msg)
             .title("Rustpwman")
-            .button("Ok", move |s| {
-                s.pop_layer();
-                s.pop_layer();
-                pwman_quit(s, sndr.clone(), String::from("")) 
+            .button("Ok", move |siv| {
+                siv.pop_layer();
+                siv.pop_layer();
+                //pwman_quit(s, sndr.clone(), String::from("")) 
+
+                #[cfg(feature = "pwmanclient")]
+                {
+                    // Ensure that state.pw_is_chached is correct
+                    let mut state = shared_state.lock().unwrap();
+                    let pw_state = check_cached_password(&state.persister, &state.password);
+                    state.pw_is_chached = pw_state;
+                }
+
+                main_window(siv, shared_state.clone(), sndr.clone());
             }),
     );
+}
+
+#[cfg(feature = "pwmanclient")]
+fn check_cached_password(p: &SendSyncPersister, ref_pw: &Option<String>) -> bool {
+    // At this point this operation should not fail
+    let ref_pw = match ref_pw {
+        Some(p) => p,
+        None => {
+            return false;
+        }
+    };
+    
+    // At this point this operation should not fail
+    let store_id = match p.get_canonical_path() {
+        Ok(s) => s,
+        Err(_) => {
+            return false;
+        }
+    };        
+
+    // If there is no pwman client, then there is no cached password
+    let pwman_client = match cache::make_pwman_client(store_id) {
+        Ok(c) => {
+            c
+        },
+        Err(_) => {                
+            return false;
+        }
+    };
+
+    // Make sure password found in state matches the one stored in pwman
+    let pw_to_test = match pwman_client.get_password() {
+        Ok(pw_to_test) => pw_to_test,
+        Err(_) => {
+            return false;
+        }
+    };
+
+    return ref_pw == &pw_to_test;
 }
 
 fn create_html(data: &jots::Jots) -> String {
@@ -84,21 +136,21 @@ fn create_html(data: &jots::Jots) -> String {
     res.push_str(HEADER_END);
     
     for key in data {
-        let mut line = String::from("<tr>");
+        let mut line = String::from("<tr>\n");
 
         let text = match data.get(key) {
             Some(t) => t,
             None => { return res }
         };
 
-        line.push_str(format!("<td class=\"big\">{}</td>", key).as_str());
+        line.push_str(format!("<td class=\"big\">{}</td>\n", key).as_str());
 
         let mut contents = text.clone();
         contents = contents.replace("\n", "</br>");
         contents = contents.replace(" ", "&nbsp");
 
-        line.push_str(format!("<td><tt class=\"big\">{}</tt></td>", contents).as_str());
-        line.push_str("</tr>");
+        line.push_str(format!("<td><tt class=\"big\">{}</tt></td>\n", contents).as_str());
+        line.push_str("</tr>\n");
 
         res.push_str(line.as_str());
     }
@@ -108,7 +160,7 @@ fn create_html(data: &jots::Jots) -> String {
     return res;
 }
 
-pub fn window(s: &mut Cursive, state: AppState, sndr: Arc<Sender<String>>) {
+pub fn window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Sender<String>>) {
     let sndr_ok = sndr.clone();
     let sndr_cancel = sndr.clone();
 
@@ -117,7 +169,7 @@ pub fn window(s: &mut Cursive, state: AppState, sndr: Arc<Sender<String>>) {
     .padding_lrtb(2, 2, 1, 1)
     .content(
         LinearLayout::vertical()
-        .child(TextView::new("Please enter the name of a file to save exported data.\n\n"))
+        .child(TextView::new("Please enter file name for saving exported data.\n\n"))
         .child(
             LinearLayout::horizontal()
                 .child(TextView::new("Filename: "))
@@ -134,7 +186,13 @@ pub fn window(s: &mut Cursive, state: AppState, sndr: Arc<Sender<String>>) {
             None => { show_message(s, "Unable to read file name"); return }
         }; 
 
-        let data :String = create_html(&state.store);
+        let data :String;
+
+        // create artificial scope to ensure unlock of global state
+        {
+            let state = shared_state.lock().unwrap();
+            data = create_html(&state.store);
+        }
 
         // Create artificial scope to make sure file is dropped and thereby closed as early as possible
         {
@@ -154,7 +212,7 @@ pub fn window(s: &mut Cursive, state: AppState, sndr: Arc<Sender<String>>) {
             }
         }
 
-        success_message(s, "Export successfull. Press OK to quit.", sndr_ok.clone());
+        success_message(s, "Export successfull. Press OK to continue.",shared_state.clone(), sndr_ok.clone());
     })
     .button("Cancel", move |s| {                 
         s.pop_layer();

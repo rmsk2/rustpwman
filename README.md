@@ -1,7 +1,7 @@
 # rustpwman
 
 `rustpwman` is a simple password manager written in Rust using the [cursive TUI library](https://github.com/gyscos/cursive). You may wonder why someone writes a TUI 
-application in 2024. The main reason is portability without creating a dependency to any of the usual GUI toolkits. `rustpwman` should work on macOS, Linux and Windows and 
+application in 2025. The main reason is portability without creating a dependency to any of the usual GUI toolkits. `rustpwman` should work on macOS, Linux and Windows and 
 it should compile without the necessity to install more or less exotic (or maybe even toxic) toolchains. Additionally I like the retro appeal of it and it can be used
 over SSH.
 
@@ -113,10 +113,10 @@ possibility to not end the program in order to save the changed state.
 
 ### Exporting the contents as HTML
 
-When using `rustpwman gui` with the `--export` option it is possible to export the whole contents of the password file in plaintext HTML format. The
-purpose of this feature is to create an offline backup in an easily readable format which can either be stored digitally or in printed form.
-When utilizing this feature the user is forced to enter the password of the data file independent of a possibly cached password. After a 
-successfull data export the program is stopped.
+When using `rustpwman gui` with the `--backup` option it is possible to export the whole contents of the password file in plaintext to an HTML file. The purpose
+of this feature is to allow the user to create an offline backup of the password data in a widely supported file format which can either be stored digitally or in
+printed form. In order to mirror the behaviour of the `rustpwman dec` command the user is forced to enter the password of the data file independent of a possibly cached
+password. After a successfull data export `rustpwman` starts up in the usual fashion.
 
 ## The Entry menu
 
@@ -396,7 +396,7 @@ This section provides information about stuff which is in my view suboptimal and
 - At the moment I do not attempt to overwrite memory that holds sensitive information when `rustpwman` is closed. This may be a problem when `rustpwman` is used in an environment where an attacker can gain access to memory previously used by `rustpwman`, i.e. when sharing a machine with an attacker.
 - When the list of entries changes (after an add or delete) it may be possible that the entry selected after the change is not visible in the `ScrollView` on the left. I was not successfull in forcing cursive to scroll to the newly selected entry. This is most probably my fault and meanwhile an appropriate warning dialog is displayed.
 - I am fairly new to Rust. I guess it shows in the code.
-- On MacOS using the mouse scroll wheel does not work at the moment. This does not happen on Linux or Windows.
+- On macOS I am unable to use `ncurses` as the console backend because the version `cursive` expects seems to be incompatible with the one provided by the latest macOS. The default `crossterm` backend has problems with rendering colours and in the alternative `pancurses` backend the mouse scroll wheel does not work. So I decided that correct rendering of the UI is more important than the scroll wheel.
 - On Windows a spurious Escape sequence `ESC[?1002l` is printed to stdout when the TUI application stops. This does not happen on Linux or MacOS. By piping the output of `rustpwman` to `winfilter.exe` you can remove this unwanted data from the output.
 - In non `--release` builds scrypt with the chosen parameters is *extremely* slow
 

@@ -17,7 +17,7 @@ limitations under the License. */
 use std::fs;
 use std::sync::mpsc::{Sender, Receiver};
 use std::sync::mpsc;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use cursive::Cursive;
 use cursive::views::Dialog;
@@ -86,11 +86,13 @@ pub fn main(data_file_name: String, default_sec_bits: usize, derive_func: KeyDer
 
         // No else branch is neccessary as open_file performs error handling
         if let Some(state_after_open) = open::storage(s, password, state) {
+            let shared_state: Arc<Mutex<AppState>> = Arc::new(Mutex::new(state_after_open));
+            
             s.pop_layer(); // Close password, file init or confirmation dialog
             if !export {
-                main_window(s, state_after_open, sender_main.clone());
+                main_window(s, shared_state.clone(), sender_main.clone());
             } else {
-                export::window(s, state_after_open, sender_main.clone());
+                export::window(s, shared_state.clone(), sender_main.clone());
             }            
         }
     });

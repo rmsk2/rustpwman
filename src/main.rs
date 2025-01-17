@@ -63,7 +63,7 @@ const ARG_OUTPUT_FILE: &str = "outputfile";
 const ARG_CONFIG_FILE: &str = "cfgfile";
 const ARG_KDF: &str = "kdf";
 const ARG_CIPHER: &str = "cipher";
-const ARG_EXPORT: &str = "export";
+const ARG_EXPORT: &str = "backup";
 #[cfg(not(feature = "chacha20"))]
 const SINGLE_CIPHER_DEFAULT: CipherId = CipherId::Aes256Gcm;
 #[cfg(feature = "chacha20")]
@@ -618,10 +618,10 @@ fn main() {
                 .arg(add_kdf_param())
                 .arg(add_cipher_param())
                 .arg(Arg::new(ARG_EXPORT)
-                     .long(ARG_EXPORT)
-                     .required(false)
-                     .action(ArgAction::SetTrue)
-                     .help("Start in export mode")))
+                    .long(ARG_EXPORT)
+                    .required(false)
+                    .action(ArgAction::SetTrue)
+                    .help("Allow to create a plaintext backup during startup")))
         .subcommand(
             Command::new(COMMAND_CONFIG)
                 .about("Change configuration")        

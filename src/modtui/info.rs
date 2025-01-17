@@ -92,7 +92,7 @@ fn make_feature_string() -> String {
 }
 
 pub fn about(s: &mut Cursive) {    
-    let msg_str = format!("A simple password manager\n\nWritten by Martin Grap in 2021-2024\n\nVersion {}\n\nhttps://github.com/rmsk2/rustpwman\n\n", VERSION_STRING);
+    let msg_str = format!("A simple password manager\n\nWritten by Martin Grap in 2021-2025\n\nVersion {}\n\nhttps://github.com/rmsk2/rustpwman\n\n", VERSION_STRING);
 
     let res = Dialog::new()
     .title("Rustpwman")
