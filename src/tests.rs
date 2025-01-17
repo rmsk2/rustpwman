@@ -319,6 +319,22 @@ pub fn test_jots_iter() {
     assert_eq!(count, 6);
 }
 
+#[test]
+pub fn test_jots_iter_empty() {    
+    let (d, i) = fcrypt::KdfId::Sha256.to_named_func();
+    let j = jots::Jots::new_id(d, i, Box::new(make_aes_gcm_cryptor));
+
+    let mut count = -1;
+
+    for i in &j {
+        println!("{}", i);
+        count += 1;
+    }
+
+    assert_eq!(count, -1);
+}
+
+
 #[cfg(test)]
 fn vec_to_hex(buf: &Vec<u8>) -> String {
     let mut result = String::from("");
