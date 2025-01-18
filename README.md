@@ -58,6 +58,10 @@ Use `rustpwman <command> -h` to get additional help for each command.
 # Functionality of the `gui` command
 
 This is the command you will use the most. It asks for a password and then presents the text user interface which allows you to manage the password data.
+When using `rustpwman gui` with the `--backup` option it is possible to export the whole contents of the password file in plaintext to an HTML file. The purpose
+of this feature is to allow the user to create an offline backup of the password data in a widely supported file format which can either be stored digitally or in
+printed form. In order to mirror the behaviour of the `rustpwman dec` command the user is forced to enter the password of the data file independent of a possibly cached
+password. After a successfull data export `rustpwman` starts up in the usual fashion.
 
 ## The File menu
 The `File` menu contains the following entries.
@@ -110,13 +114,6 @@ use `paste_utf8.exe -c ` (see below) instead of `clip.exe`.
 
 Through this menu entry the program can be closed. Before ending the program it is checked if there are unsaved changes. If there are then the user is warned correspondingly and has the 
 possibility to not end the program in order to save the changed state.
-
-### Exporting the contents as HTML
-
-When using `rustpwman gui` with the `--backup` option it is possible to export the whole contents of the password file in plaintext to an HTML file. The purpose
-of this feature is to allow the user to create an offline backup of the password data in a widely supported file format which can either be stored digitally or in
-printed form. In order to mirror the behaviour of the `rustpwman dec` command the user is forced to enter the password of the data file independent of a possibly cached
-password. After a successfull data export `rustpwman` starts up in the usual fashion.
 
 ## The Entry menu
 
