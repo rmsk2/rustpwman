@@ -17,8 +17,9 @@ use std::sync::{Arc, Mutex};
 
 use cursive::Cursive;
 use super::AppState;
-use crate::modtui::get_selected_entry_name;
-use crate::modtui::show_message;
+use super::get_selected_entry_name;
+use super::show_message;
+use super::format_pw_entry;
 
 
 pub fn add(s: &mut Cursive, state_for_q_add: Arc<Mutex<AppState>>) {
@@ -59,7 +60,8 @@ fn get_entries_int(state_for_q_clear: Arc<Mutex<AppState>>, clear: bool) -> Stri
             }
         };
 
-        res.push_str(format!("-------- {} --------\n{}\n", i, entry_data).as_str());
+        res.push_str(format_pw_entry(i, &entry_data).as_str());
+        res.push_str("\n");
     }
 
     if clear {

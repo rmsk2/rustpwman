@@ -20,6 +20,7 @@ use super::show_message;
 use super::get_selected_entry_name;
 use crate::clip::set_clipboard;
 use super::queue;
+use super::format_pw_entry;
 
 pub fn entry(s: &mut Cursive, state_for_copy_entry: Arc<Mutex<AppState>>) {
     let entry_name = match get_selected_entry_name(s) {
@@ -35,7 +36,7 @@ pub fn entry(s: &mut Cursive, state_for_copy_entry: Arc<Mutex<AppState>>) {
         None => { show_message(s, "Unable to read value of entry"); return }
     };
 
-    h = format!("-------- {} --------\n{}", entry_name, h);
+    h = format_pw_entry(&entry_name, &h);
     let mut content = queue::get_entries(state_for_copy_entry.clone());
     content.push_str(h.as_str());
 

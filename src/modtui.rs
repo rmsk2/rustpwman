@@ -314,6 +314,10 @@ fn visualize_if_modified(siv: &mut Cursive, state: Arc<Mutex<AppState>>) {
     }
 }
 
+fn format_pw_entry(key: &String, value: &String) -> String {
+    return format!("-------- {} --------\n{}", key, value);
+}
+
 fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Sender<String>>) {
     let select_view = SelectView::new();
 
@@ -394,7 +398,7 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
                     None => { show_message(s, "Unable to read entry value"); return } 
                 };
     
-                out_str.push_str(format!("-------- {} --------\n{}", key, value).as_str());
+                out_str.push_str(format_pw_entry(&key, &value).as_str());
                 dirty_flag = store.is_dirty();
             }
 
