@@ -19,6 +19,7 @@ use cursive::Cursive;
 use super::show_message;
 use super::get_selected_entry_name;
 use crate::clip::set_clipboard;
+use super::queue;
 
 pub fn entry(s: &mut Cursive, state_for_copy_entry: Arc<Mutex<AppState>>) {
     let entry_name = match get_selected_entry_name(s) {
@@ -29,19 +30,21 @@ pub fn entry(s: &mut Cursive, state_for_copy_entry: Arc<Mutex<AppState>>) {
         }
     };
 
-    let mut content = match state_for_copy_entry.lock().unwrap().store.get(&entry_name) {
+    let mut h = match state_for_copy_entry.lock().unwrap().store.get(&entry_name) {
         Some(c) => c,
         None => { show_message(s, "Unable to read value of entry"); return }
     };
 
-    content = format!("-------- {} --------\n{}", entry_name, content);
+    h = format!("-------- {} --------\n{}", entry_name, h);
+    let mut content = queue::get_entries(state_for_copy_entry.clone());
+    content.push_str(h.as_str());
 
     match set_clipboard(String::from(state_for_copy_entry.lock().unwrap().copy_command.clone()), Box::new(content)) {
         true => {
             show_message(s, "Unable to set clipboad");
         },
         false => {
-            show_message(s, "Contents of entry copied to clipboard");
+            show_message(s, "Contents of queue and selected entry copied to clipboard");
         }
     }
 }

@@ -175,6 +175,25 @@ Via this menu entry the contents of the currently selected password entry can be
 
 This allows to load the contents of a (text-)file into an entry. The current contents of the entry is overwritten.
 
+## The Queue menu
+
+In version 2.2.0 the notion of an entry queue has been introduced to `rustpwman`. The idea behind this is that at certain times it is known beforehand that several entries of the
+password file will be needed to complete a task. Without this feature several copy and paste operations including switching to another application are necessary to retrieve the
+desired information. Using the entry queue allows password file entries to be marked for being retrieved **in addition** to the currently selected entry when performing a 
+`Copy to clipboard` or `Quit and print` operation. After this operation is completed the queue is emptied.
+
+### Add to queue
+
+Use this menu entry to mark the currently selected password file entry for being retrieved when a `Copy to clipboard` or `Quit and print` operation occurs.
+
+### Show queue
+
+Select this menu entry to view a list of currently queued password file entries.
+
+### Clear queue
+
+Via this menu entry the queue can be emptied.
+
 # A note about using the clipboard
 
 It has to be noted that copying and pasting text in its most basic form is not possible in a terminal window while the cursive application is running. This in turn is probably 

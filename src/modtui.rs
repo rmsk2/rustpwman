@@ -29,6 +29,7 @@ mod copy;
 mod open;
 mod info;
 mod export;
+mod queue;
 pub mod tuimain;
 
 pub const PW_MAX_SEC_LEVEL: usize = 24;
@@ -75,6 +76,7 @@ pub struct AppState {
     persister: SendSyncPersister, 
     last_custom_selection: String,
     pw_is_chached: bool,
+    entry_queue: Vec<String>,
 }
 
 impl AppState {
@@ -90,7 +92,8 @@ impl AppState {
             copy_command: copy_cmd.clone(),
             persister: p,
             last_custom_selection: String::from(""),
-            pw_is_chached: is_pw_cached
+            pw_is_chached: is_pw_cached,
+            entry_queue: Vec::new()
         }
     }
 
@@ -331,6 +334,9 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
     let sender = sndr.clone();
     let sender2 = sndr.clone();
     let state_temp_copy = shared_state.clone();
+    let state_temp_q_add = shared_state.clone();
+    let state_temp_q_clear = shared_state.clone();
+    let state_temp_q_show = shared_state.clone();
 
     let state_for_callback = shared_state.clone();
     let state_for_fill_tui = shared_state.clone();
@@ -376,7 +382,7 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
             };
 
             let dirty_flag: bool;
-            let out_str: String;
+            let mut out_str = queue::get_entries(state_temp_quit_print.clone());
             
             // Create artificial scope to ensure unlock of Mutex
             {
@@ -388,7 +394,7 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
                     None => { show_message(s, "Unable to read entry value"); return } 
                 };
     
-                out_str = format!("-------- {} --------\n{}", key, value);
+                out_str.push_str(format!("-------- {} --------\n{}", key, value).as_str());
                 dirty_flag = store.is_dirty();
             }
 
@@ -431,7 +437,21 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
             })                    
             .leaf("Load Entry ...", move |s| {
                 load::entry(s, state_temp_load.clone())  
-            }));        
+            })
+        )
+        .add_subtree("Queue", 
+            Tree::new()
+            .leaf("Add to queue", move |s| {
+                queue::add(s, state_temp_q_add.clone());
+            })
+            .leaf("Show queue ...", move |s| {
+                queue::show(s, state_temp_q_show.clone());
+            })
+            .delimiter()        
+            .leaf("Clear queue", move |_s| {
+                queue::clear(state_temp_q_clear.clone());
+            })            
+        );        
 
     s.set_autohide_menu(false);
     s.add_global_callback(Key::Esc, |s| s.select_menubar());
