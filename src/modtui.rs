@@ -48,7 +48,7 @@ pub const DEFAULT_COPY_CMD: &str = "xsel -ib";
 use crate::persist::SendSyncPersister;
 use cursive::theme::ColorStyle;
 use cursive::traits::*;
-use cursive::views::{Dialog, LinearLayout, SelectView, TextArea, Panel, NamedView, ScrollView, ResizedView};
+use cursive::views::{Dialog, LinearLayout, SelectView, TextArea, Panel, NamedView, ScrollView, ResizedView, OnEventView};
 use cursive::Cursive;
 use cursive::menu::Tree;
 use cursive::align::HAlign;
@@ -308,10 +308,36 @@ fn visualize_if_modified(siv: &mut Cursive, state: Arc<Mutex<AppState>>) {
     let is_dirty = state.lock().unwrap().store.is_dirty();
 
     if is_dirty {
-        siv.call_on_name("EntrySelectPanel", |view: &mut Panel<NamedView<ScrollView<ResizedView<NamedView<SelectView>>>>>| { view.set_title("Entries *"); } );
+        siv.call_on_name("EntrySelectPanel", |view: &mut Panel<NamedView<ScrollView<ResizedView<OnEventView<NamedView<SelectView>>>>>>| { view.set_title("Entries *"); } );
     } else {
-        siv.call_on_name("EntrySelectPanel", |view: &mut Panel<NamedView<ScrollView<ResizedView<NamedView<SelectView>>>>>| { view.set_title("Entries"); } );
+        siv.call_on_name("EntrySelectPanel", |view: &mut Panel<NamedView<ScrollView<ResizedView<OnEventView<NamedView<SelectView>>>>>>| { view.set_title("Entries"); } );
     }
+}
+
+fn quit_and_print(s: &mut Cursive, state: Arc<Mutex<AppState>>, sndr: Arc<Sender<String>>) {
+    let key = match get_selected_entry_name(s) {
+        Some(k) => k,
+        None => { show_message(s, "Unable to read entry name"); return }
+    };
+
+    let dirty_flag: bool;
+    let mut out_str = queue::get_entries(state.clone());
+    
+    // Create artificial scope to ensure unlock of Mutex
+    {
+        let h = state.lock().unwrap();
+        let store = &(*h).store;
+
+        let value = match store.get(&key) {
+            Some(v) => v,
+            None => { show_message(s, "Unable to read entry value"); return } 
+        };
+
+        out_str.push_str(format_pw_entry(&key, &value).as_str());
+        dirty_flag = store.is_dirty();
+    }
+
+    pwman_quit_with_state(s, sndr.clone(), out_str, dirty_flag, Some(state.clone()))
 }
 
 fn format_pw_entry(key: &String, value: &String) -> String {
@@ -323,7 +349,6 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
 
     let state_temp_add = shared_state.clone();
     let state_temp_save = shared_state.clone();
-    let state_temp_print = shared_state.clone();
     let state_temp_del = shared_state.clone();
     let state_temp_pw = shared_state.clone();
     let state_temp_edit = shared_state.clone();
@@ -335,12 +360,18 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
     let state_temp_info = shared_state.clone();
     let state_temp_quit = shared_state.clone();
     let state_temp_quit_print = shared_state.clone();
+    let state_temp_quit_print2 = shared_state.clone();
     let sender = sndr.clone();
     let sender2 = sndr.clone();
+    let sender3 = sndr.clone();
+    let sender4 = sndr.clone();
     let state_temp_copy = shared_state.clone();
+    let state_temp_copy2 = shared_state.clone();
     let state_temp_q_add = shared_state.clone();
+    let state_temp_q_add2 = shared_state.clone();
     let state_temp_q_clear = shared_state.clone();
     let state_temp_q_show = shared_state.clone();
+    let state_temp_global_quit = shared_state.clone();
 
     let state_for_callback = shared_state.clone();
     let state_for_fill_tui = shared_state.clone();
@@ -379,32 +410,10 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
             tuiundo::undo(s, state_for_undo.clone());
         })                    
         .delimiter()
-        .leaf("Quit and print", move |s| {
-            let key = match get_selected_entry_name(s) {
-                Some(k) => k,
-                None => { show_message(s, "Unable to read entry name"); return }
-            };
-
-            let dirty_flag: bool;
-            let mut out_str = queue::get_entries(state_temp_quit_print.clone());
-            
-            // Create artificial scope to ensure unlock of Mutex
-            {
-                let h = state_temp_print.lock().unwrap();
-                let store = &(*h).store;
-    
-                let value = match store.get(&key) {
-                    Some(v) => v,
-                    None => { show_message(s, "Unable to read entry value"); return } 
-                };
-    
-                out_str.push_str(format_pw_entry(&key, &value).as_str());
-                dirty_flag = store.is_dirty();
-            }
-
-            pwman_quit_with_state(s, sender2.clone(), out_str, dirty_flag, Some(state_temp_quit_print.clone())) 
+        .leaf("Quit and print        F4", move |s| {
+            quit_and_print(s, state_temp_quit_print.clone(), sender2.clone());
         })            
-        .leaf("Quit", move |s| pwman_quit_with_state(s, sender.clone(), String::from(""), shared_state.lock().unwrap().store.is_dirty(), Some(state_temp_quit.clone()) )
+        .leaf("Quit                  F3", move |s| pwman_quit_with_state(s, sender.clone(), String::from(""), shared_state.lock().unwrap().store.is_dirty(), Some(state_temp_quit.clone()) )
     );
 
     // Ok this is really, really hacky but it works. I would have preferred to be able to simply exclude some lines from
@@ -421,12 +430,12 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
         )
         .add_subtree(
             "Entry", Tree::new()
+            .leaf("Copy to clipboard ... F2", move |s| {
+                copy::entry(s, state_temp_copy.clone())
+            })
             .leaf("Edit Entry ...", move |s| {
                 edit::entry(s, state_temp_edit.clone(), None)
-            })
-            .leaf("Copy to clipboard ...", move |s| {
-                copy::entry(s, state_temp_copy.clone())
-            })  
+            }) 
             .leaf("Add Entry ...", move |s| {
                 add::entry(s, state_temp_add.clone());
             })
@@ -445,7 +454,7 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
         )
         .add_subtree("Queue", 
             Tree::new()
-            .leaf("Add to queue", move |s| {
+            .leaf("Add to queue   F1", move |s| {
                 queue::add(s, state_temp_q_add.clone());
             })
             .leaf("Show queue ...", move |s| {
@@ -458,20 +467,33 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
         );        
 
     s.set_autohide_menu(false);
+
     s.add_global_callback(Key::Esc, |s| s.select_menubar());
+    s.add_global_callback(Key::F3, move |s| pwman_quit_with_state(s, sender3.clone(), String::from(""), state_temp_global_quit.lock().unwrap().store.is_dirty(), Some(state_temp_global_quit.clone())));
+    s.add_global_callback(Key::F4, move |s| quit_and_print(s, state_temp_quit_print2.clone(), sender4.clone()));
     
-    let select_view_attributed = select_view
+    let mut event_wrapped_select_view = OnEventView::new(select_view
         .h_align(HAlign::Center)
         .on_select(move |s, item| {
             display_entry(s, state_for_callback.clone(), item, false)
         })
-        .autojump()   
-        .with_name(SELECT_VIEW)
+        .autojump()
+        .with_name(SELECT_VIEW));
+
+    event_wrapped_select_view.set_on_event(Key::F1,  move |s| {
+        queue::add(s, state_temp_q_add2.clone())
+    });
+
+    event_wrapped_select_view.set_on_event(Key::F2, move |s| {
+        copy::entry(s, state_temp_copy2.clone())
+    });    
+
+    let select_view_scrollable = event_wrapped_select_view
         .fixed_width(40)
         .scrollable()
         .with_name(SCROLL_VIEW);
 
-    let entry_select_panel = Panel::new(select_view_attributed)
+    let entry_select_panel = Panel::new(select_view_scrollable)
         .title("Entries")
         .with_name("EntrySelectPanel");
 
