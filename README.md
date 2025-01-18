@@ -98,8 +98,8 @@ file was saved.
 
 ### Quit and print
 
-Selecting this entry ends the program and prints the value of the currently selected entry to the CLI window after the TUI has been closed. About the reasoning behind this idea have 
-a look at the section [A note about using the clipboard](#a-note-about-using-the-clipboard). 
+Selecting this entry ends the program and prints the value of the currently selected entry as well as the values of all queued entries to the CLI window after the TUI has 
+been closed. About the reasoning behind this idea have a look at the section [A note about using the clipboard](#a-note-about-using-the-clipboard). 
 
 Tip: You can pipe the output of `rustpwman` to a program that places the data it reads via stdin in the clipboard. This works even under Windows which offers the `clip` 
 command for this purpose. Under Linux `xsel` can be used and MacOS provides the `pbcopy` command. When you use `clip` under Windows you have to be aware that non ASCII
@@ -149,11 +149,11 @@ The controls to select a custom character set are hidden unless you select the `
 
 ### Copy to clipboard
 
-This menu entry can be used to copy the value of the currently selected password entry to the clipboard. For the reasons described [below](#a-note-about-using-the-clipboard) this 
-feature requires an additional tool which accepts its input via stdin and uses that data to set the clipboard contents. The path to this tool can be confgured by calling
-`rustpwman cfg`. When you use `clip.exe` under Windows for this purpose you have to be aware that non ASCII characters may not be displayed correctly after pasting the clipboard
-data. The reason for this is that `clip.exe` expects a character encoding different from UTF-8 which is the default for Rust. If you want to prevent this problem you can use
-`paste_utf8.exe -c` instead of `clip.exe`.
+This menu entry can be used to copy the value of the currently selected password entry and the values of all queued entries to the clipboard. For the reasons described 
+[below](#a-note-about-using-the-clipboard) this feature requires an additional tool which accepts its input via stdin and uses that data to set the clipboard contents. The path to 
+this tool can be confgured by calling `rustpwman cfg`. When you use `clip.exe` under Windows for this purpose you have to be aware that non ASCII characters may not be displayed 
+correctly after pasting the clipboard data. The reason for this is that `clip.exe` expects a character encoding different from UTF-8 which is the default for Rust. If you want to
+prevent this problem you can use `paste_utf8.exe -c` instead of `clip.exe`.
 
 ### Add entry
 
