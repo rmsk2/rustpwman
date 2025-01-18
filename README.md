@@ -108,12 +108,12 @@ been closed. About the reasoning behind this idea have a look at the section [A 
 Tip: You can pipe the output of `rustpwman` to a program that places the data it reads via stdin in the clipboard. This works even under Windows which offers the `clip` 
 command for this purpose. Under Linux `xsel` can be used and MacOS provides the `pbcopy` command. When you use `clip` under Windows you have to be aware that non ASCII
 characters may not be displayed correctly when pasting the data copied by `clip.exe`. Alternatively you can use the `Copy to clipboard` menu entry for this purpose or 
-use `paste_utf8.exe -c ` (see below) instead of `clip.exe`.
+use `paste_utf8.exe -c ` (see below) instead of `clip.exe`. Instead of selecting this menu entry you can alternatively press F4.
 
 ### Quit
 
 Through this menu entry the program can be closed. Before ending the program it is checked if there are unsaved changes. If there are then the user is warned correspondingly and has the 
-possibility to not end the program in order to save the changed state.
+possibility to not end the program in order to save the changed state. Instead of selecting this menu entry you can alternatively press F3.
 
 ## The Entry menu
 
@@ -150,7 +150,7 @@ This menu entry can be used to copy the value of the currently selected password
 [below](#a-note-about-using-the-clipboard) this feature requires an additional tool which accepts its input via stdin and uses that data to set the clipboard contents. The path to 
 this tool can be confgured by calling `rustpwman cfg`. When you use `clip.exe` under Windows for this purpose you have to be aware that non ASCII characters may not be displayed 
 correctly after pasting the clipboard data. The reason for this is that `clip.exe` expects a character encoding different from UTF-8 which is the default for Rust. If you want to
-prevent this problem you can use `paste_utf8.exe -c` instead of `clip.exe`.
+prevent this problem you can use `paste_utf8.exe -c` instead of `clip.exe`. Instead of selecting this menu entry you can alternatively press F3.
 
 ### Add entry
 
@@ -181,7 +181,7 @@ desired information. Using the entry queue allows password file entries to be ma
 
 ### Add to queue
 
-Use this menu entry to mark the currently selected password file entry for being retrieved when a `Copy to clipboard` or `Quit and print` operation occurs.
+Use this menu entry to mark the currently selected password file entry for being retrieved when a `Copy to clipboard` or `Quit and print` operation occurs. Instead of selecting this menu entry you can alternatively press F1.
 
 ### Show queue
 
