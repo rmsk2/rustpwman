@@ -1,6 +1,6 @@
 [package]
 name = "rustpwman"
-version = "2.1.1"
+version = "2.1.2"
 authors = ["Martin <rmsk2@gmx.de>"]
 edition = "2021"
 
@@ -40,8 +40,6 @@ features = ["ncurses-backend"]
 
 [target.'cfg(target_os = "macos")'.dependencies.cursive]
 version = "0.21"
-#default-features = false
-#features = ["pancurses-backend"]
 
 [target.'cfg(windows)'.dependencies]
 pancurses = "0.17"
