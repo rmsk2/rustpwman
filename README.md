@@ -402,7 +402,7 @@ The plaintext password data is simply stored as key value pairs in an obvious wa
 ]
 ```
 
-Due to this extreme simplicity the password files created by `rustpwman` are really compact. The file which holds my passwords (having about 50 entries) is less than 16 KB in 
+Due to this extreme simplicity the password files created by `rustpwman` are really compact. The file which holds my passwords (having about 80 entries) is about 26 KB in 
 size.
 
 # Caveats
