@@ -54,7 +54,7 @@ use cursive::align::HAlign;
 use cursive::event::Key;
 use cursive::theme;
 use cursive::theme::Effects;
-use cursive::theme::{ColorType, Effect, Color, PaletteColor};
+use cursive::theme::Effect;
 use std::sync::{Arc, Mutex};
 
 use std::sync::mpsc::Sender;
@@ -288,15 +288,14 @@ fn get_special_styles() -> (theme::Style, theme::Style) {
     let mut eff_reverse = Effects::empty();
     eff_reverse.insert(Effect::Reverse);
 
-
-    let danger_style = theme::Style {
+    let reverse_style = theme::Style {
         effects: eff_reverse,
-        color: ColorStyle::new(ColorType::Color(Color::Rgb(255,0,0)), ColorType::Color(Color::Rgb(255, 255, 255))),
+        color: ColorStyle::secondary()
     };
 
-    let reverse_style = theme::Style {
+    let danger_style = theme::Style {
         effects: eff_simple,
-        color: ColorStyle::new(ColorType::Color(Color::Rgb(255, 255, 255)), PaletteColor::Background),
+        color: ColorStyle::highlight()
     };
 
     return (danger_style, reverse_style);    
