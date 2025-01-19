@@ -150,7 +150,7 @@ This menu entry can be used to copy the value of the currently selected password
 [below](#a-note-about-using-the-clipboard) this feature requires an additional tool which accepts its input via stdin and uses that data to set the clipboard contents. The path to 
 this tool can be confgured by calling `rustpwman cfg`. When you use `clip.exe` under Windows for this purpose you have to be aware that non ASCII characters may not be displayed 
 correctly after pasting the clipboard data. The reason for this is that `clip.exe` expects a character encoding different from UTF-8 which is the default for Rust. If you want to
-prevent this problem you can use `paste_utf8.exe -c` instead of `clip.exe`. Instead of selecting this menu entry you can alternatively press F3.
+prevent this problem you can use `paste_utf8.exe -c` instead of `clip.exe`. Instead of selecting this menu entry you can alternatively press F2.
 
 ### Add entry
 
