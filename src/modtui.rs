@@ -32,7 +32,7 @@ mod export;
 mod queue;
 pub mod tuimain;
 
-pub const PW_MAX_SEC_LEVEL: usize = 24;
+pub const PW_MAX_SEC_LEVEL: usize = 32;
 
 pub const PW_SEC_LEVEL: usize = 9;
 const SCROLL_VIEW: &str = "scrollview";
@@ -431,7 +431,7 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
         .add_subtree(
             "Entry", Tree::new()
             .leaf("Copy to clipboard ... F2", move |s| {
-                copy::entry(s, state_temp_copy.clone())
+                copy::entry(s, state_temp_copy.clone(), true)
             })
             .leaf("Edit Entry ...", move |s| {
                 edit::entry(s, state_temp_edit.clone(), None)
@@ -485,7 +485,7 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
     });
 
     event_wrapped_select_view.set_on_event(Key::F2, move |s| {
-        copy::entry(s, state_temp_copy2.clone())
+        copy::entry(s, state_temp_copy2.clone(), false)
     });    
 
     let select_view_scrollable = event_wrapped_select_view

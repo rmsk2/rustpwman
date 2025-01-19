@@ -73,7 +73,7 @@ Selecting this entry saves the encrypted data file using the password that was s
 ### Change password
 
 Using this entry allows to select a new password which is used to encrypt the data file. After a new password has been selected the data file is saved 
-automatically. The new password is also used in subsequent save operations. If `rustpwman` is compiled with the `pwmanclient`` feature then the password
+automatically. The new password is also used in subsequent save operations. If `rustpwman` is compiled with the `pwmanclient` feature then the password
 cache is also automatically cleared, as the cached password is now incorrect.
 
 ### Cache password

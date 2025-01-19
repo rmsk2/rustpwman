@@ -22,7 +22,7 @@ use crate::clip::set_clipboard;
 use super::queue;
 use super::format_pw_entry;
 
-pub fn entry(s: &mut Cursive, state_for_copy_entry: Arc<Mutex<AppState>>) {
+pub fn entry(s: &mut Cursive, state_for_copy_entry: Arc<Mutex<AppState>>, show_confirmation: bool) {
     let entry_name = match get_selected_entry_name(s) {
         Some(name) => name,
         None => {
@@ -45,7 +45,9 @@ pub fn entry(s: &mut Cursive, state_for_copy_entry: Arc<Mutex<AppState>>) {
             show_message(s, "Unable to set clipboad");
         },
         false => {
-            show_message(s, "Contents of queue and selected entry copied to clipboard");
+            if show_confirmation {
+                show_message(s, "Contents of queue and selected entry copied to clipboard");
+            }            
         }
     }
 }
