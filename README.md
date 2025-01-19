@@ -409,7 +409,7 @@ size.
 
 This section provides information about stuff which is in my view suboptimal and the user should be aware of:
 
-- At the moment I do not attempt to overwrite memory that holds sensitive information when `rustpwman` is closed. This may be a problem when `rustpwman` is used in an environment where an attacker can gain access to memory previously used by `rustpwman`, i.e. when sharing a machine with an attacker.
+- At the moment I do not attempt to overwrite memory that holds sensitive information when `rustpwman` is closed. This may be a problem when `rustpwman` is used in an environment where an attacker can gain access to unsanitized memory previously used by `rustpwman`. On the other hand it is probably impossible to defend against an attacker who has that level of access and in the end the information stored in `rustpwman` is used in other applications which most probably do not sanitize their memory.
 - When the list of entries changes (after an add or delete) it may be possible that the entry selected after the change is not visible in the `ScrollView` on the left. I was not successfull in forcing cursive to scroll to the newly selected entry. This is most probably my fault and meanwhile an appropriate warning dialog is displayed.
 - On Windows a spurious Escape sequence `ESC[?1002l` is printed to stdout when the TUI application stops. This does not happen on Linux or MacOS. By piping the output of `rustpwman` to `winfilter.exe` you can remove this unwanted data from the output.
 - In non `--release` builds scrypt with the chosen parameters is *extremely* slow
