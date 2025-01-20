@@ -319,7 +319,7 @@ the encryption key used by `rustpwman` in the first place. There are even some (
 
 ## Automatic local backup of last successfully opened password file
 
-I mostly use `pwman` to access a password file which resides on a WebDAV share stored at a cloud provider. This is all fine and dandy as long as one can access cloud resources.
+I mostly use `rustpwman` to access a password file which resides on a WebDAV share stored at a cloud provider. This is all fine and dandy as long as one can access cloud resources.
 This may not be the case at times when there is no internet connection or if the cloud provider is offline. If the feature `writebackup` is active `rustpwman` stores a local copy 
 of the data file after its password has been successfully verified. As a default the backup file is stored in the current directory using the name `rustpwman_last.enc`. This
 default can be overriden by setting the environment variable `PWMANBKP` to the desired name of the backup file. This feature is active by default.

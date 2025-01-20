@@ -35,13 +35,17 @@ pub fn add(s: &mut Cursive, state_for_q_add: Arc<Mutex<AppState>>) {
 
 pub fn show(s: &mut Cursive, state_for_q_show: Arc<Mutex<AppState>>) {
     let state = state_for_q_show.lock().unwrap();
-    let mut res = String::from("The following entries have been queued:\n\n");
+    if state.entry_queue.len() != 0 {
+        let mut res = String::from("The following entries have been queued:\n\n");
 
-    for i in &state.entry_queue {
-        res.push_str(format!("{}\n", i).as_str());
+        for i in &state.entry_queue {
+            res.push_str(format!("{}\n", i).as_str());
+        }
+
+        show_message(s, res.as_str());
+    } else {
+        show_message(s, "Queue is empty!");
     }
-
-    show_message(s, res.as_str());
 }
 
 pub fn clear(state_for_q_clear: Arc<Mutex<AppState>>) {
