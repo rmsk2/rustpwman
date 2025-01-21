@@ -472,13 +472,15 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
     s.add_global_callback(Key::F3, move |s| pwman_quit_with_state(s, sender3.clone(), String::from(""), state_temp_global_quit.lock().unwrap().store.is_dirty(), Some(state_temp_global_quit.clone())));
     s.add_global_callback(Key::F4, move |s| quit_and_print(s, state_temp_quit_print2.clone(), sender4.clone()));
     
-    let mut event_wrapped_select_view = OnEventView::new(select_view
+    let mut event_wrapped_select_view = OnEventView::new(
+        select_view
         .h_align(HAlign::Center)
         .on_select(move |s, item| {
             display_entry(s, state_for_callback.clone(), item, false)
         })
         .autojump()
-        .with_name(SELECT_VIEW));
+        .with_name(SELECT_VIEW)
+    );
 
     event_wrapped_select_view.set_on_event(Key::F1,  move |s| {
         queue::add(s, state_temp_q_add2.clone())
