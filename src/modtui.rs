@@ -344,13 +344,44 @@ fn format_pw_entry(key: &String, value: &String) -> String {
     return format!("-------- {} --------\n{}", key, value);
 }
 
+#[derive(Clone)]
+struct AppCtx {
+    state: Arc<Mutex<AppState>>,
+    sndr: Arc<Sender<String>>
+}
+
+impl AppCtx {
+    fn new(shared_state: Arc<Mutex<AppState>>, sndr: Arc<Sender<String>>) -> AppCtx {
+        let res = AppCtx {
+            state: shared_state.clone(),
+            sndr: sndr.clone()
+        };
+
+        return res;
+    }
+
+    fn call_save(&self, s: &mut Cursive) {
+        save::storage(s, self.state.clone()); 
+    }
+
+    fn pw_change(&self, s: &mut Cursive) {
+        pw::change(s, self.state.clone()); 
+    }
+
+    fn quit_and_print(&self, s: &mut Cursive) {
+        quit_and_print(s, self.state.clone(), self.sndr.clone());
+    }
+}
+
 fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Sender<String>>) {
     let select_view = SelectView::new();
+    let h = AppCtx::new(shared_state.clone(), sndr.clone());
+    let h2 = h.clone();
+    let h3 = h.clone();
+
 
     let state_temp_add = shared_state.clone();
-    let state_temp_save = shared_state.clone();
     let state_temp_del = shared_state.clone();
-    let state_temp_pw = shared_state.clone();
     let state_temp_edit = shared_state.clone();
     let state_temp_load = shared_state.clone();
     let state_temp_clear = shared_state.clone();
@@ -359,10 +390,8 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
     let state_temp_clear_chache = shared_state.clone();
     let state_temp_info = shared_state.clone();
     let state_temp_quit = shared_state.clone();
-    let state_temp_quit_print = shared_state.clone();
     let state_temp_quit_print2 = shared_state.clone();
     let sender = sndr.clone();
-    let sender2 = sndr.clone();
     let sender3 = sndr.clone();
     let sender4 = sndr.clone();
     let state_temp_copy = shared_state.clone();
@@ -387,11 +416,11 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
 
     file_tree = Tree::new()
         .leaf("Save File", move |s| { 
-            save::storage(s, state_temp_save.clone()); 
+            h.call_save(s);
         })
         .delimiter()
         .leaf("Change password ...", move |s| {
-            pw::change(s, state_temp_pw.clone())
+            h2.pw_change(s);
         })            
         .leaf("Cache password", move |s| { 
             cache::password(s, state_temp_write_chache.clone())  
@@ -411,7 +440,7 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
         })                    
         .delimiter()
         .leaf("Quit and print        F4", move |s| {
-            quit_and_print(s, state_temp_quit_print.clone(), sender2.clone());
+            h3.quit_and_print(s);
         })            
         .leaf("Quit                  F3", move |s| pwman_quit_with_state(s, sender.clone(), String::from(""), shared_state.lock().unwrap().store.is_dirty(), Some(state_temp_quit.clone()) )
     );
