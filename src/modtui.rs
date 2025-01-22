@@ -373,9 +373,9 @@ fn wrapper2(ctx: AppCtx, f: fn(&mut Cursive, state: Arc<Mutex<AppState>>, sndr: 
     };
 }
 
-fn wrapper3<T : Clone>(ctx: AppCtx, f: fn(&mut Cursive, state: Arc<Mutex<AppState>>, fl: T), flag: T) -> impl Fn(&mut Cursive) {    
+fn wrapper3<T : Clone>(ctx: AppCtx, f: fn(&mut Cursive, state: Arc<Mutex<AppState>>, v: T), val: T) -> impl Fn(&mut Cursive) {
     return move |s| {
-        f(s, ctx.state.clone(), flag.clone());
+        f(s, ctx.state.clone(), val.clone());
     };
 }
 
