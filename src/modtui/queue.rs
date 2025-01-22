@@ -48,7 +48,7 @@ pub fn show(s: &mut Cursive, state_for_q_show: Arc<Mutex<AppState>>) {
     }
 }
 
-pub fn clear(state_for_q_clear: Arc<Mutex<AppState>>) {
+pub fn clear(_s: &mut Cursive, state_for_q_clear: Arc<Mutex<AppState>>) {
     state_for_q_clear.lock().unwrap().entry_queue.clear();
 }
 

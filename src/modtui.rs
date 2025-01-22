@@ -359,52 +359,35 @@ impl AppCtx {
 
         return res;
     }
-
-    fn call_save(&self, s: &mut Cursive) {
-        save::storage(s, self.state.clone()); 
-    }
-
-    fn pw_change(&self, s: &mut Cursive) {
-        pw::change(s, self.state.clone()); 
-    }
-
-    fn quit_and_print(&self, s: &mut Cursive) {
-        quit_and_print(s, self.state.clone(), self.sndr.clone());
-    }
 }
+
+fn wrapper(ctx: AppCtx, f: fn(&mut Cursive, state: Arc<Mutex<AppState>>)) -> impl Fn(&mut Cursive) {    
+    return move |s| {
+        f(s, ctx.state.clone());
+    };
+}
+
+fn wrapper2(ctx: AppCtx, f: fn(&mut Cursive, state: Arc<Mutex<AppState>>, sndr: Arc<Sender<String>>)) -> impl Fn(&mut Cursive) {    
+    return move |s| {
+        f(s, ctx.state.clone(), ctx.sndr.clone());
+    };
+}
+
+fn wrapper3<T : Clone>(ctx: AppCtx, f: fn(&mut Cursive, state: Arc<Mutex<AppState>>, fl: T), flag: T) -> impl Fn(&mut Cursive) {    
+    return move |s| {
+        f(s, ctx.state.clone(), flag.clone());
+    };
+}
+
 
 fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Sender<String>>) {
     let select_view = SelectView::new();
-    let h = AppCtx::new(shared_state.clone(), sndr.clone());
-    let h2 = h.clone();
-    let h3 = h.clone();
-
-
-    let state_temp_add = shared_state.clone();
-    let state_temp_del = shared_state.clone();
-    let state_temp_edit = shared_state.clone();
-    let state_temp_load = shared_state.clone();
-    let state_temp_clear = shared_state.clone();
-    let state_temp_rename = shared_state.clone();
-    let state_temp_write_chache = shared_state.clone();
-    let state_temp_clear_chache = shared_state.clone();
-    let state_temp_info = shared_state.clone();
-    let state_temp_quit = shared_state.clone();
-    let state_temp_quit_print2 = shared_state.clone();
-    let sender = sndr.clone();
-    let sender3 = sndr.clone();
-    let sender4 = sndr.clone();
-    let state_temp_copy = shared_state.clone();
-    let state_temp_copy2 = shared_state.clone();
-    let state_temp_q_add = shared_state.clone();
-    let state_temp_q_add2 = shared_state.clone();
-    let state_temp_q_clear = shared_state.clone();
-    let state_temp_q_show = shared_state.clone();
+    let ctx = AppCtx::new(shared_state.clone(), sndr.clone());
     let state_temp_global_quit = shared_state.clone();
-
     let state_for_callback = shared_state.clone();
     let state_for_fill_tui = shared_state.clone();
-    let state_for_undo = shared_state.clone();
+    let state_temp_quit = shared_state.clone();
+    let sender3 = sndr.clone();
 
     let menu_bar = s.menubar();
 
@@ -415,34 +398,18 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
     let file_tree : Tree;
 
     file_tree = Tree::new()
-        .leaf("Save File", move |s| { 
-            h.call_save(s);
-        })
+        .leaf("Save File", wrapper(ctx.clone(), save::storage))
         .delimiter()
-        .leaf("Change password ...", move |s| {
-            h2.pw_change(s);
-        })            
-        .leaf("Cache password", move |s| { 
-            cache::password(s, state_temp_write_chache.clone())  
-        })
-        .leaf("Clear cached password", move |s| { 
-            cache::uncache_password(s, state_temp_clear_chache.clone())  
-        })
+        .leaf("Change password ...", wrapper(ctx.clone(), pw::change))            
+        .leaf("Cache password", wrapper(ctx.clone(), cache::password))
+        .leaf("Clear cached password", wrapper(ctx.clone(), cache::uncache_password))
         .delimiter()
-        .leaf("About ...", |s| {
-            info::about(s)
-        })
-        .leaf("Info ...", move |s| {
-            info::show(s, state_temp_info.clone());
-        })   
-        .leaf("Undo changes ...", move |s| {
-            tuiundo::undo(s, state_for_undo.clone());
-        })                    
+        .leaf("About ...", info::about)
+        .leaf("Info ...", wrapper(ctx.clone(), info::show))
+        .leaf("Undo changes ...", wrapper(ctx.clone(), tuiundo::undo))                    
         .delimiter()
-        .leaf("Quit and print        F4", move |s| {
-            h3.quit_and_print(s);
-        })            
-        .leaf("Quit                  F3", move |s| pwman_quit_with_state(s, sender.clone(), String::from(""), shared_state.lock().unwrap().store.is_dirty(), Some(state_temp_quit.clone()) )
+        .leaf("Quit and print        F4", wrapper2(ctx.clone(), quit_and_print))            
+        .leaf("Quit                  F3", move |s| pwman_quit_with_state(s, sndr.clone(), String::from(""), shared_state.lock().unwrap().store.is_dirty(), Some(state_temp_quit.clone()) )
     );
 
     // Ok this is really, really hacky but it works. I would have preferred to be able to simply exclude some lines from
@@ -459,47 +426,27 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
         )
         .add_subtree(
             "Entry", Tree::new()
-            .leaf("Copy to clipboard ... F2", move |s| {
-                copy::entry(s, state_temp_copy.clone(), true)
-            })
-            .leaf("Edit Entry ...", move |s| {
-                edit::entry(s, state_temp_edit.clone(), None)
-            }) 
-            .leaf("Add Entry ...", move |s| {
-                add::entry(s, state_temp_add.clone());
-            })
-            .leaf("Delete Entry ...", move |s| {
-                delete::entry(s, state_temp_del.clone()); 
-            }) 
-            .leaf("Rename Entry ...", move |s| {
-                rename::entry(s, state_temp_rename.clone()); 
-            }) 
-            .leaf("Clear Entry ...", move |s| {
-                clear::entry(s, state_temp_clear.clone()); 
-            })                    
-            .leaf("Load Entry ...", move |s| {
-                load::entry(s, state_temp_load.clone())  
-            })
+            .leaf("Copy to clipboard ... F2", wrapper3(ctx.clone(), copy::entry, true))
+            .leaf("Edit Entry ...", wrapper3(ctx.clone(), edit::entry, None)) 
+            .leaf("Add Entry ...", wrapper(ctx.clone(), add::entry))
+            .leaf("Delete Entry ...", wrapper(ctx.clone(), delete::entry)) 
+            .leaf("Rename Entry ...", wrapper(ctx.clone(), rename::entry)) 
+            .leaf("Clear Entry ...", wrapper(ctx.clone(), clear::entry))                    
+            .leaf("Load Entry ...", wrapper(ctx.clone(), load::entry))
         )
         .add_subtree("Queue", 
             Tree::new()
-            .leaf("Add to queue   F1", move |s| {
-                queue::add(s, state_temp_q_add.clone());
-            })
-            .leaf("Show queue ...", move |s| {
-                queue::show(s, state_temp_q_show.clone());
-            })
+            .leaf("Add to queue   F1", wrapper(ctx.clone(), queue::add))
+            .leaf("Show queue ...", wrapper(ctx.clone(), queue::show))
             .delimiter()        
-            .leaf("Clear queue", move |_s| {
-                queue::clear(state_temp_q_clear.clone());
-            })            
+            .leaf("Clear queue", wrapper(ctx.clone(), queue::clear))            
         );        
 
     s.set_autohide_menu(false);
 
     s.add_global_callback(Key::Esc, |s| s.select_menubar());
     s.add_global_callback(Key::F3, move |s| pwman_quit_with_state(s, sender3.clone(), String::from(""), state_temp_global_quit.lock().unwrap().store.is_dirty(), Some(state_temp_global_quit.clone())));
-    s.add_global_callback(Key::F4, move |s| quit_and_print(s, state_temp_quit_print2.clone(), sender4.clone()));
+    s.add_global_callback(Key::F4, wrapper2(ctx.clone(), quit_and_print));
     
     let mut event_wrapped_select_view = OnEventView::new(
         select_view
@@ -511,13 +458,8 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
         .with_name(SELECT_VIEW)
     );
 
-    event_wrapped_select_view.set_on_event(Key::F1,  move |s| {
-        queue::add(s, state_temp_q_add2.clone())
-    });
-
-    event_wrapped_select_view.set_on_event(Key::F2, move |s| {
-        copy::entry(s, state_temp_copy2.clone(), false)
-    });    
+    event_wrapped_select_view.set_on_event(Key::F1, wrapper(ctx.clone(), queue::add));
+    event_wrapped_select_view.set_on_event(Key::F2, wrapper3(ctx.clone(), copy::entry, false));    
 
     let select_view_scrollable = event_wrapped_select_view
         .fixed_width(40)
