@@ -46,7 +46,6 @@ pub const DEFAULT_PASTE_CMD: &str = "xsel -ob";
 pub const DEFAULT_COPY_CMD: &str = "xsel -ib";
 
 use crate::persist::SendSyncPersister;
-use crate::theme::get_theme;
 use cursive::theme::ColorStyle;
 use cursive::traits::*;
 use cursive::views::{Dialog, LinearLayout, SelectView, TextArea, Panel, NamedView, ScrollView, ResizedView, OnEventView};
@@ -380,11 +379,7 @@ fn wrapper2(ctx: AppCtx, f: fn(&mut Cursive, state: Arc<Mutex<AppState>>, sndr: 
     };
 }
 
-<<<<<<< Updated upstream
 fn wrapper3<T : Clone>(ctx: AppCtx, f: fn(&mut Cursive, state: Arc<Mutex<AppState>>, v: T), val: T) -> impl Fn(&mut Cursive) {
-=======
-fn wrapper3<T : Clone>(ctx: AppCtx, f: fn(&mut Cursive, state: Arc<Mutex<AppState>>, fl: T), flag: T) -> impl Fn(&mut Cursive) {
->>>>>>> Stashed changes
     return move |s| {
         f(s, ctx.state.clone(), val.clone());
     };

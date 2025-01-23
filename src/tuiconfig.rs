@@ -17,7 +17,6 @@ use cursive::views::{Dialog, LinearLayout, TextView, TextArea, SliderView, Radio
 use cursive::Cursive;
 use cursive::view::Margins;
 
-use crate::theme::get_theme;
 use crate::tomlconfig;
 use crate::tomlconfig::RustPwManSerialize;
 use crate::pwgen;
