@@ -344,6 +344,12 @@ fn format_pw_entry(key: &String, value: &String) -> String {
     return format!("-------- {} --------\n{}", key, value);
 }
 
+fn quit_without_print(s :&mut Cursive, state: Arc<Mutex<AppState>>, sndr: Arc<Sender<String>>) {
+    let is_dirty = state.lock().unwrap().store.is_dirty();
+
+    pwman_quit_with_state(s, sndr.clone(), String::from(""), is_dirty, Some(state.clone()))
+}
+
 #[derive(Clone)]
 struct AppCtx {
     state: Arc<Mutex<AppState>>,
@@ -383,11 +389,8 @@ fn wrapper3<T : Clone>(ctx: AppCtx, f: fn(&mut Cursive, state: Arc<Mutex<AppStat
 fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Sender<String>>) {
     let select_view = SelectView::new();
     let ctx = AppCtx::new(shared_state.clone(), sndr.clone());
-    let state_temp_global_quit = shared_state.clone();
     let state_for_callback = shared_state.clone();
     let state_for_fill_tui = shared_state.clone();
-    let state_temp_quit = shared_state.clone();
-    let sender3 = sndr.clone();
 
     let menu_bar = s.menubar();
 
@@ -409,7 +412,7 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
         .leaf("Undo changes ...", wrapper(ctx.clone(), tuiundo::undo))                    
         .delimiter()
         .leaf("Quit and print        F4", wrapper2(ctx.clone(), quit_and_print))            
-        .leaf("Quit                  F3", move |s| pwman_quit_with_state(s, sndr.clone(), String::from(""), shared_state.lock().unwrap().store.is_dirty(), Some(state_temp_quit.clone()) )
+        .leaf("Quit                  F3", wrapper2(ctx.clone(), quit_without_print)
     );
 
     // Ok this is really, really hacky but it works. I would have preferred to be able to simply exclude some lines from
@@ -445,7 +448,7 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
     s.set_autohide_menu(false);
 
     s.add_global_callback(Key::Esc, |s| s.select_menubar());
-    s.add_global_callback(Key::F3, move |s| pwman_quit_with_state(s, sender3.clone(), String::from(""), state_temp_global_quit.lock().unwrap().store.is_dirty(), Some(state_temp_global_quit.clone())));
+    s.add_global_callback(Key::F3, wrapper2(ctx.clone(), quit_without_print));
     s.add_global_callback(Key::F4, wrapper2(ctx.clone(), quit_and_print));
     
     let mut event_wrapped_select_view = OnEventView::new(
