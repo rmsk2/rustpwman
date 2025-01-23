@@ -24,6 +24,8 @@ mod clip;
 mod undo;
 mod persist;
 mod obfuscate;
+mod theme;
+
 #[cfg(feature = "webdav")]
 mod webdav;
 #[cfg(feature = "pwmanclient")]
@@ -106,7 +108,7 @@ pub fn make_cryptor(id: &str, d: fcrypt::KeyDeriver, i: fcrypt::KdfId) -> Box<dy
                 Ok(s) => String::from(s.as_str()),
                 Err(_) => String::from(MULTIPLE_CIPHER_DEFAULT_ENV_NOT_SET.to_str())
             }
-        }        
+        }
 
         algo_id = algo_id.to_lowercase();
 
@@ -137,7 +139,7 @@ impl RustPwMan {
 
     fn is_option_present(matches: &clap::ArgMatches, id: &str) -> bool {
         let test_res = matches.value_source(id);
-    
+
         return match test_res {
             Some(v) => {
                 return v == clap::parser::ValueSource::CommandLine;
@@ -153,7 +155,7 @@ impl RustPwMan {
         };
 
         home_dir.push(CFG_FILE_NAME);
-        
+
         return Some(home_dir);
     }
 
@@ -163,10 +165,10 @@ impl RustPwMan {
             Ok(s) => String::from(s.as_str()),
             Err(_) => String::from(BACKUP_FILE_NAME)
         };
-        
+
         let mut path = std::path::PathBuf::new();
         path.push(file_name);
-    
+
         return Some(path);
     }
 
@@ -206,13 +208,13 @@ impl RustPwMan {
         return match GenerationStrategy::from_str(strategy_name) {
             Some(v) => v,
             _ => self.default_pw_gen
-        };       
+        };
     }
 
     fn verify_sec_level(&self, loaded_level: usize) -> usize {
         if loaded_level >= modtui::PW_MAX_SEC_LEVEL {
             self.default_sec_level
-        } 
+        }
         else
         {
             loaded_level
@@ -223,18 +225,18 @@ impl RustPwMan {
         return match fcrypt::KdfId::from_str(deriver_name) {
             Some(v) => v.to_named_func(),
             _ => (self.default_deriver, self.default_deriver_id)
-        }       
+        }
     }
 
-    fn set_pbkdf_from_command_line(&mut self, matches: &clap::ArgMatches) {    
+    fn set_pbkdf_from_command_line(&mut self, matches: &clap::ArgMatches) {
         if RustPwMan::is_option_present(matches, ARG_KDF) {
             let a: Option<&String> = matches.get_one(ARG_KDF);
-            
+
             let kdf_name: String = match a {
                 Some(b) => b.clone(),
                 _ => panic!("Unable to determine KDF") // Should not happen
             };
-            
+
             let (k, id) = self.str_to_deriver(&kdf_name);
 
             self.default_deriver = k;
@@ -250,7 +252,7 @@ impl RustPwMan {
             Some(a) => a.clone(),
             _ => panic!("Unable to determine input file") // Should not happen
         };
-        
+
         let file_name_out = match out_f {
             Some(a) => a.clone(),
             _ => panic!("Unable to determine output file") // Should not happen
@@ -258,29 +260,29 @@ impl RustPwMan {
 
         return (file_name_in, file_name_out);
     }
-    
+
     fn enter_password_verified() -> std::io::Result<String> {
         let pw1 = rpassword::prompt_password("Password: ")?;
         let pw2 = rpassword::prompt_password("Verfication: ")?;
-    
+
         if pw1 != pw2 {
             return Err(Error::new(ErrorKind::Other, "Passwords differ"));
         }
-    
+
         match fcrypt::check_password(&pw1) {
             Some(e) => return Err(e),
             None => ()
         }
-    
+
         return Ok(pw1);
     }
-    
+
     fn perform_encrypt_command(&mut self, encrypt_matches: &clap::ArgMatches) {
         self.set_pbkdf_from_command_line(encrypt_matches);
         let (file_in, file_out) = RustPwMan::determine_in_out_files(encrypt_matches);
-        
+
         let pw = match RustPwMan::enter_password_verified() {
-            Err(e) => { 
+            Err(e) => {
                 eprintln!("Error reading password: {:?}", e);
                 return;
             },
@@ -294,38 +296,38 @@ impl RustPwMan {
         };
 
         let cr_gen = Box::new(move |k: fcrypt::KeyDeriver, i: fcrypt::KdfId| -> Box<dyn fcrypt::Cryptor>  {
-            return make_cryptor(algo_id.as_str(), k, i); 
+            return make_cryptor(algo_id.as_str(), k, i);
         });
 
         let mut jots_file = jots::Jots::new(self.default_deriver, self.default_deriver_id, cr_gen);
-    
+
         let file = match File::open(&file_in) {
             Ok(f) => f,
             Err(e) => {
                 eprintln!("Error opening file. {:?}", e);
-                return;                    
+                return;
             }
         };
-    
+
         let reader = BufReader::new(file);
-        
+
         match jots_file.from_reader(reader) {
             Err(e) => {
                 eprintln!("Error reading file. {:?}", e);
-                return;                    
+                return;
             },
-            Ok(_) => ()                
+            Ok(_) => ()
         }
-    
+
         match jots_file.to_enc_file(&file_out, &pw[..]) {
             Ok(_) => (),
-            Err(e) => { 
+            Err(e) => {
                 eprintln!("Error creating file. {:?}", e);
                 return;
             },
         };
     }
-    
+
     fn perform_decrypt_command(&mut self, decrypt_matches: &clap::ArgMatches) {
         self.set_pbkdf_from_command_line(decrypt_matches);
         let (file_in, file_out) = RustPwMan::determine_in_out_files(decrypt_matches);
@@ -337,56 +339,56 @@ impl RustPwMan {
         };
 
         let cr_gen = Box::new(move |k: fcrypt::KeyDeriver, i: fcrypt::KdfId| -> Box<dyn fcrypt::Cryptor>  {
-            return make_cryptor(algo_id.as_str(), k, i); 
-        });        
-        
+            return make_cryptor(algo_id.as_str(), k, i);
+        });
+
         let mut jots_file = jots::Jots::new(self.default_deriver, self.default_deriver_id, cr_gen);
-    
+
         let pw = match rpassword::prompt_password("Password: ") {
-            Err(_) => { 
+            Err(_) => {
                 eprintln!("Error reading password");
                 return;
             },
             Ok(p) => p
         };
-        
+
         match fcrypt::check_password(&pw) {
             Some(e) => {
                 eprintln!("Password illegal: {:?}", e);
                 return;
             },
             None => ()
-        }    
-        
+        }
+
         println!();
-    
+
         match jots_file.from_enc_file(&file_in, &pw[..]) {
             Err(e) => {
                 eprintln!("Error reading file. {:?}", e);
-                return;                    
+                return;
             },
             Ok(_) => ()
         };
-    
+
         let file = match File::create(&file_out) {
             Err(e) => {
                 eprintln!("Error creating file. {:?}", e);
-                return;                    
+                return;
             },
-            Ok(f) => f      
+            Ok(f) => f
         };
-    
+
         let w = BufWriter::new(file);
-    
+
         match jots_file.to_writer(w) {
             Err(e) => {
                 eprintln!("Error writing file. {:?}", e);
-                return;                    
+                return;
             },
             Ok(_) => ()
         };
     }
-    
+
     #[allow(unused_variables)]
     fn make_persist_creator(&self, u: &String, p: &String, s: &String, s_id: &String) -> PersistCreator {
         let persist_closure : PersistCreator;
@@ -394,7 +396,7 @@ impl RustPwMan {
         let u = u.clone();
         let p = p.clone();
         let s = s.clone();
-        
+
         #[cfg(feature = "webdav")]
         {
             let test_str = format!("{}{}", s, s_id).to_lowercase();
@@ -421,7 +423,7 @@ impl RustPwMan {
 
     fn perform_gui_command(&mut self, gui_matches: &clap::ArgMatches) {
         self.set_pbkdf_from_command_line(gui_matches);
-    
+
         let a:Option<&String> = gui_matches.get_one(ARG_INPUT_FILE);
         let u = self.webdav_user.clone();
         let mut p = self.webdav_pw.clone();
@@ -436,7 +438,7 @@ impl RustPwMan {
         let cr_gen_gen = Box::new(move || -> jots::CryptorGen {
             let h = algo_id.clone();
             return Box::new(move |k: fcrypt::KeyDeriver, i: fcrypt::KdfId| -> Box<dyn fcrypt::Cryptor>  {
-                return make_cryptor(h.as_str(), k, i); 
+                return make_cryptor(h.as_str(), k, i);
             });
         });
 
@@ -456,7 +458,7 @@ impl RustPwMan {
 
                 let persist_closure = self.make_persist_creator(&u, &p, &s, &data_file_name);
 
-                modtui::tuimain::main(data_file_name, self.default_sec_level, self.default_deriver, self.default_deriver_id, 
+                modtui::tuimain::main(data_file_name, self.default_sec_level, self.default_deriver, self.default_deriver_id,
                                       self.default_pw_gen, self.paste_command.clone(), self.copy_command.clone(), persist_closure, cr_gen_gen, gui_matches.get_flag(ARG_EXPORT));
             },
             None => {
@@ -469,13 +471,13 @@ impl RustPwMan {
     fn perform_obfuscate_command(&mut self) {
         let pw1 = rpassword::prompt_password("WebDAV password       : ").unwrap();
         let pw2 = rpassword::prompt_password("Again for verification: ").unwrap();
-    
+
         if pw1 != pw2 {
             eprintln!("Passwords differ");
             return;
         }
 
-        println!("{}", obfuscate(&pw1, OBFUSCATION_ENV_VAR));        
+        println!("{}", obfuscate(&pw1, OBFUSCATION_ENV_VAR));
     }
 
     fn perform_config_command(&mut self, config_matches: &clap::ArgMatches) {
@@ -497,7 +499,7 @@ impl RustPwMan {
             }
         }
 
-        let mut file_was_loaded = false; 
+        let mut file_was_loaded = false;
 
         let loaded_config = match tomlconfig::load(&config_file_name, &mut file_was_loaded) {
             Ok(c) => c,
@@ -524,13 +526,13 @@ impl RustPwMan {
         let pw_gen_strategy = self.str_to_gen_strategy(&loaded_config.pwgen);
         let (_, pbkdf_id) = self.str_to_deriver(&loaded_config.pbkdf);
 
-        tuiconfig::config_main(config_file_name, sec_level, pw_gen_strategy, pbkdf_id, &loaded_config.clip_cmd, &loaded_config.copy_cmd, 
+        tuiconfig::config_main(config_file_name, sec_level, pw_gen_strategy, pbkdf_id, &loaded_config.clip_cmd, &loaded_config.copy_cmd,
                                &loaded_config.webdav_user, &loaded_config.webdav_pw, &loaded_config.webdav_server);
-    }   
+    }
 
     fn perform_generate_command(&mut self) {
         tuigen::generate_main(self.default_sec_level, self.default_pw_gen);
-    } 
+    }
 }
 
 pub fn add_kdf_param() -> clap::Arg {
@@ -571,10 +573,10 @@ fn main() {
     let mut app = Command::new("rustpwman")
         .version(VERSION_STRING)
         .author("Martin Grap <rmsk2@gmx.de>")
-        .about("A password manager for the cursive TUI in Rust")          
+        .about("A password manager for the cursive TUI in Rust")
         .subcommand(
             Command::new(COMMAND_ENCRYPT)
-                .about("Encrypt file")        
+                .about("Encrypt file")
                 .arg(Arg::new(ARG_INPUT_FILE)
                     .short('i')
                     .long(ARG_INPUT_FILE)
@@ -586,12 +588,12 @@ fn main() {
                     .long(ARG_OUTPUT_FILE)
                     .required(true)
                     .num_args(1)
-                    .help("Encrypted output file"))                    
+                    .help("Encrypted output file"))
                 .arg(add_kdf_param())
                 .arg(add_cipher_param()))
         .subcommand(
             Command::new(COMMAND_DECRYPT)
-                .about("Decrypt file")        
+                .about("Decrypt file")
                 .arg(Arg::new(ARG_INPUT_FILE)
                     .short('i')
                     .long(ARG_INPUT_FILE)
@@ -603,18 +605,18 @@ fn main() {
                     .long(ARG_OUTPUT_FILE)
                     .required(true)
                     .num_args(1)
-                    .help("Name of plaintext file"))                    
+                    .help("Name of plaintext file"))
                 .arg(add_kdf_param())
                 .arg(add_cipher_param()))
         .subcommand(
             Command::new(COMMAND_GUI)
-                .about("Open file in TUI")        
+                .about("Open file in TUI")
                 .arg(Arg::new(ARG_INPUT_FILE)
                     .short('i')
                     .long(ARG_INPUT_FILE)
                     .required(true)
                     .num_args(1)
-                    .help("Name of encrypted data file"))                   
+                    .help("Name of encrypted data file"))
                 .arg(add_kdf_param())
                 .arg(add_cipher_param())
                 .arg(Arg::new(ARG_EXPORT)
@@ -624,7 +626,7 @@ fn main() {
                     .help("Allow to create a plaintext backup during startup")))
         .subcommand(
             Command::new(COMMAND_CONFIG)
-                .about("Change configuration")        
+                .about("Change configuration")
                 .arg(Arg::new(ARG_CONFIG_FILE)
                     .short('c')
                     .long(ARG_CONFIG_FILE)
@@ -635,8 +637,8 @@ fn main() {
                 .about("Generate passwords"))
         .subcommand(
             Command::new(COMMAND_OBFUSCATE)
-                .about("Obfuscate WebDAV password")                
-        );                    
+                .about("Obfuscate WebDAV password")
+        );
 
     let mut rustpwman = RustPwMan::new();
     rustpwman.load_config();
@@ -655,7 +657,7 @@ fn main() {
                 },
                 (COMMAND_GUI, gui_matches) => {
                     rustpwman.perform_gui_command(gui_matches);
-                },   
+                },
                 (COMMAND_CONFIG, cfg_matches) => {
                     rustpwman.perform_config_command(cfg_matches);
                 },
@@ -664,8 +666,8 @@ fn main() {
                 },
                 (COMMAND_OBFUSCATE, _) => {
                     rustpwman.perform_obfuscate_command();
-                },                
-                (&_, _) => panic!("Can not happen")           
+                },
+                (&_, _) => panic!("Can not happen")
             }
         },
         _ => {
@@ -673,6 +675,6 @@ fn main() {
                 Err(e) => eprintln!("{}", e),
                 _ => eprintln!("")
             }
-        }        
+        }
     }
 }

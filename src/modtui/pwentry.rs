@@ -39,8 +39,8 @@ pub fn dialog(sndr: Arc<Sender<String>>, ok_cb_with_state: Box<dyn Fn(&mut Cursi
 
         if let Some(err) = fcrypt::check_password(&pw_text) {
             show_message(s, &format!("Password incorrect: {:?}", err));
-            return;        
-        }        
+            return;
+        }
 
         ok_cb_with_state(s, &pw_text, false);
     };

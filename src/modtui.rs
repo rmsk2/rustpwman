@@ -73,14 +73,14 @@ pub struct AppState {
     default_generator: GenerationStrategy,
     paste_command: String,
     copy_command: String,
-    persister: SendSyncPersister, 
+    persister: SendSyncPersister,
     last_custom_selection: String,
     pw_is_chached: bool,
     entry_queue: Vec<String>,
 }
 
 impl AppState {
-    pub fn new(s: jots::Jots, f_name: &String, default_sec: usize, default_gen: GenerationStrategy, 
+    pub fn new(s: jots::Jots, f_name: &String, default_sec: usize, default_gen: GenerationStrategy,
                paste_cmd: &String, copy_cmd: &String, p: SendSyncPersister, is_pw_cached: bool) -> Self {
         return AppState {
             store: s,
@@ -108,9 +108,9 @@ impl AppState {
                 return Err(Error::new(ErrorKind::Other, format!("No password available, unable to persist store '{}'", &self.store_id)));
             }
         };
-        
+
         return self.store.persist(&mut self.persister, pw.as_str());
-    }   
+    }
 }
 
 fn do_quit(s: &mut Cursive, sender: Arc<Sender<String>>, message: String) {
@@ -118,7 +118,7 @@ fn do_quit(s: &mut Cursive, sender: Arc<Sender<String>>, message: String) {
         Ok(_) => (),
         Err(_) => ()
     };
-    
+
     s.quit();
 }
 
@@ -153,26 +153,26 @@ fn pwman_quit_with_state(s: &mut Cursive, sender: Arc<Sender<String>>, message: 
                 })
                 .button("No", move |s| {
                     s.pop_layer();
-                    
+
                     match &app_state {
                         None => {},
                         Some(state) => {
                             ask_for_save(s, sndr2.clone(), msg2.clone(), state.clone());
                         }
                     }
-                })           
+                })
         );
     } else {
         do_quit(s, sender, message);
     }
-} 
+}
 
 fn ask_for_save(s: &mut Cursive, sender: Arc<Sender<String>>, message: String, app_state: Arc<Mutex<AppState>>) {
     s.add_layer(
         Dialog::text("Save file and quit?")
             .title("Rustpwman")
             .button("Yes", move |s: &mut Cursive| {
-                s.pop_layer(); 
+                s.pop_layer();
                 save::storage(s, app_state.clone());
 
                 let is_dirty = app_state.lock().unwrap().store.is_dirty();
@@ -184,7 +184,7 @@ fn ask_for_save(s: &mut Cursive, sender: Arc<Sender<String>>, message: String, a
             .button("No", |s| {
                 s.pop_layer();
             })
-        )           
+        )
 }
 
 fn pwman_quit(s: &mut Cursive, sender: Arc<Sender<String>>, message: String)
@@ -225,10 +225,10 @@ fn display_entry(siv: &mut Cursive, state: Arc<Mutex<AppState>>, entry_name: &St
         match siv.call_on_name(SELECT_VIEW, |view: &mut SelectView| { view.set_selection(pos) }) {
             Some(cb) => cb(siv),
             None => {
-                show_message(siv, "Unable to set selection"); 
+                show_message(siv, "Unable to set selection");
                 return;
             }
-        }     
+        }
     } else {
         siv.call_on_name(TEXT_AREA_MAIN, |view: &mut TextArea| { view.set_content(entry_text.clone()); });
         siv.call_on_name(TEXT_AREA_TITLE, |view: &mut TextArea| { view.set_content(entry_name.clone()); });
@@ -251,13 +251,13 @@ fn redraw_tui(siv: &mut Cursive, state: Arc<Mutex<AppState>>) {
             if count == 0 {
                  initial_entry = i.clone();
             }
-    
+
             siv.call_on_name(SELECT_VIEW, |view: &mut SelectView| { view.add_item(i.clone(), i.clone()); } );
-    
+
             count += 1;
-        }    
+        }
     }
-    
+
     display_entry(siv, state.clone(), &initial_entry, true);
 }
 
@@ -268,7 +268,7 @@ fn get_selected_entry_name(s: &mut Cursive) -> Option<String> {
     };
 
     if let Some(id) = id_opt {
-        let help = s.call_on_name(SELECT_VIEW, |view: &mut SelectView| -> Option<String> { 
+        let help = s.call_on_name(SELECT_VIEW, |view: &mut SelectView| -> Option<String> {
             match view.get_item(id) {
                 Some(t) => Some(String::from(t.0)),
                 _ => None
@@ -301,7 +301,7 @@ fn get_special_styles() -> (theme::Style, theme::Style) {
         color: ColorStyle::highlight()
     };
 
-    return (danger_style, reverse_style);    
+    return (danger_style, reverse_style);
 }
 
 fn visualize_if_modified(siv: &mut Cursive, state: Arc<Mutex<AppState>>) {
@@ -322,7 +322,7 @@ fn quit_and_print(s: &mut Cursive, state: Arc<Mutex<AppState>>, sndr: Arc<Sender
 
     let dirty_flag: bool;
     let mut out_str = queue::get_entries(state.clone());
-    
+
     // Create artificial scope to ensure unlock of Mutex
     {
         let h = state.lock().unwrap();
@@ -330,7 +330,7 @@ fn quit_and_print(s: &mut Cursive, state: Arc<Mutex<AppState>>, sndr: Arc<Sender
 
         let value = match store.get(&key) {
             Some(v) => v,
-            None => { show_message(s, "Unable to read entry value"); return } 
+            None => { show_message(s, "Unable to read entry value"); return }
         };
 
         out_str.push_str(format_pw_entry(&key, &value).as_str());
@@ -367,13 +367,13 @@ impl AppCtx {
     }
 }
 
-fn wrapper(ctx: AppCtx, f: fn(&mut Cursive, state: Arc<Mutex<AppState>>)) -> impl Fn(&mut Cursive) {    
+fn wrapper(ctx: AppCtx, f: fn(&mut Cursive, state: Arc<Mutex<AppState>>)) -> impl Fn(&mut Cursive) {
     return move |s| {
         f(s, ctx.state.clone());
     };
 }
 
-fn wrapper2(ctx: AppCtx, f: fn(&mut Cursive, state: Arc<Mutex<AppState>>, sndr: Arc<Sender<String>>)) -> impl Fn(&mut Cursive) {    
+fn wrapper2(ctx: AppCtx, f: fn(&mut Cursive, state: Arc<Mutex<AppState>>, sndr: Arc<Sender<String>>)) -> impl Fn(&mut Cursive) {
     return move |s| {
         f(s, ctx.state.clone(), ctx.sndr.clone());
     };
@@ -403,21 +403,21 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
     file_tree = Tree::new()
         .leaf("Save File", wrapper(ctx.clone(), save::storage))
         .delimiter()
-        .leaf("Change password ...", wrapper(ctx.clone(), pw::change))            
+        .leaf("Change password ...", wrapper(ctx.clone(), pw::change))
         .leaf("Cache password", wrapper(ctx.clone(), cache::password))
         .leaf("Clear cached password", wrapper(ctx.clone(), cache::uncache_password))
         .delimiter()
         .leaf("About ...", info::about)
         .leaf("Info ...", wrapper(ctx.clone(), info::show))
-        .leaf("Undo changes ...", wrapper(ctx.clone(), tuiundo::undo))                    
+        .leaf("Undo changes ...", wrapper(ctx.clone(), tuiundo::undo))
         .delimiter()
-        .leaf("Quit and print        F4", wrapper2(ctx.clone(), quit_and_print))            
+        .leaf("Quit and print        F4", wrapper2(ctx.clone(), quit_and_print))
         .leaf("Quit                  F3", wrapper2(ctx.clone(), quit_without_print)
     );
 
     // Ok this is really, really hacky but it works. I would have preferred to be able to simply exclude some lines from
-    // compilation when constructing the file_tree but I came to the opinion that in Rust conditional compilation is tied to 
-    // attributes which in turn does not seem to work when chaining values together as is done above.    
+    // compilation when constructing the file_tree but I came to the opinion that in Rust conditional compilation is tied to
+    // attributes which in turn does not seem to work when chaining values together as is done above.
     #[cfg(not(feature = "pwmanclient"))]
     file_tree.remove(3);  // remove cache item when building without the pwmanclient feature
 
@@ -430,27 +430,27 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
         .add_subtree(
             "Entry", Tree::new()
             .leaf("Copy to clipboard ... F2", wrapper3(ctx.clone(), copy::entry, true))
-            .leaf("Edit Entry ...", wrapper3(ctx.clone(), edit::entry, None)) 
+            .leaf("Edit Entry ...", wrapper3(ctx.clone(), edit::entry, None))
             .leaf("Add Entry ...", wrapper(ctx.clone(), add::entry))
-            .leaf("Delete Entry ...", wrapper(ctx.clone(), delete::entry)) 
-            .leaf("Rename Entry ...", wrapper(ctx.clone(), rename::entry)) 
-            .leaf("Clear Entry ...", wrapper(ctx.clone(), clear::entry))                    
+            .leaf("Delete Entry ...", wrapper(ctx.clone(), delete::entry))
+            .leaf("Rename Entry ...", wrapper(ctx.clone(), rename::entry))
+            .leaf("Clear Entry ...", wrapper(ctx.clone(), clear::entry))
             .leaf("Load Entry ...", wrapper(ctx.clone(), load::entry))
         )
-        .add_subtree("Queue", 
+        .add_subtree("Queue",
             Tree::new()
             .leaf("Add to queue   F1", wrapper(ctx.clone(), queue::add))
             .leaf("Show queue ...", wrapper(ctx.clone(), queue::show))
-            .delimiter()        
-            .leaf("Clear queue", wrapper(ctx.clone(), queue::clear))            
-        );        
+            .delimiter()
+            .leaf("Clear queue", wrapper(ctx.clone(), queue::clear))
+        );
 
     s.set_autohide_menu(false);
 
     s.add_global_callback(Key::Esc, |s| s.select_menubar());
     s.add_global_callback(Key::F3, wrapper2(ctx.clone(), quit_without_print));
     s.add_global_callback(Key::F4, wrapper2(ctx.clone(), quit_and_print));
-    
+
     let mut event_wrapped_select_view = OnEventView::new(
         select_view
         .h_align(HAlign::Center)
@@ -462,7 +462,7 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
     );
 
     event_wrapped_select_view.set_on_event(Key::F1, wrapper(ctx.clone(), queue::add));
-    event_wrapped_select_view.set_on_event(Key::F2, wrapper3(ctx.clone(), copy::entry, false));    
+    event_wrapped_select_view.set_on_event(Key::F2, wrapper3(ctx.clone(), copy::entry, false));
 
     let select_view_scrollable = event_wrapped_select_view
         .fixed_width(40)
@@ -478,7 +478,7 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
     .child(entry_select_panel)
     .child(
         LinearLayout::vertical()
-        .child(Panel::new(          
+        .child(Panel::new(
             TextArea::new()
                 .disabled()
                 .content("")
@@ -497,9 +497,9 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
                 .scrollable()
         )
         .title("Contents of entry")
-        .with_name(PANEL_AREA_MAIN))      
+        .with_name(PANEL_AREA_MAIN))
     );
-    
+
     s.add_layer(tui);
     redraw_tui(s, state_for_fill_tui.clone());
 }
