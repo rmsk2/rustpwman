@@ -30,17 +30,18 @@ use super::AppState;
 use super::open;
 use crate::persist::SendSyncPersister;
 use crate::persist;
-use crate::theme::get_theme;
+use crate::modtui::tuitheme::get_theme;
 
 use super::main_window;
 use super::pwman_quit;
-use super::pwentry::{self, show_pw_error};
+use super::pwentry;
 #[cfg(feature = "pwmanclient")]
 use super::cache;
 use super::init;
 use super::export;
 #[cfg(feature = "writebackup")]
 use crate::RustPwMan;
+use super::show_message;
 
 
 #[cfg(feature = "writebackup")]
@@ -114,7 +115,9 @@ pub fn main(data_file_name: String, default_sec_bits: usize, derive_func: KeyDer
 
     match get_theme() {
         Ok(theme) => siv.set_theme(theme),
-        Err(e) => { show_pw_error(&mut siv, format!("Error in theme.json:\n\n{}\n\nDefault theme will be used!", e).as_str()); }
+        Err(e) => { 
+            show_message(&mut siv, format!("Error in theme.json:\n\n{}\n\nDefault theme will be used!", e).as_str()); 
+        }
     }
 
     // run password entry dialog

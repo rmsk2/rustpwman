@@ -149,6 +149,13 @@ pub fn generate_main(sec_level: usize, pw_gen_strategy: pwgen::GenerationStrateg
     show_num_pws(&mut siv, NUM_PW_DEFAULT);
     siv.call_on_name(GEN_DIALOG, |view: &mut Dialog| {view.set_focus(DialogFocus::Button(0))});
 
+    match crate::modtui::tuitheme::get_theme() {
+        Ok(theme) => siv.set_theme(theme),
+        Err(e) => { 
+            tuiconfig::show_message(&mut siv, format!("Error in theme.json:\n\n{}\n\nDefault theme will be used!", e).as_str()); 
+        }
+    }
+
     siv.run();
 
     let do_cancel = *was_cancelled.lock().unwrap();

@@ -24,7 +24,6 @@ mod clip;
 mod undo;
 mod persist;
 mod obfuscate;
-mod theme;
 
 #[cfg(feature = "webdav")]
 mod webdav;

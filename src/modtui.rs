@@ -31,6 +31,7 @@ mod info;
 mod export;
 mod queue;
 pub mod tuimain;
+pub mod tuitheme;
 
 pub const PW_MAX_SEC_LEVEL: usize = 32;
 

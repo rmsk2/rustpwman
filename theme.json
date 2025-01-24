@@ -7,8 +7,8 @@
         "shadow": "black",
         "view": "grey",
 
-        "primary": "black",
-        "secondary": "dark blue",
+        "primary": "white",
+        "secondary": "white",
         "tertiary": "#ffffff",
 
         "title_primary": "dark red",

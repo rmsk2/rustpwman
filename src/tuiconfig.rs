@@ -22,6 +22,7 @@ use crate::tomlconfig::RustPwManSerialize;
 use crate::pwgen;
 use crate::fcrypt;
 use crate::modtui;
+use crate::tuiconfig;
 #[cfg(feature = "webdav")]
 use crate::OBFUSCATION_ENV_VAR;
 #[cfg(feature = "webdav")]
@@ -318,6 +319,13 @@ pub fn config_main(config_file: std::path::PathBuf, sec_level: usize, pw_gen_str
         siv.call_on_name("webdav_user", |view: &mut EditView| { view.set_content(webdav_user) });
         siv.call_on_name("webdav_password", |view: &mut EditView| { view.set_content(webdav_pw) });
         siv.call_on_name("webdav_server", |view: &mut EditView| { view.set_content(webdav_server) });
+    }
+
+    match crate::modtui::tuitheme::get_theme() {
+        Ok(theme) => siv.set_theme(theme),
+        Err(e) => { 
+            tuiconfig::show_message(&mut siv, format!("Error in theme.json:\n\n{}\n\nDefault theme will be used!", e).as_str()); 
+        }
     }
 
     siv.run();
