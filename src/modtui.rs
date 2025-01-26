@@ -386,11 +386,38 @@ fn wrapper3<T : Clone>(ctx: AppCtx, f: fn(&mut Cursive, state: Arc<Mutex<AppStat
     };
 }
 
+fn build_entry_select_panel(ctx: &AppCtx) -> NamedView<Panel<NamedView<ScrollView<ResizedView<OnEventView<NamedView<SelectView>>>>>>> {
+    let select_view = SelectView::new();
+    let shared_state = ctx.state.clone();
+
+    let mut event_wrapped_select_view = OnEventView::new(
+        select_view
+        .h_align(HAlign::Center)
+        .on_select(move |s, item| {
+            display_entry(s, shared_state.clone(), item, false)
+        })
+        .autojump()
+        .with_name(SELECT_VIEW)
+    );
+
+    event_wrapped_select_view.set_on_event(Key::F1, wrapper(ctx.clone(), queue::add));
+    event_wrapped_select_view.set_on_event(Key::F2, wrapper3(ctx.clone(), copy::entry, false));
+
+    let select_view_scrollable = event_wrapped_select_view
+        .fixed_width(40)
+        .scrollable()
+        .with_name(SCROLL_VIEW);
+
+    let entry_select_panel = Panel::new(select_view_scrollable)
+        .title("Entries")
+        .with_name("EntrySelectPanel");
+
+    return entry_select_panel;
+}
+
 
 fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Sender<String>>) {
-    let select_view = SelectView::new();
     let ctx = AppCtx::new(shared_state.clone(), sndr.clone());
-    let state_for_callback = shared_state.clone();
     let state_for_fill_tui = shared_state.clone();
 
     let menu_bar = s.menubar();
@@ -452,31 +479,9 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
     s.add_global_callback(Key::F3, wrapper2(ctx.clone(), quit_without_print));
     s.add_global_callback(Key::F4, wrapper2(ctx.clone(), quit_and_print));
 
-    let mut event_wrapped_select_view = OnEventView::new(
-        select_view
-        .h_align(HAlign::Center)
-        .on_select(move |s, item| {
-            display_entry(s, state_for_callback.clone(), item, false)
-        })
-        .autojump()
-        .with_name(SELECT_VIEW)
-    );
-
-    event_wrapped_select_view.set_on_event(Key::F1, wrapper(ctx.clone(), queue::add));
-    event_wrapped_select_view.set_on_event(Key::F2, wrapper3(ctx.clone(), copy::entry, false));
-
-    let select_view_scrollable = event_wrapped_select_view
-        .fixed_width(40)
-        .scrollable()
-        .with_name(SCROLL_VIEW);
-
-    let entry_select_panel = Panel::new(select_view_scrollable)
-        .title("Entries")
-        .with_name("EntrySelectPanel");
-
 
     let tui = LinearLayout::horizontal()
-    .child(entry_select_panel)
+    .child(build_entry_select_panel(&ctx))
     .child(
         LinearLayout::vertical()
         .child(Panel::new(
