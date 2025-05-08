@@ -287,7 +287,7 @@ impl AeadContext {
         // ThreadRng, provided by the thread_rng function, is a handle to a thread-local CSPRNG with periodic 
         // seeding from OsRng. Because this is local, it is typically much faster than OsRng. It should be secure, 
         // though the paranoid may prefer OsRng.        
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         
         // ToDo: Error handling with fill_bytes()?
         let mut temp_nonce: [u8; DEFAULT_NONCE_SIZE] = [0; DEFAULT_NONCE_SIZE];

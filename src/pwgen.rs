@@ -92,7 +92,7 @@ pub struct GeneratorBase {
 impl GeneratorBase {
     pub fn new() -> GeneratorBase {
         return GeneratorBase {
-            rng: rand::thread_rng(), 
+            rng: rand::rng(),
             buffer: [0; PW_MAX_SEC_LEVEL]
         }
     }
@@ -102,10 +102,9 @@ impl GeneratorBase {
             return Err(Error::new(ErrorKind::Other, "Security level not supported"));
         }
 
-        return match self.rng.try_fill_bytes(&mut self.buffer) {
-            Err(_) => Err(Error::new(ErrorKind::Other, "Unable to generate random bytes")),
-            Ok(_) => Ok(&self.buffer[..num_bytes])
-        };
+        self.rng.fill_bytes(&mut self.buffer);
+
+        return Ok(&self.buffer[..num_bytes]);
     }
 }
 
@@ -180,7 +179,7 @@ const ALL_VOWELS: &str = "aeiouAEIOU";
 impl SpecialGenerator {
     pub fn new(use_hissing_sounds: bool) -> SpecialGenerator {
         let mut res = SpecialGenerator {
-            rng: rand::thread_rng(),
+            rng: rand::rng(),
             use_ch: use_hissing_sounds,
             vowels: Vec::new(),
             consonants: Vec::new(),
@@ -218,8 +217,8 @@ impl SpecialGenerator {
     }
 
     fn get_group(&mut self) -> String {       
-        let pos1 = self.rng.gen_range(0..self.consonants.len());
-        let pos2 = self.rng.gen_range(0..self.vowels.len());
+        let pos1 = self.rng.random_range(0..self.consonants.len());
+        let pos2 = self.rng.random_range(0..self.vowels.len());
 
         let mut res = self.consonants[pos1].clone();
         res.push_str(&self.vowels[pos2]);
@@ -239,9 +238,9 @@ impl PasswordGenerator for SpecialGenerator {
             res.push_str(&self.get_group())
         }
 
-        let pos1 = self.rng.gen_range(0..42);
+        let pos1 = self.rng.random_range(0..42);
         res.push_str(&self.consonants[pos1]);
-        res.push_str(&format!("{:03}", self.rng.gen_range(0..1000)));
+        res.push_str(&format!("{:03}", self.rng.random_range(0..1000)));
 
         return Some(res);
     }
@@ -264,7 +263,7 @@ impl PasswordGenerator for NumericGenerator {
         let mut res = String::from("");
 
         for _ in 0..number_of_digits {
-            let rand_digit = self.0.rng.gen_range(0..10);
+            let rand_digit = self.0.rng.random_range(0..10);
             res.push(digits[rand_digit])
         }
 
