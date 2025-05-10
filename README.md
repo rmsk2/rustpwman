@@ -305,7 +305,7 @@ depend on it being present.
 ## Themes
 
 Themes can be specified in the [theme file](./theme.json). All theme options are listed in the file and are equivalent to the theme arguments for [Cursive](https://docs.rs/cursive/latest/cursive/theme/struct.Theme.html).
-Color values can be in the base format (`dark red`), hex (`#ff8800`) or low presition hex (`#f00`), the borders style option can be of types `simple`, `outset` or `none`. If you remove the theme file,
+Color values can be in the base format (`dark red`), hex (`#ff8800`) or low precision hex (`#f00`), the borders style option can be of types `simple`, `outset` or `none`. If you remove the theme file,
 the program will use default terminal values, arguments are not greedy and undefined options will revert to defaults, see defaults at [Cursive docs](https://docs.rs/cursive/latest/cursive/theme/struct.Palette.html#method.retro).
 Support for colouring varies between platforms and console backends.
 
