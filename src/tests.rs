@@ -47,9 +47,9 @@ use crate::jots::CryptorGen;
 
 
 #[cfg(test)]
-pub fn test_fcrypt_enc_dec_generic(gen: CryptorGen) {
+pub fn test_fcrypt_enc_dec_generic(generator: CryptorGen) {
     let (d, i) = fcrypt::KdfId::Sha256.to_named_func();
-    let mut ctx = gen(d, i);
+    let mut ctx = generator(d, i);
     let data_raw: Vec<u8> = vec![0; 32];
 
     let cipher_text = match ctx.encrypt("this is a test", &data_raw) {
@@ -83,9 +83,9 @@ pub fn test_fcrypt_enc_dec_chacha20() {
 
 
 #[cfg(test)]
-pub fn test_fcrypt_enc_dec_empty_generic(gen: CryptorGen) {
+pub fn test_fcrypt_enc_dec_empty_generic(generator: CryptorGen) {
     let (d, i) = fcrypt::KdfId::Sha256.to_named_func();
-    let mut ctx = gen(d, i);
+    let mut ctx = generator(d, i);
     let data_raw: Vec<u8> = Vec::new();
 
     let cipher_text = match ctx.encrypt("this is a test", &data_raw) {
@@ -124,9 +124,9 @@ pub fn test_fcrypt_enc_dec_empty_chacha20() {
 }
 
 #[cfg(test)]
-pub fn test_fcrypt_dec_failure_generic(gen: CryptorGen) {
+pub fn test_fcrypt_dec_failure_generic(generator: CryptorGen) {
     let (d, i) = fcrypt::KdfId::Sha256.to_named_func();
-    let mut ctx = gen(d, i);
+    let mut ctx = generator(d, i);
     let data_raw: Vec<u8> = vec![0; 32];
 
     let cipher_text = match ctx.encrypt("this is a test", &data_raw) {
@@ -158,14 +158,14 @@ pub fn test_fcrypt_dec_failure_chacha20() {
 
 
 #[cfg(test)]
-pub fn test_fcrypt_enc_dec_with_json_generic(gen: CryptorGen) {
+pub fn test_fcrypt_enc_dec_with_json_generic(generator: CryptorGen) {
     let data_raw: Vec<u8> = vec![0; 32];
     let mut cipher_json: Vec<u8> = Vec::new();
     let (d, i) = fcrypt::KdfId::Sha256.to_named_func();
 
     {
         
-        let mut ctx = gen(d, i);
+        let mut ctx = generator(d, i);
     
         let cipher_text = match ctx.encrypt("this is a test", &data_raw) {
             Ok(c) => c,
@@ -182,7 +182,7 @@ pub fn test_fcrypt_enc_dec_with_json_generic(gen: CryptorGen) {
         }
     }
 
-    let mut ctx2 = gen(d, i);
+    let mut ctx2 = generator(d, i);
     let cipher_raw: Vec<u8> = match ctx2.from_dyn_reader(&mut cipher_json.as_slice()) {
         Ok(c) => c,
         Err(_) => { panic!("Deserialization failed"); }        
@@ -540,13 +540,13 @@ fn test_base_n_conversion() {
     let digits = String::from("abcdefghijklmnopqrstuvwxyz23456");
     let zero_byte: u8 = 0;    
     let one_byte: u8 = 1;
-    let gen = BaseNGenerator::from_string(&digits);
+    let generator = BaseNGenerator::from_string(&digits);
 
     let buf: [u8;4] = [zero_byte, zero_byte, zero_byte, zero_byte];
-    assert_eq!(gen.buf_to_base_n(&buf, num_bytes), String::from("aaaaaaa"));
+    assert_eq!(generator.buf_to_base_n(&buf, num_bytes), String::from("aaaaaaa"));
 
     let buf2: [u8;4] = [0xFF, one_byte, one_byte, one_byte];
-    assert_eq!(gen.buf_to_base_n(&buf2, num_bytes), String::from("eznrae6"));
+    assert_eq!(generator.buf_to_base_n(&buf2, num_bytes), String::from("eznrae6"));
 }
 
 #[test]
@@ -554,11 +554,11 @@ fn test_base_n_gen() {
     let num_bytes = 4;
     // base 32
     let digits = String::from("abcdefghijklmnopqrstuvwxyz234567");
-    let mut gen = BaseNGenerator::from_string(&digits);
+    let mut generator = BaseNGenerator::from_string(&digits);
 
     for _i in 0..100 {
-        let pw = gen.gen_password(num_bytes).unwrap();    
+        let pw = generator.gen_password(num_bytes).unwrap();
         println!("{}", &pw);
-        assert_eq!(gen.get_max_digits(num_bytes), pw.len());    
+        assert_eq!(generator.get_max_digits(num_bytes), pw.len());
     }
 }
