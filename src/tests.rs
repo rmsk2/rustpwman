@@ -360,7 +360,7 @@ pub fn test_sha256_key_gen() {
 
 #[test]
 pub fn test_scrypt_params() {
-    let parms = Params::new(14, 8, 1, 32).unwrap();
+    let parms = Params::new(14, 8, 1).unwrap();
     let mut aes_key: [u8; 64] = [0; 64];
 
     // Test vectors from RFC7914

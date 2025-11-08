@@ -17,7 +17,7 @@ use std::io::Read;
 use std::io::Write;
 use crate::fcrypt::{Cryptor, AeadContext, KdfId, KeyDeriver};
 use crate::fcrypt::{decrypt_aead, encrypt_aead};
-use cipher::generic_array::typenum;
+use cipher::consts::U12;
 use aes_gcm::AesGcm;
 use super::derivers;
 
@@ -38,11 +38,11 @@ impl Gcm256Context {
 
 impl Cryptor for Gcm256Context {
     fn decrypt(&mut self, password: &str, data: &Vec<u8>) -> std::io::Result<Vec<u8>> {
-        return decrypt_aead::<AesGcm::<aes::Aes256, typenum::U12>>(&mut self.0, password, data, ALGO_AES256);
+        return decrypt_aead::<AesGcm::<aes::Aes256, U12>>(&mut self.0, password, data, ALGO_AES256);
     }
 
     fn encrypt(&mut self, password: &str, data: &Vec<u8>) -> std::io::Result<Vec<u8>> {
-        return encrypt_aead::<AesGcm::<aes::Aes256, typenum::U12>>(&mut self.0, password, data, ALGO_AES256);
+        return encrypt_aead::<AesGcm::<aes::Aes256, U12>>(&mut self.0, password, data, ALGO_AES256);
     }
 
     fn from_dyn_reader(&mut self, reader: &mut dyn Read) -> std::io::Result<Vec<u8>> {
@@ -73,11 +73,11 @@ impl Gcm192Context {
 
 impl Cryptor for Gcm192Context {
     fn decrypt(&mut self, password: &str, data: &Vec<u8>) -> std::io::Result<Vec<u8>> {
-        return decrypt_aead::<AesGcm::<aes::Aes192, typenum::U12>>(&mut self.0,password, data, ALGO_AES192);
+        return decrypt_aead::<AesGcm::<aes::Aes192, U12>>(&mut self.0,password, data, ALGO_AES192);
     }
 
     fn encrypt(&mut self, password: &str, data: &Vec<u8>) -> std::io::Result<Vec<u8>> {
-        return encrypt_aead::<AesGcm::<aes::Aes192, typenum::U12>>(&mut self.0, password, data, ALGO_AES192);
+        return encrypt_aead::<AesGcm::<aes::Aes192, U12>>(&mut self.0, password, data, ALGO_AES192);
     }
 
     fn from_dyn_reader(&mut self, reader: &mut dyn Read) -> std::io::Result<Vec<u8>> {
