@@ -30,6 +30,7 @@ mod open;
 mod info;
 mod export;
 mod queue;
+mod qrcode;
 pub mod tuimain;
 pub mod tuitheme;
 
@@ -464,6 +465,7 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
             .leaf("Rename Entry ...", wrapper(ctx.clone(), rename::entry))
             .leaf("Clear Entry ...", wrapper(ctx.clone(), clear::entry))
             .leaf("Load Entry ...", wrapper(ctx.clone(), load::entry))
+            .leaf("To QR-Code ...", wrapper(ctx.clone(), qrcode::create))
         )
         .add_subtree("Queue",
             Tree::new()
