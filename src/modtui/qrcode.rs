@@ -78,12 +78,18 @@ pub fn create(s: &mut Cursive, state_for_copy_entry: Arc<Mutex<AppState>>) {
             return
         }
 
-        let result = image.save(file_name.as_str());
+        let mut f_name = String::from(file_name.as_str());
+
+        if !f_name.ends_with(".png") {
+            f_name.push_str(".png");
+        }
+
+        let result = image.save(f_name.as_str());
 
         match result {
             Ok(_) => {
                 s.pop_layer();
-                show_message(s, "Done"); 
+                show_message(s, &format!("Saved QR code to: {:?}", f_name));
             },
             Err(e) => {
                 show_message(s, &format!("Unable to save QR code: {:?}", e));
