@@ -23,11 +23,39 @@ use std::process::Command;
 use qrcode::QrCode;
 use image::Luma;
 use std::env;
+use std::fs;
 
 const QR_CODE_FILE_NAME: &str = "qrfile";
-const RUSTPWMAN_VIEWER: &str = "RUSTPWMMAN_VIEWER";
+const RUSTPWMAN_VIEWER: &str = "RUSTPWMAN_VIEWER";
 
-pub fn run_command(cmd: &str) -> Option<std::io::Error> {
+fn ask_for_deletion(s: &mut Cursive, file_name: String) {
+    let dlg = Dialog::new()
+    .title("Rustpwman delete QR code file")
+    .padding_lrtb(2, 2, 1, 1)
+    .content(
+        LinearLayout::vertical()
+        .child(TextView::new("The following file was created:"))
+        .child(TextView::new("\n"))
+        .child(TextView::new(file_name.clone()))
+        .child(TextView::new("\n"))
+        .child(TextView::new("In order to not let a secret presist on disk it is advisable to delete"))
+        .child(TextView::new("this file as soon as possible."))
+        .child(TextView::new("\n"))
+        .child(TextView::new("So scan the QR code and after that select 'Delete Now' to delete it."))
+        .child(TextView::new("If you want to remove the file by hand later select 'Cancel'"))
+    )
+    .button("Cancel", |s| { s.pop_layer(); })            
+    .button("Delete Now", move |s| {
+        s.pop_layer();
+        if let Err(e) = fs::remove_file(file_name.as_str()) {
+            show_message(s, &format!("Unable to delete QR code file: {:?}", e)); 
+        }
+    });
+    
+    s.add_layer(dlg);
+}
+
+fn run_command(cmd: &str) -> Option<std::io::Error> {
     if cmd.len() == 0 {
         return Some(std::io::Error::new(std::io::ErrorKind::Other, "Command string not valid"));
     }
@@ -49,34 +77,35 @@ pub fn run_command(cmd: &str) -> Option<std::io::Error> {
     };
 }
 
-pub fn execute_viewer(file_name: String, cmd_prefix: Option<&str>) -> String {
-    let res: String;
+fn execute_viewer(file_name: &String, cmd_prefix: Option<&str>) -> Option<String> {
+    let res: Option<String>;
     let mut h: String;
 
     match cmd_prefix {
         None => {
-            return format!("Saved QR code to: {:?}", file_name);
+            return None;
         },
         Some(prefix) => {
             h = String::from(prefix)
         }        
     };
     
-    h.push_str(&file_name);
+    h.push_str(" ");
+    h.push_str(file_name);
     
     res = match run_command(h.as_str()) {
         None => {
-            String::from("")
+            None
         },
         Some(e) => {
-            format!("Unable to start QR code viewer: {:?}", e)
+            Some(format!("Unable to start QR code viewer: {:?}", e))
         }
     };
     
     return res;
 }
 
-pub fn create(s: &mut Cursive, state_for_copy_entry: Arc<Mutex<AppState>>) {
+pub fn create(s: &mut Cursive, state_for_create_qr_entry: Arc<Mutex<AppState>>) {
     let entry_name = match get_selected_entry_name(s) {
         Some(name) => name,
         None => {
@@ -85,7 +114,7 @@ pub fn create(s: &mut Cursive, state_for_copy_entry: Arc<Mutex<AppState>>) {
         }
     };
 
-    let h = match state_for_copy_entry.lock().unwrap().store.get(&entry_name) {
+    let h = match state_for_create_qr_entry.lock().unwrap().store.get(&entry_name) {
         Some(c) => c,
         None => { show_message(s, "Unable to read value of entry"); return }
     };
@@ -107,7 +136,7 @@ pub fn create(s: &mut Cursive, state_for_copy_entry: Arc<Mutex<AppState>>) {
     .padding_lrtb(2, 2, 1, 1)
     .content(
         LinearLayout::vertical()
-        .child(TextView::new("Please enter the name of a file to save QR code.\n\n"))
+        .child(TextView::new("Please enter the name of the file in which to save the QR code.\n\n"))
         .child(
             LinearLayout::horizontal()
                 .child(TextView::new("Filename: "))
@@ -150,10 +179,13 @@ pub fn create(s: &mut Cursive, state_for_copy_entry: Arc<Mutex<AppState>>) {
         match result {
             Ok(_) => {
                 s.pop_layer();
-                let msg = execute_viewer(f_name, viewer);
-                if msg != "" {
-                    show_message(s, &msg);
+                let msg = execute_viewer(&f_name, viewer);
+                if let Some(error_message) = msg {
+                    show_message(s, &error_message);
                     return
+                } else {
+                    ask_for_deletion(s, f_name);
+                    return;
                 }
             },
             Err(e) => {
