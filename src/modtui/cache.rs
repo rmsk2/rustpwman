@@ -14,26 +14,21 @@ limitations under the License. */
 
 
 use std::sync::{Arc, Mutex};
-#[cfg(feature = "pwmanclient")]
 use std::sync::mpsc::Sender;
 
 
 use super::AppState;
 use super::show_message;
-#[cfg(feature = "pwmanclient")]
 use super::pwman_quit;
 #[cfg(feature = "pwmanclientux")]
 use crate::pwman_client_ux::UDSClient;
 #[cfg(feature = "pwmanclientwin")]
 use crate::pwman_client_win::UDSClientWin;
-#[cfg(feature = "pwmanclient")]
 use crate::pwman_client::PWManClient;
-#[cfg(feature = "pwmanclient")]
 use crate::pwman_client::SendSyncPwManClient;
 
 
 use cursive::Cursive;
-#[cfg(feature = "pwmanclient")]
 use cursive::views::{Dialog, LinearLayout, TextView};
 
 #[cfg(feature = "pwmanclientux")]
@@ -52,7 +47,6 @@ pub fn make_pwman_client(file_name: String) -> std::io::Result<SendSyncPwManClie
     }
 }
 
-#[cfg(feature = "pwmanclient")]
 pub fn password(s: &mut Cursive, state_for_write_cache: Arc<Mutex<AppState>>) {
     let pw_option = state_for_write_cache.lock().unwrap().password.clone();
     let file_name = match state_for_write_cache.lock().unwrap().persister.get_canonical_path() {
@@ -94,7 +88,6 @@ pub fn password(s: &mut Cursive, state_for_write_cache: Arc<Mutex<AppState>>) {
     }
 }
 
-#[cfg(feature = "pwmanclient")]
 pub fn uncache_password(s: &mut Cursive, state_for_write_cache: Arc<Mutex<AppState>>) {
     let file_name = match state_for_write_cache.lock().unwrap().persister.get_canonical_path() {
         Ok(s) => s,
@@ -126,17 +119,6 @@ pub fn uncache_password(s: &mut Cursive, state_for_write_cache: Arc<Mutex<AppSta
     }
 }
 
-#[cfg(not(feature = "pwmanclient"))]
-pub fn password(s: &mut Cursive, _state_for_write_cache: Arc<Mutex<AppState>>) {
-    show_message(s, "Sorry this feature is not available in this build") 
-}
-
-#[cfg(not(feature = "pwmanclient"))]
-pub fn uncache_password(s: &mut Cursive, _state_for_write_cache: Arc<Mutex<AppState>>) {
-    show_message(s, "Sorry this feature is not available in this build") 
-}
-
-#[cfg(feature = "pwmanclient")]
 pub fn confirmation_dialog(sndr: Arc<Sender<String>>, password: String, client: SendSyncPwManClient, ok_cb_with_state: Box<dyn Fn(&mut Cursive, &String, bool) + Send + Sync>) -> Dialog {
     let sender = sndr.clone();
     let sender2 = sndr.clone();

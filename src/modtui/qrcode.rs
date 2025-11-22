@@ -12,6 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+
 use cursive::Cursive;
 use cursive::views::{Dialog, LinearLayout, TextView, EditView};
 use cursive::traits::*;
@@ -27,6 +28,7 @@ use std::fs;
 
 const QR_CODE_FILE_NAME: &str = "qrfile";
 const RUSTPWMAN_VIEWER: &str = "RUSTPWMAN_VIEWER";
+
 
 fn ask_for_deletion(s: &mut Cursive, file_name: String) {
     let dlg = Dialog::new()
