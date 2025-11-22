@@ -72,7 +72,7 @@ pub fn set_clipboard(cmd: String, data: Box<String>) -> bool {
     };
     
    std::thread::spawn(move || {
-        stdin.write_all(data.as_bytes()).expect("failed to talk to child preocess")
+        stdin.write_all(data.as_bytes()).expect("failed to talk to child process")
     });
 
     match child.wait() {

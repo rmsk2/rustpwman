@@ -19,10 +19,62 @@ use std::sync::{Arc, Mutex};
 use super::AppState;
 use super::show_message;
 use super::get_selected_entry_name;
+use std::process::Command;
 use qrcode::QrCode;
 use image::Luma;
+use std::env;
 
 const QR_CODE_FILE_NAME: &str = "qrfile";
+const RUSTPWMAN_VIEWER: &str = "RUSTPWMMAN_VIEWER";
+
+pub fn run_command(cmd: &str) -> Option<std::io::Error> {
+    if cmd.len() == 0 {
+        return Some(std::io::Error::new(std::io::ErrorKind::Other, "Command string not valid"));
+    }
+
+    let cmd_args = cmd.split_ascii_whitespace();
+    let collection: Vec<&str> = cmd_args.collect(); 
+
+    if collection.len() < 1 {
+        return Some(std::io::Error::new(std::io::ErrorKind::Other, "Command string not valid"));
+    }   
+
+    match Command::new(collection[0]).args(collection[1..].into_iter()).spawn() {
+        Ok(_) =>  {
+            return None
+        },
+        Err(e) => {
+            return Some(e)
+        }
+    };
+}
+
+pub fn execute_viewer(file_name: String, cmd_prefix: Option<&str>) -> String {
+    let res: String;
+    let mut h: String;
+
+    match cmd_prefix {
+        None => {
+            return format!("Saved QR code to: {:?}", file_name);
+        },
+        Some(prefix) => {
+            h = String::from(prefix)
+        }        
+    };
+    
+    h.push_str(&file_name);
+    
+    res = match run_command(h.as_str()) {
+        None => {
+            String::from("")
+        },
+        Some(e) => {
+            format!("Unable to start QR code viewer: {:?}", e)
+        }
+    };
+    
+    return res;
+}
 
 pub fn create(s: &mut Cursive, state_for_copy_entry: Arc<Mutex<AppState>>) {
     let entry_name = match get_selected_entry_name(s) {
@@ -85,14 +137,28 @@ pub fn create(s: &mut Cursive, state_for_copy_entry: Arc<Mutex<AppState>>) {
         }
 
         let result = image.save(f_name.as_str());
+        let temp: String;
+
+        let viewer = match env::var(RUSTPWMAN_VIEWER) {
+            Ok(s) => {
+                temp = s.clone();
+                Some(temp.as_str())
+            },
+            Err(_) => None
+        };
 
         match result {
             Ok(_) => {
                 s.pop_layer();
-                show_message(s, &format!("Saved QR code to: {:?}", f_name));
+                let msg = execute_viewer(f_name, viewer);
+                if msg != "" {
+                    show_message(s, &msg);
+                    return
+                }
             },
             Err(e) => {
                 show_message(s, &format!("Unable to save QR code: {:?}", e));
+                return
             }
         };
     });
