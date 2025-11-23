@@ -245,7 +245,7 @@ webdav_server = ""
 - `pwgen` is one of the strings `base64`, `hex`, `numeric` or `special`
 - `clip_cmd` is a string which specifies a command that can be used to write the current contents of the clipboard to stdout.
 - `copy_cmd` is a string which specifies a command that can be used to transfer the data sent to it via stdin to the clipboard.
-- `viewer_cmd` is a string which specifies a command that can be used to show an image. This entry is optional,
+- `viewer_cmd` is a string which specifies a command that can be used to show an image. This entry is optional.
 - See below for an explanation of  the `webdav_xx` entries.
 
 The default value for `clip_cmd` is `xsel -ob`, which works on Linux to retrieve the contents of the clipboard, which is filled via `CTRL+C` or after activating the `Copy`
