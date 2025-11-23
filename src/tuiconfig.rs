@@ -37,6 +37,8 @@ const BITS_SEC_VALUE: &str = "cfgseclevel";
 const SLIDER_SEC_NAME: &str = "cfgslider";
 const EDIT_PASTE_COMMAND: &str = "pastecmd";
 const EDIT_COPY_COMMAND: &str = "copycmd";
+#[cfg(feature = "qrcode")]
+const EDIT_VIEWER_COMMAND: &str = "viewercmd";
 
 pub fn show_yes_no_decision(siv: &mut Cursive, msg: &str) {
     siv.add_layer(
@@ -94,13 +96,15 @@ pub fn obfuscate_password(s: &mut Cursive) {
     s.call_on_name("webdav_password", |view: &mut EditView| { view.set_content(pw) });
 }
 
-pub fn save_new_config(s: &mut Cursive, u: &String, p: &String, srv: &String, config_file: &std::path::PathBuf, strat: &RadioGroup<pwgen::GenerationStrategy>, pbkdf: &RadioGroup<fcrypt::KdfId>) {
+pub fn save_new_config(s: &mut Cursive, u: &String, p: &String, srv: &String, config_file: &std::path::PathBuf, strat: &RadioGroup<pwgen::GenerationStrategy>, pbkdf: &RadioGroup<fcrypt::KdfId>, vwr: &Option<String>) {
     #[allow(unused_mut, unused_assignments)]
     let mut user = u.clone();
     #[allow(unused_mut, unused_assignments)]
     let mut pw = p.clone();
     #[allow(unused_mut, unused_assignments)]
     let mut server = srv.clone();
+    #[allow(unused_mut, unused_assignments)]
+    let mut viewer_command = vwr.clone();
 
     let rand_bytes = match s.call_on_name(SLIDER_SEC_NAME, |view: &mut SliderView| { view.get_value() }) {
         Some(v) => v,
@@ -125,6 +129,24 @@ pub fn save_new_config(s: &mut Cursive, u: &String, p: &String, srv: &String, co
             return;
         }
     };
+
+    #[cfg(feature = "qrcode")]
+    {
+        let viewer_command_txt = match s.call_on_name(EDIT_VIEWER_COMMAND, |view: &mut EditView| { view.get_content() }) {
+            Some(v) => v,
+            None => {
+                show_message(s, "Unable to determine image viewer command");
+                return;
+            }
+        };
+
+        if viewer_command_txt.len() != 0 {
+            viewer_command = Some(String::from(viewer_command_txt.as_str()));
+        } else {
+            viewer_command = None;
+        }
+    }
+
 
     #[cfg(feature = "webdav")]
     if let Some(t) = s.call_on_name("webdav_user", |view: &mut EditView| { view.get_content() }) {
@@ -153,7 +175,7 @@ pub fn save_new_config(s: &mut Cursive, u: &String, p: &String, srv: &String, co
     let strategy = strat.selection();
     let pbkdf = &pbkdf.selection();
 
-    let new_config = RustPwManSerialize::new(rand_bytes, pbkdf.to_str(), strategy.to_str(), clip_command.as_str(), copy_command.as_str(), user.as_str(), pw.as_str(), server.as_str());
+    let new_config = RustPwManSerialize::new(rand_bytes, pbkdf.to_str(), strategy.to_str(), clip_command.as_str(), copy_command.as_str(), user.as_str(), pw.as_str(), server.as_str(), viewer_command);
 
     match tomlconfig::save(config_file, new_config) {
         Some(e) => {
@@ -166,7 +188,7 @@ pub fn save_new_config(s: &mut Cursive, u: &String, p: &String, srv: &String, co
 }
 
 pub fn config_main(config_file: std::path::PathBuf, sec_level: usize, pw_gen_strategy: pwgen::GenerationStrategy, pbkdf_id: fcrypt::KdfId,
-                   clp_cmd: &String, cpy_cmd: &String, webdav_user: &String, webdav_pw: &String, webdav_server: &String) {
+                   clp_cmd: &String, cpy_cmd: &String, webdav_user: &String, webdav_pw: &String, webdav_server: &String, viewer_cmd: &Option<String>) {
     let mut siv = cursive::default();
 
     let mut strategy_group: RadioGroup<pwgen::GenerationStrategy> = RadioGroup::new();
@@ -234,27 +256,37 @@ pub fn config_main(config_file: std::path::PathBuf, sec_level: usize, pw_gen_str
             ).title("Default PBKDF")
     );
 
+    let mut cmds_layout =LinearLayout::vertical();
+    cmds_layout.add_child(LinearLayout::horizontal()
+        .child(TextView::new("Paste command        : "))
+        .child(EditView::new()
+            .with_name(EDIT_PASTE_COMMAND)
+            .fixed_width(60))
+    );
+
+    cmds_layout.add_child(TextView::new("\n"));
+
+    cmds_layout.add_child(LinearLayout::horizontal()
+        .child(TextView::new("Copy command         : "))
+        .child(EditView::new()
+            .with_name(EDIT_COPY_COMMAND)
+            .fixed_width(60)));
+
+    #[cfg(feature = "qrcode")]
+    {
+        cmds_layout.add_child(TextView::new("\n"));
+        cmds_layout.add_child(LinearLayout::horizontal()
+            .child(TextView::new("Image viewer command : "))
+            .child(EditView::new()
+                .with_name(EDIT_VIEWER_COMMAND)
+                .fixed_width(60)));
+
+    }
+
     config_panels.add_child(
         Panel::new(
-            PaddedView::new(Margins::lrtb(1,1,1,1),
-            LinearLayout::vertical()
-                .child(
-                    LinearLayout::horizontal()
-                        .child(TextView::new("Paste command: "))
-                        .child(EditView::new()
-                            .with_name(EDIT_PASTE_COMMAND)
-                            .fixed_width(60))
-                )
-                .child(TextView::new("\n"))
-                .child(
-                    LinearLayout::horizontal()
-                        .child(TextView::new("Copy command : "))
-                        .child(EditView::new()
-                            .with_name(EDIT_COPY_COMMAND)
-                            .fixed_width(60))
-                )
-            ))
-            .title("Clipboard commands")
+            PaddedView::new(Margins::lrtb(1,1,1,1), cmds_layout))
+            .title("Helper commands")
     );
 
     #[cfg(feature = "webdav")]
@@ -302,8 +334,9 @@ pub fn config_main(config_file: std::path::PathBuf, sec_level: usize, pw_gen_str
     let u = webdav_user.clone();
     let p = webdav_pw.clone();
     let serv = webdav_server.clone();
+    let vwr = viewer_cmd.clone();
 
-    res.add_button("OK", move |s| save_new_config(s, &u, &p, &serv, &config_file, &strategy_group, &pbkdf_group));
+    res.add_button("OK", move |s| save_new_config(s, &u, &p, &serv, &config_file, &strategy_group, &pbkdf_group, &vwr));
     res.add_button("Cancel", |s| s.quit() );
 
     #[cfg(feature = "webdav")]
@@ -319,6 +352,15 @@ pub fn config_main(config_file: std::path::PathBuf, sec_level: usize, pw_gen_str
         siv.call_on_name("webdav_user", |view: &mut EditView| { view.set_content(webdav_user) });
         siv.call_on_name("webdav_password", |view: &mut EditView| { view.set_content(webdav_pw) });
         siv.call_on_name("webdav_server", |view: &mut EditView| { view.set_content(webdav_server) });
+    }
+
+    #[cfg(feature = "qrcode")]
+    {
+        if let Some(vc) = viewer_cmd {
+            siv.call_on_name(EDIT_VIEWER_COMMAND, |view: &mut EditView| { view.set_content(vc.clone()) });
+        } else {
+            siv.call_on_name(EDIT_VIEWER_COMMAND, |view: &mut EditView| { view.set_content(String::from("")) });
+        }
     }
 
     match crate::modtui::tuitheme::get_theme() {

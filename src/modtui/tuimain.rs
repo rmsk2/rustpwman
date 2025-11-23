@@ -57,7 +57,7 @@ pub fn write_backup_file(data: &Vec<u8>) -> std::io::Result<()> {
 }
 
 pub fn main(data_file_name: String, default_sec_bits: usize, derive_func: KeyDeriver, deriver_id: fcrypt::KdfId, default_pw_gen: GenerationStrategy,
-            paste_cmd: String, copy_cmd: String, make_default: persist::PersistCreator, crypt_gen: Box<dyn Fn() -> CryptorGen + Send + Sync>, export: bool) {
+            paste_cmd: String, copy_cmd: String, make_default: persist::PersistCreator, crypt_gen: Box<dyn Fn() -> CryptorGen + Send + Sync>, export: bool, qr_viewer: Option<String>) {
     let (tx, rx): (Sender<String>, Receiver<String>) = mpsc::channel();
 
     let capture_file_name = data_file_name.clone();
@@ -86,7 +86,7 @@ pub fn main(data_file_name: String, default_sec_bits: usize, derive_func: KeyDer
 
         let f_name = capture_file_name.clone();
 
-        let state = AppState::new(jots_store, &f_name, default_sec_bits, default_pw_gen, &paste_cmd, &copy_cmd, p_cb, pw_cached);
+        let state = AppState::new(jots_store, &f_name, default_sec_bits, default_pw_gen, &paste_cmd, &copy_cmd, p_cb, pw_cached, &qr_viewer);
 
         // No else branch is neccessary as open_file performs error handling
         if let Some(state_after_open) = open::storage(s, password, state) {

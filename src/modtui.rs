@@ -61,7 +61,6 @@ use cursive::theme;
 use cursive::theme::Effects;
 use cursive::theme::Effect;
 use std::sync::{Arc, Mutex};
-use std::env;
 
 use std::sync::mpsc::Sender;
 use std::io::{Error, ErrorKind};
@@ -69,9 +68,7 @@ use std::io::{Error, ErrorKind};
 use crate::pwgen::GenerationStrategy;
 use crate::jots;
 
-const RUSTPWMAN_VIEWER: &str = "RUSTPWMAN_VIEWER";
-
-
+#[allow(dead_code)]
 pub struct AppState {
     store: jots::Jots,
     password: Option<String>,
@@ -89,7 +86,7 @@ pub struct AppState {
 
 impl AppState {
     pub fn new(s: jots::Jots, f_name: &String, default_sec: usize, default_gen: GenerationStrategy,
-               paste_cmd: &String, copy_cmd: &String, p: SendSyncPersister, is_pw_cached: bool) -> Self {
+               paste_cmd: &String, copy_cmd: &String, p: SendSyncPersister, is_pw_cached: bool, qr_viewer: &Option<String>) -> Self {
         return AppState {
             store: s,
             password: None,
@@ -98,24 +95,12 @@ impl AppState {
             default_generator: default_gen,
             paste_command: paste_cmd.clone(),
             copy_command: copy_cmd.clone(),
-            viewer_prefix: AppState::get_viewer_from_env(),
+            viewer_prefix: qr_viewer.clone(),
             persister: p,
             last_custom_selection: String::from(""),
             pw_is_chached: is_pw_cached,
             entry_queue: Vec::new()
         }
-    }
-
-    fn get_viewer_from_env() -> Option<String> {
-        let viewer = match env::var(RUSTPWMAN_VIEWER) {
-            Ok(s) => {
-                let temp = s.clone();
-                Some(temp)
-            },
-            Err(_) => None
-        }; 
-
-        return viewer;     
     }
 
     pub fn get_default_bits(&self) -> usize {
