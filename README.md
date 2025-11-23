@@ -172,6 +172,18 @@ Via this menu entry the contents of the currently selected password entry can be
 
 This allows to load the contents of a (text-)file into an entry. The current contents of the entry is overwritten.
 
+### To QR-Code
+
+This entry is visible when the feature `qrcode` was used to build `rustpwman`. Via this entry you can create a QR code which encodes the contents of the entry. This can be useful if
+you want use data stored in `rustpwman` on a mobile phone. It is especially handy, if the data stored in `rustpwman` is a `otpauth://`-URL which holds the value and the usage parameters
+of a TOTP secret.
+
+As `rustpwman` is a text mode only application it can not show images directly. We therefore have to make use of an OS-specific helper application which allows us to display an image
+stored in the file system of the machine on which `rustpwman` runs. This also means that the image containing the QR code has to be created before it can be displayed. For this purpose
+you have to specify the file name in which to store the QR code.
+
+After you have scanned the QR code with your device you most probably want to delete the file again. `rustpwman` offers to do that for you immedeately after starting the image viewer.
+
 ## The Queue menu
 
 In version 2.2.0 the notion of an entry queue has been introduced to `rustpwman`. The idea behind this is that at certain times it is known beforehand that several entries of the
@@ -233,6 +245,7 @@ webdav_server = ""
 - `pwgen` is one of the strings `base64`, `hex`, `numeric` or `special`
 - `clip_cmd` is a string which specifies a command that can be used to write the current contents of the clipboard to stdout.
 - `copy_cmd` is a string which specifies a command that can be used to transfer the data sent to it via stdin to the clipboard.
+- `viewer_cmd` is a string which specifies a command that can be used to show an image. This entry is optional,
 - See below for an explanation of  the `webdav_xx` entries.
 
 The default value for `clip_cmd` is `xsel -ob`, which works on Linux to retrieve the contents of the clipboard, which is filled via `CTRL+C` or after activating the `Copy`
@@ -241,6 +254,8 @@ to manually install `xsel` on Ubuntu 22.04. Under MacOS `pbpaste -Prefer txt` ca
 tool `paste_utf8.exe` which can be built in a Visual Studio developer prompt using the `build_paste_utf8.bat` batch file.
 
 The value `copy_cmd` uses `xsel -ib` as a default. This should work under Linux. Use `pbcopy` under MacOS and `clip.exe` or `paste_utf8.exe -c` under Windows.
+
+As the value of `viewer_cmd` you can use `eog` (Gnome) or `xdg-open` on Linux, `open -a Preview` on MacOS and `start` under Windows.
 
 The config file is stored in the users' home directory in a file named `.rustpwman` and you can alternatively edit it by hand instead of calling `rustpwman cfg`.
 
@@ -331,6 +346,19 @@ This may not be the case at times when there is no internet connection or if the
 of the data file after its password has been successfully verified. As a default the backup file is stored in the current directory using the name `rustpwman_last.enc`. This
 default can be overriden by setting the environment variable `PWMANBKP` to the desired name of the backup file. This feature is active by default.
 
+## Encoding stored data as a QR code
+
+The feature `qrcode` allows you to encode data stored in `rustpwman` as a QR code which is especially useful for recreating TOTP secrets on your mobile phone or any other
+TOTP enabled device which is able to read the corresponding QR code. `rustpwman` stores the generated QR code as a PNG image at a location in the file system chosen by the user.
+`rustpwman` can also automatically start an image viewer which displays the newly created PNG. For that to work the prefix of the image viewer command has to be specified either in
+an environment variable called `RUSTPWMAN_VIEWER` or via the entry `viewer_cmd` of  the `.rustpwman` config file. `rustpwman` simply appends the file name of the PNG to the
+specified prefix and executes the resulting string as a command.
+
+If a config file entry exists it takes precedence over the environment variable. This feature also works if you do not specify a viewer application. In that case you have to open the
+generated image file manually.
+
+This feature alone adds about 80 dependencies to the project. If you do not plan to use QR codes then build `rustpwman` without it.
+
 # Rustpwman under Windows
 
 ## Native
@@ -339,9 +367,9 @@ The good news is that it works and it even works well. I have tested the `pancur
 uses a binding to a C library and requires an [installed C compiler](https://github.com/ihalila/pdcurses-sys) in order to build. On the other hand Rust itself is dependent on a C
 compiler when used under Windows.
 
-In order to build `rustpwman` with all optional features you have to use the command `cargo build --release --no-default-features --features pwmanclientwin,chacha20,webdav,writebackup`.
+In order to build `rustpwman` with all optional features you have to use the command `cargo build --release --no-default-features --features pwmanclientwin,chacha20,webdav,writebackup,qrcode`.
 Alternatively you can call the batch file `build_win.bat` which executes this command and calls `build_paste_utf8.bat` (see below). If you do not care about the
-password cache, WebDAV or the additional ciphers use `cargo build --release --no-default-features`. You should additionally build the `paste_utf8.exe` tool by
+password cache, WebDAV, additional ciphers or QR codes use `cargo build --release --no-default-features`. You should additionally build the `paste_utf8.exe` tool by
 running `build_paste_utf8.bat` in a Visual Studio developer prompt. This tool enables you to paste the clipboard contents while editing an entry and to copy an entry which
 contains non-ASCII characters (in my case Umlauts) to the clipboard in such a way that the non ASCII characters are displayed correctly.
 
@@ -349,7 +377,8 @@ This batch file also builds `winfilter.exe` from the rust source `winfilter.rs`.
 input (if it appears at the beginning of the stream). Therefore if you pipe the output of `rustpwman` through `winfilter.exe` you can cleanup `rustpwman`'s output in order to
 make further processing easier.
 
-I have tested `rustpwman` with the `pancurses` backend in the normal `cmd.exe` console and the new [Windows Terminal](https://www.microsoft.com/en-us/p/windows-terminal/9n0dx20hk701#activetab=pivot:overviewtab). Both work well. It has to be noted though that the `pancurses` version does not run in the console window from which it was started:
+I have tested `rustpwman` with the `pancurses` backend in the normal `cmd.exe` console and the new [Windows Terminal](https://www.microsoft.com/en-us/p/windows-terminal/9n0dx20hk701#activetab=pivot:overviewtab). 
+Both work well. It has to be noted though that the `pancurses` version does not run in the console window from which it was started:
 It opens a new window. On top of that this window, let's call it the `pancurses` window, remembers its size from session to session. You can change the font type and size which
 is used if you right click on the title bar of the `pancurses` window.
 
@@ -420,4 +449,5 @@ This section provides information about stuff which is in my view suboptimal and
 - When the list of entries changes (after an add or delete) it may be possible that the entry selected after the change is not visible in the `ScrollView` on the left. I was not successfull in forcing cursive to scroll to the newly selected entry. This is most probably my fault and meanwhile an appropriate warning dialog is displayed.
 - On Windows a spurious Escape sequence `ESC[?1002l` is printed to stdout when the TUI application stops. This does not happen on Linux or MacOS. By piping the output of `rustpwman` to `winfilter.exe` you can remove this unwanted data from the output.
 - In non `--release` builds scrypt with the chosen parameters is *extremely* slow
+- At the moment I use release candidates of the crypto routines as their last official releases can not be built without warnings with a reasonably up-to-date rust toolchain
 
