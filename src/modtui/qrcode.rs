@@ -23,11 +23,9 @@ use super::get_selected_entry_name;
 use std::process::Command;
 use qrcode::QrCode;
 use image::Luma;
-use std::env;
 use std::fs;
 
 const QR_CODE_FILE_NAME: &str = "qrfile";
-const RUSTPWMAN_VIEWER: &str = "RUSTPWMAN_VIEWER";
 
 
 fn ask_for_deletion(s: &mut Cursive, file_name: String) {
@@ -108,6 +106,8 @@ fn execute_viewer(file_name: &String, cmd_prefix: Option<&str>) -> Option<String
 }
 
 pub fn create(s: &mut Cursive, state_for_create_qr_entry: Arc<Mutex<AppState>>) {
+    let state_for_open_viewer = state_for_create_qr_entry.clone();
+
     let entry_name = match get_selected_entry_name(s) {
         Some(name) => name,
         None => {
@@ -168,15 +168,15 @@ pub fn create(s: &mut Cursive, state_for_create_qr_entry: Arc<Mutex<AppState>>) 
         }
 
         let result = image.save(f_name.as_str());
-        let temp: String;
 
-        let viewer = match env::var(RUSTPWMAN_VIEWER) {
-            Ok(s) => {
-                temp = s.clone();
-                Some(temp.as_str())
-            },
-            Err(_) => None
-        };
+        let viewer_help = state_for_open_viewer.lock().unwrap().viewer_prefix.clone();
+
+        let v_help: String;
+        let mut viewer: Option<&str> = None;
+        if let Some(v) = viewer_help {
+            v_help = v.clone();
+            viewer = Some(v_help.as_str());
+        }
 
         match result {
             Ok(_) => {

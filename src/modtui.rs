@@ -61,12 +61,15 @@ use cursive::theme;
 use cursive::theme::Effects;
 use cursive::theme::Effect;
 use std::sync::{Arc, Mutex};
+use std::env;
 
 use std::sync::mpsc::Sender;
 use std::io::{Error, ErrorKind};
 
 use crate::pwgen::GenerationStrategy;
 use crate::jots;
+
+const RUSTPWMAN_VIEWER: &str = "RUSTPWMAN_VIEWER";
 
 
 pub struct AppState {
@@ -77,6 +80,7 @@ pub struct AppState {
     default_generator: GenerationStrategy,
     paste_command: String,
     copy_command: String,
+    viewer_prefix: Option<String>,
     persister: SendSyncPersister,
     last_custom_selection: String,
     pw_is_chached: bool,
@@ -94,11 +98,24 @@ impl AppState {
             default_generator: default_gen,
             paste_command: paste_cmd.clone(),
             copy_command: copy_cmd.clone(),
+            viewer_prefix: AppState::get_viewer_from_env(),
             persister: p,
             last_custom_selection: String::from(""),
             pw_is_chached: is_pw_cached,
             entry_queue: Vec::new()
         }
+    }
+
+    fn get_viewer_from_env() -> Option<String> {
+        let viewer = match env::var(RUSTPWMAN_VIEWER) {
+            Ok(s) => {
+                let temp = s.clone();
+                Some(temp)
+            },
+            Err(_) => None
+        }; 
+
+        return viewer;     
     }
 
     pub fn get_default_bits(&self) -> usize {
