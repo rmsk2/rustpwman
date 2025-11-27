@@ -12,6 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#[cfg(feature = "pwmanclient")]
 mod cache;
 mod pwgenerate;
 mod load;
@@ -30,6 +31,8 @@ mod open;
 mod info;
 mod export;
 mod queue;
+#[cfg(feature = "qrcode")]
+mod qrcode;
 pub mod tuimain;
 pub mod tuitheme;
 
@@ -65,7 +68,7 @@ use std::io::{Error, ErrorKind};
 use crate::pwgen::GenerationStrategy;
 use crate::jots;
 
-
+#[allow(dead_code)]
 pub struct AppState {
     store: jots::Jots,
     password: Option<String>,
@@ -74,6 +77,7 @@ pub struct AppState {
     default_generator: GenerationStrategy,
     paste_command: String,
     copy_command: String,
+    viewer_prefix: Option<String>,
     persister: SendSyncPersister,
     last_custom_selection: String,
     pw_is_chached: bool,
@@ -82,7 +86,7 @@ pub struct AppState {
 
 impl AppState {
     pub fn new(s: jots::Jots, f_name: &String, default_sec: usize, default_gen: GenerationStrategy,
-               paste_cmd: &String, copy_cmd: &String, p: SendSyncPersister, is_pw_cached: bool) -> Self {
+               paste_cmd: &String, copy_cmd: &String, p: SendSyncPersister, is_pw_cached: bool, qr_viewer: &Option<String>) -> Self {
         return AppState {
             store: s,
             password: None,
@@ -91,6 +95,7 @@ impl AppState {
             default_generator: default_gen,
             paste_command: paste_cmd.clone(),
             copy_command: copy_cmd.clone(),
+            viewer_prefix: qr_viewer.clone(),
             persister: p,
             last_custom_selection: String::from(""),
             pw_is_chached: is_pw_cached,
@@ -420,51 +425,39 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
     let ctx = AppCtx::new(shared_state.clone(), sndr.clone());
     let state_for_fill_tui = shared_state.clone();
 
-    let menu_bar = s.menubar();
-
-    #[cfg(not(feature = "pwmanclient"))]
     let mut file_tree : Tree;
-
+    file_tree = Tree::new();
+    file_tree.add_leaf("Save File", wrapper(ctx.clone(), save::storage));
+    file_tree.add_delimiter();
+    file_tree.add_leaf("Change password ...", wrapper(ctx.clone(), pw::change));
     #[cfg(feature = "pwmanclient")]
-    let file_tree : Tree;
-
-    file_tree = Tree::new()
-        .leaf("Save File", wrapper(ctx.clone(), save::storage))
-        .delimiter()
-        .leaf("Change password ...", wrapper(ctx.clone(), pw::change))
-        .leaf("Cache password", wrapper(ctx.clone(), cache::password))
-        .leaf("Clear cached password", wrapper(ctx.clone(), cache::uncache_password))
-        .delimiter()
-        .leaf("About ...", info::about)
-        .leaf("Info ...", wrapper(ctx.clone(), info::show))
-        .leaf("Undo changes ...", wrapper(ctx.clone(), tuiundo::undo))
-        .delimiter()
-        .leaf("Quit and print        F4", wrapper2(ctx.clone(), quit_and_print))
-        .leaf("Quit                  F3", wrapper2(ctx.clone(), quit_without_print)
+    file_tree.add_leaf("Cache password", wrapper(ctx.clone(), cache::password));
+    #[cfg(feature = "pwmanclient")]
+    file_tree.add_leaf("Clear cached password", wrapper(ctx.clone(), cache::uncache_password));
+    file_tree.add_delimiter();
+    file_tree.add_leaf("About ...", info::about);
+    file_tree.add_leaf("Info ...", wrapper(ctx.clone(), info::show));
+    file_tree.add_leaf("Undo changes ...", wrapper(ctx.clone(), tuiundo::undo));
+    file_tree.add_delimiter();
+    file_tree.add_leaf("Quit and print        F4", wrapper2(ctx.clone(), quit_and_print));
+    file_tree.add_leaf("Quit                  F3", wrapper2(ctx.clone(), quit_without_print)
     );
 
-    // Ok this is really, really hacky but it works. I would have preferred to be able to simply exclude some lines from
-    // compilation when constructing the file_tree but I came to the opinion that in Rust conditional compilation is tied to
-    // attributes which in turn does not seem to work when chaining values together as is done above.
-    #[cfg(not(feature = "pwmanclient"))]
-    file_tree.remove(3);  // remove cache item when building without the pwmanclient feature
+    let mut entry_tree = Tree::new();
+    entry_tree.add_leaf("Copy to clipboard ... F2", wrapper3(ctx.clone(), copy::entry, true));
+    entry_tree.add_leaf("Edit Entry ...", wrapper3(ctx.clone(), edit::entry, None));
+    entry_tree.add_leaf("Add Entry ...", wrapper(ctx.clone(), add::entry));
+    entry_tree.add_leaf("Delete Entry ...", wrapper(ctx.clone(), delete::entry));
+    entry_tree.add_leaf("Rename Entry ...", wrapper(ctx.clone(), rename::entry));
+    entry_tree.add_leaf("Clear Entry ...", wrapper(ctx.clone(), clear::entry));
+    entry_tree.add_leaf("Load Entry ...", wrapper(ctx.clone(), load::entry));
 
-    #[cfg(not(feature = "pwmanclient"))]
-    file_tree.remove(3);  // remove cache clear item when building without the pwmanclient feature
+    #[cfg(feature = "qrcode")]
+    entry_tree.add_leaf("To QR-Code ...", wrapper(ctx.clone(), qrcode::create));
 
-    menu_bar.add_subtree(
-        "File", file_tree
-        )
-        .add_subtree(
-            "Entry", Tree::new()
-            .leaf("Copy to clipboard ... F2", wrapper3(ctx.clone(), copy::entry, true))
-            .leaf("Edit Entry ...", wrapper3(ctx.clone(), edit::entry, None))
-            .leaf("Add Entry ...", wrapper(ctx.clone(), add::entry))
-            .leaf("Delete Entry ...", wrapper(ctx.clone(), delete::entry))
-            .leaf("Rename Entry ...", wrapper(ctx.clone(), rename::entry))
-            .leaf("Clear Entry ...", wrapper(ctx.clone(), clear::entry))
-            .leaf("Load Entry ...", wrapper(ctx.clone(), load::entry))
-        )
+    s.menubar()
+        .add_subtree("File", file_tree)
+        .add_subtree("Entry", entry_tree)
         .add_subtree("Queue",
             Tree::new()
             .leaf("Add to queue   F1", wrapper(ctx.clone(), queue::add))

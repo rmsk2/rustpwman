@@ -1,37 +1,40 @@
 [package]
 name = "rustpwman"
-version = "2.4.2"
+version = "2.5.0"
 authors = ["Martin <rmsk2@gmx.de>"]
 edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-digest = "0.10"
-sha2 = "0.10"
-md-5 = "0.10"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serde_bytes = "0.11"
-aes-gcm = "0.10"
-chacha20poly1305 = "0.10"
-cipher = "0.4"
-aes = "0.8"
-cfb8 = "0.8"
-aead = "0.5"
 base64 = "0.22"
 rand = "0.9"
-scrypt = "0.11"
 clap = "4.5"
 rpassword = "7.4"
-argon2 = "0.5"
 toml = "0.9"
 dirs = "6.0"
 num-bigint = "0.4"
 itertools = "0.14"
+qrcode = {version = "0.14", optional = true}
+image = {version = "0.25", default-features = false, features = ["default-formats"], optional = true}
 uds_windows =  {version ="1.1", optional = true}
 users = {version = "0.11", optional = true}
 reqwest = {version = "0.12", optional = true, features = ["blocking"]}
+
+digest = "=0.11.0-rc.4"
+sha2 = "=0.11.0-rc.3"
+md-5 = "=0.11.0-rc.3"
+aes-gcm = "=0.11.0-rc.2"
+chacha20poly1305 = "=0.11.0-rc.2"
+cipher = "=0.5.0-rc.2"
+aes = "=0.9.0-rc.2"
+cfb8 = "=0.9.0-rc.1"
+aead = "=0.6.0-rc.3"
+scrypt = "=0.12.0-rc.3"
+argon2 = "=0.6.0-rc.2"
 
 [target.'cfg(target_os = "linux")'.dependencies.cursive]
 version = "0.21"
@@ -51,10 +54,11 @@ default-features = false
 features = ["pancurses-backend"]
 
 [features]
-default = ["pwmanclientux", "chacha20", "webdav", "writebackup"]
+default = ["pwmanclientux", "chacha20", "webdav", "writebackup", "qrcode"]
 pwmanclient = []
 pwmanclientux = ["dep:users", "pwmanclient"]
 pwmanclientwin = ["dep:uds_windows", "pwmanclient"]
 webdav = ["dep:reqwest"]
+qrcode = ["dep:image", "dep:qrcode"]
 chacha20 = []
 writebackup = []

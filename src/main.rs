@@ -35,6 +35,7 @@ mod pwman_client_ux;
 mod pwman_client_win;
 
 const OBFUSCATION_ENV_VAR: &str = "RUSTPWMAN_OBFUSCATION";
+const RUSTPWMAN_VIEWER: &str = "RUSTPWMAN_VIEWER";
 
 use std::env;
 use dirs;
@@ -88,6 +89,7 @@ struct RustPwMan {
     default_pw_gen: GenerationStrategy,
     paste_command: String,
     copy_command: String,
+    viewer_command: Option<String>,
     webdav_user: String,
     webdav_pw: String,
     webdav_server: String
@@ -130,6 +132,7 @@ impl RustPwMan {
             default_pw_gen: GenerationStrategy::Base64,
             paste_command: String::from(DEFAULT_PASTE_CMD),
             copy_command: String::from(DEFAULT_COPY_CMD),
+            viewer_command: RustPwMan::get_viewer_from_env(),
             webdav_user: String::from(""),
             webdav_pw: String::from(""),
             webdav_server: String::from(""),
@@ -198,6 +201,13 @@ impl RustPwMan {
         self.default_sec_level = self.verify_sec_level(loaded_config.seclevel);
         self.paste_command = loaded_config.clip_cmd;
         self.copy_command = loaded_config.copy_cmd;
+
+        // If the config contains a viewer command prefix. Use this instead of the value
+        // read from the environment.
+        if loaded_config.viewer_cmd != None {
+            self.viewer_command = loaded_config.viewer_cmd;
+        }
+
         self.webdav_user = loaded_config.webdav_user;
         self.webdav_pw = loaded_config.webdav_pw;
         self.webdav_server = loaded_config.webdav_server;
@@ -420,6 +430,18 @@ impl RustPwMan {
         return persist_closure;
     }
 
+    fn get_viewer_from_env() -> Option<String> {
+        let viewer = match env::var(RUSTPWMAN_VIEWER) {
+            Ok(s) => {
+                let temp = s.clone();
+                Some(temp)
+            },
+            Err(_) => None
+        };
+
+        return viewer;
+    }
+
     fn perform_gui_command(&mut self, gui_matches: &clap::ArgMatches) {
         self.set_pbkdf_from_command_line(gui_matches);
 
@@ -458,7 +480,7 @@ impl RustPwMan {
                 let persist_closure = self.make_persist_creator(&u, &p, &s, &data_file_name);
 
                 modtui::tuimain::main(data_file_name, self.default_sec_level, self.default_deriver, self.default_deriver_id,
-                                      self.default_pw_gen, self.paste_command.clone(), self.copy_command.clone(), persist_closure, cr_gen_gen, gui_matches.get_flag(ARG_EXPORT));
+                                      self.default_pw_gen, self.paste_command.clone(), self.copy_command.clone(), persist_closure, cr_gen_gen, gui_matches.get_flag(ARG_EXPORT), self.viewer_command.clone());
             },
             None => {
                 eprintln!("Password file name missing");
@@ -514,6 +536,7 @@ impl RustPwMan {
                     pwgen: self.default_pw_gen.to_string(),
                     clip_cmd: String::from(crate::modtui::DEFAULT_PASTE_CMD),
                     copy_cmd: String::from(crate::modtui::DEFAULT_COPY_CMD),
+                    viewer_cmd: RustPwMan::get_viewer_from_env(),
                     webdav_user: self.webdav_user.clone(),
                     webdav_pw: self.webdav_pw.clone(),
                     webdav_server: self.webdav_server.clone()
@@ -525,8 +548,13 @@ impl RustPwMan {
         let pw_gen_strategy = self.str_to_gen_strategy(&loaded_config.pwgen);
         let (_, pbkdf_id) = self.str_to_deriver(&loaded_config.pbkdf);
 
+        let mut viewer_cmd = RustPwMan::get_viewer_from_env();
+        if loaded_config.viewer_cmd != None {
+            viewer_cmd = loaded_config.viewer_cmd;
+        }
+
         tuiconfig::config_main(config_file_name, sec_level, pw_gen_strategy, pbkdf_id, &loaded_config.clip_cmd, &loaded_config.copy_cmd,
-                               &loaded_config.webdav_user, &loaded_config.webdav_pw, &loaded_config.webdav_server);
+                               &loaded_config.webdav_user, &loaded_config.webdav_pw, &loaded_config.webdav_server, &viewer_cmd);
     }
 
     fn perform_generate_command(&mut self) {

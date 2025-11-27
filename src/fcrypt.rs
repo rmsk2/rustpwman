@@ -28,10 +28,9 @@ use rand::RngCore;
 
 use serde::{Serialize, Deserialize};
 use cipher::consts::{U12, U16};
-use cipher::generic_array::GenericArray;
 use base64::prelude::*;
 use crate::persist::SendSyncPersister;
-use aead::{Aead, KeyInit, AeadInPlace, AeadCore, KeySizeUser};
+use aead::{Aead, KeyInit, AeadInOut, AeadCore, KeySizeUser};
 
 
 const DEFAULT_TAG_SIZE: usize = 16;
@@ -337,31 +336,31 @@ impl AeadContext {
 
 // The following two functions provide a generic implementation of AEAD en- and decryption on the basis of an AeadContext struct for all ciphers which 
 // implement the corresponding RustCrypto traits. They are therefore helper functions in order to implement the Cryptor trait in this case.
-fn encrypt_aead<T: Aead + AeadInPlace + AeadCore<NonceSize = U12, TagSize = U16> + KeyInit>(ctx: &mut AeadContext, password: &str, data: &Vec<u8>, algo_name: &str) -> std::io::Result<Vec<u8>> {
+fn encrypt_aead<T: Aead + AeadInOut + AeadCore<NonceSize = U12, TagSize = U16> + KeyInit>(ctx: &mut AeadContext, password: &str, data: &Vec<u8>, algo_name: &str) -> std::io::Result<Vec<u8>> {
     let (key, nonce) = ctx.prepare_params_encrypt(password);
-    let nonce_help = GenericArray::<u8, <T as AeadCore>::NonceSize>::from_slice(nonce.as_slice());
-    let key_help = GenericArray::<u8, <T as KeySizeUser>::KeySize>::from_slice(&key[0..T::key_size()]);
+    let nonce_help = cipher::Array::<u8, <T as AeadCore>::NonceSize>::try_from(nonce.as_slice()).unwrap();
+    let key_help = cipher::Array::<u8, <T as KeySizeUser>::KeySize>::try_from(&key[0..T::key_size()]).unwrap();
 
     let cipher = T::new(&key_help);
 
-    return match cipher.encrypt(nonce_help, data.as_slice()) {
+    return match cipher.encrypt(&nonce_help, data.as_slice()) {
         Err(_) => return Err(Error::new(ErrorKind::Other, format!("{} {}", algo_name, "Encryption error"))),
         Ok(d) => Ok(d)
     };
 }
 
-fn decrypt_aead<T: Aead + AeadInPlace + AeadCore<NonceSize = U12, TagSize = U16> + KeyInit>(ctx: &mut AeadContext, password: &str, data: &Vec<u8>, algo_name: &str) -> std::io::Result<Vec<u8>> {
+fn decrypt_aead<T: Aead + AeadInOut + AeadCore<NonceSize = U12, TagSize = U16> + KeyInit>(ctx: &mut AeadContext, password: &str, data: &Vec<u8>, algo_name: &str) -> std::io::Result<Vec<u8>> {
     ctx.check_min_size(data.len())?;
     let associated_data: [u8; 0] = [];
 
     let (key, nonce, tag, mut dec_buffer) = ctx.prepare_params_decrypt(password, data);
 
-    let nonce_help = GenericArray::<u8, <T as AeadCore>::NonceSize>::from_slice(nonce.as_slice());
-    let key_help = GenericArray::<u8, <T as KeySizeUser>::KeySize>::from_slice(&key[0..T::key_size()]);
-    let tag_help = GenericArray::<u8, <T as AeadCore>::TagSize>::from_slice(tag.as_slice());
+    let nonce_help = cipher::Array::<u8, <T as AeadCore>::NonceSize>::try_from(nonce.as_slice()).unwrap();
+    let key_help = cipher::Array::<u8, <T as KeySizeUser>::KeySize>::try_from(&key[0..T::key_size()]).unwrap();
+    let tag_help = cipher::Array::<u8, <T as AeadCore>::TagSize>::try_from(tag.as_slice()).unwrap();
 
     let cipher = T::new(&key_help);
-    let _ = match cipher.decrypt_in_place_detached(nonce_help, &associated_data, dec_buffer.as_mut_slice(), tag_help) {
+    let _ = match cipher.decrypt_inout_detached(&nonce_help, &associated_data, dec_buffer.as_mut_slice().into(), &tag_help) {
         Ok(_) => (),
         Err(_) => {
             return Err(Error::new(ErrorKind::Other, format!("{} {}", algo_name, "Decryption error")));

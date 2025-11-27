@@ -34,7 +34,7 @@ pub fn argon2id_deriver(salt: &Vec<u8>, password: &str) -> Vec<u8> {
 
 pub fn scrypt_deriver(salt: &Vec<u8>, password: &str) -> Vec<u8> {
     // N = 32768 = 2^15, r=8, p=2
-    let parms = scrypt::Params::new(15, 8, 2, 32).unwrap();
+    let parms = scrypt::Params::new(15, 8, 2).unwrap();
     let mut aes_key: [u8; 32] = [0; 32];
 
     scrypt(password.as_bytes(), salt.as_slice(), &parms, &mut aes_key).unwrap();

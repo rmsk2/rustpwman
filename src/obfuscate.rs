@@ -15,7 +15,6 @@ limitations under the License. */
 
 use std::env;
 use sha2::{Sha256, Digest};
-use cipher::generic_array::GenericArray;
 use std::str;
 use aes::cipher::{AsyncStreamCipher, KeyIvInit};
 use cfb8;
@@ -50,10 +49,10 @@ fn do_crypt(v: &mut [u8], env_name: &str, do_enc: bool) {
     let hash_res = sha_256.finalize();
 
     let k: Vec<u8> = hash_res.clone().into_iter().take(16).collect();
-    let key = GenericArray::from_slice(k.as_slice());
+    let key = cipher::Array::try_from(k.as_slice()).unwrap();
 
     let i: Vec<u8> = hash_res.clone().into_iter().skip(16).collect();
-    let iv = GenericArray::from_slice(i.as_slice());
+    let iv = cipher::Array::try_from(i.as_slice()).unwrap();
     
     if do_enc {
         Aes128Cfb8Enc::new(&key, &iv).encrypt(v);

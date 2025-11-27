@@ -55,7 +55,7 @@ pub struct JotsIter<'a> {
 }
 
 impl<'a> JotsIter<'a> {
-    fn new(j: &Jots) -> JotsIter {
+    fn new(j: &Jots) -> JotsIter<'_> {
         let mut temp: Vec<&String> = (&j.contents).into_iter().map(|i| i.0).collect();
         temp.sort();
         
