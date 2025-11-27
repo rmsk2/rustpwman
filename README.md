@@ -13,7 +13,7 @@ a minimal set of features (and therefore a minimal set of dependencies) you can 
 In this case the password cache, support for WebDAV, additional crypto algorithms and the automatic local backup feature are not available.
 
 If you have an older version of this repo on your  machine you need to perform a `cargo update` after pulling this release otherwise the official version 0.21 of
-cursive will not build. I am also using the as of today most current version 1.80 of `rustc`.
+cursive will not build. I am curently using version 1.91.0 of `rustc`.
 
 # How to run the software
 
