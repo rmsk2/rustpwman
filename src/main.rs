@@ -36,6 +36,7 @@ mod pwman_client_win;
 
 const OBFUSCATION_ENV_VAR: &str = "RUSTPWMAN_OBFUSCATION";
 const RUSTPWMAN_VIEWER: &str = "RUSTPWMAN_VIEWER";
+const PWMAN_CONFIG: &str = "PWMAN_CONFIG";
 
 use std::env;
 use dirs;
@@ -151,6 +152,10 @@ impl RustPwMan {
     }
 
     pub fn get_cfg_file_name() -> Option<std::path::PathBuf> {
+        if let Ok(file_name) = env::var(PWMAN_CONFIG) {
+            return Some(std::path::PathBuf::from(file_name));
+        }
+
         let mut home_dir = match dirs::home_dir() {
             Some(p) => p,
             None => return None
