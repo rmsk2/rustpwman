@@ -324,8 +324,17 @@ pub fn config_main(config_file: std::path::PathBuf, sec_level: usize, pw_gen_str
         );
     }
 
+    let title_str = match config_file.as_os_str().to_str() {
+        Some(s) => s,
+        None => {
+            "File name not UTF-8"
+        }
+    };
+
+    let title_string = format!("Change config {}", title_str);
+
     let mut res = Dialog::new()
-    .title("Rustpwman change config")
+    .title(title_string)
     .padding_lrtb(2, 2, 1, 1)
     .content(
         config_panels
