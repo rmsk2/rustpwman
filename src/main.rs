@@ -536,15 +536,15 @@ impl RustPwMan {
                 }
 
                 tomlconfig::RustPwManSerialize {
-                    seclevel: self.default_sec_level,
-                    pbkdf: self.default_deriver_id.to_string(),
-                    pwgen: self.default_pw_gen.to_string(),
+                    seclevel: modtui::PW_SEC_LEVEL,
+                    pbkdf: DEFAULT_KDF_ID.to_string(),
+                    pwgen: GenerationStrategy::Base64.to_string(),
                     clip_cmd: String::from(crate::modtui::DEFAULT_PASTE_CMD),
                     copy_cmd: String::from(crate::modtui::DEFAULT_COPY_CMD),
                     viewer_cmd: RustPwMan::get_viewer_from_env(),
-                    webdav_user: self.webdav_user.clone(),
-                    webdav_pw: self.webdav_pw.clone(),
-                    webdav_server: self.webdav_server.clone()
+                    webdav_user: String::from(""),
+                    webdav_pw: String::from(""),
+                    webdav_server: String::from("")
                 }
             }
         };
