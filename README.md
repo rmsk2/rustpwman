@@ -256,7 +256,7 @@ tool `paste_utf8.exe` which can be built in a Visual Studio developer prompt usi
 
 The value `copy_cmd` uses `xsel -ib` as a default. This should work under Linux. Use `pbcopy` under MacOS and `clip.exe` or `paste_utf8.exe -c` under Windows.
 
-As the value of `viewer_cmd` you can use `eog` (Gnome) or `xdg-open` on Linux, `open -a Preview` on MacOS and `start` under Windows.
+As the value of `viewer_cmd` you can use `eog` (Gnome) or `xdg-open` on Linux, `open -a Preview` on MacOS and `explorer.exe` under Windows.
 
 As a default the config file is stored in the users' home directory in a file named `.rustpwman` and you can alternatively edit it by hand instead of calling `rustpwman cfg`.
 If the environment variable `PWMAN_CONFIG` is set to a value, then `rustpwman` will interpret its value as the file name of a separate config file. This can
