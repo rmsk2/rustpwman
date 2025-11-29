@@ -226,7 +226,7 @@ similar to this one
 
 ![](/scrshot_cfg.png?raw=true "Screenshot of rustpwman cfg")
 
-This screenshot was taken while running a version which was compiled with the `webdav` feature. Here is an example for `rustpwman` configuration file:
+This screenshot was taken while running a version which was compiled with the `webdav` and the `qrcode` feature. Here is an example for `rustpwman` configuration file:
 
 ```
 [defaults]
@@ -257,7 +257,9 @@ The value `copy_cmd` uses `xsel -ib` as a default. This should work under Linux.
 
 As the value of `viewer_cmd` you can use `eog` (Gnome) or `xdg-open` on Linux, `open -a Preview` on MacOS and `start` under Windows.
 
-The config file is stored in the users' home directory in a file named `.rustpwman` and you can alternatively edit it by hand instead of calling `rustpwman cfg`.
+As a default the config file is stored in the users' home directory in a file named `.rustpwman` and you can alternatively edit it by hand instead of calling `rustpwman cfg`.
+If the environment variable `PWMAN_CONFIG` is set to a value, then `rustpwman` will interpret its value as the file name of an alternative config file. This can
+be useful during testing or when using password files on several WebDAV servers.
 
 # Using `rustpwman` to generate passwords or the `gen` command
 
