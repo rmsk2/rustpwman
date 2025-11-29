@@ -49,6 +49,9 @@ const PW_WIDTH: usize = 35;
 pub const DEFAULT_PASTE_CMD: &str = "xsel -ob";
 pub const DEFAULT_COPY_CMD: &str = "xsel -ib";
 
+pub type FormatterFunc = fn(&String, &String) -> String;
+static DEFAULT_FORMATTER: FormatterFunc = format_pw_entry;
+
 use crate::persist::SendSyncPersister;
 use cursive::theme::ColorStyle;
 use cursive::traits::*;
@@ -327,7 +330,7 @@ fn quit_and_print(s: &mut Cursive, state: Arc<Mutex<AppState>>, sndr: Arc<Sender
     };
 
     let dirty_flag: bool;
-    let mut out_str = queue::get_entries(state.clone());
+    let mut out_str = queue::get_entries(state.clone(), DEFAULT_FORMATTER);
 
     // Create artificial scope to ensure unlock of Mutex
     {
@@ -348,6 +351,10 @@ fn quit_and_print(s: &mut Cursive, state: Arc<Mutex<AppState>>, sndr: Arc<Sender
 
 fn format_pw_entry(key: &String, value: &String) -> String {
     return format!("-------- {} --------\n{}", key, value);
+}
+
+fn copy_pw_entry_contents(_key: &String, value: &String) -> String {
+    return value.clone();
 }
 
 fn quit_without_print(s :&mut Cursive, state: Arc<Mutex<AppState>>, sndr: Arc<Sender<String>>) {
@@ -391,6 +398,12 @@ fn wrapper3<T : Clone>(ctx: AppCtx, f: fn(&mut Cursive, state: Arc<Mutex<AppStat
     };
 }
 
+fn wrapper4<T : Clone, U: Clone>(ctx: AppCtx, f: fn(&mut Cursive, state: Arc<Mutex<AppState>>, v: T, u: U), val: T, val2: U) -> impl Fn(&mut Cursive) {
+    return move |s| {
+        f(s, ctx.state.clone(), val.clone(), val2.clone());
+    };
+}
+
 fn build_entry_select_panel(ctx: &AppCtx) -> NamedView<Panel<NamedView<ScrollView<ResizedView<OnEventView<NamedView<SelectView>>>>>>> {
     let select_view = SelectView::new();
     let shared_state = ctx.state.clone();
@@ -406,7 +419,8 @@ fn build_entry_select_panel(ctx: &AppCtx) -> NamedView<Panel<NamedView<ScrollVie
     );
 
     event_wrapped_select_view.set_on_event(Key::F1, wrapper(ctx.clone(), queue::add));
-    event_wrapped_select_view.set_on_event(Key::F2, wrapper3(ctx.clone(), copy::entry, false));
+    event_wrapped_select_view.set_on_event(Key::F2, wrapper4(ctx.clone(), copy::entry, false, DEFAULT_FORMATTER));
+    event_wrapped_select_view.set_on_event(Key::F5, wrapper3(ctx.clone(), copy::contents, false));
 
     let select_view_scrollable = event_wrapped_select_view
         .fixed_width(40)
@@ -444,7 +458,8 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
     );
 
     let mut entry_tree = Tree::new();
-    entry_tree.add_leaf("Copy to clipboard ... F2", wrapper3(ctx.clone(), copy::entry, true));
+    entry_tree.add_leaf("Copy to clipboard ... F2", wrapper4(ctx.clone(), copy::entry, true, DEFAULT_FORMATTER));
+    entry_tree.add_leaf("Copy contents ...     F5", wrapper3(ctx.clone(), copy::contents, true));
     entry_tree.add_leaf("Edit Entry ...", wrapper3(ctx.clone(), edit::entry, None));
     entry_tree.add_leaf("Add Entry ...", wrapper(ctx.clone(), add::entry));
     entry_tree.add_leaf("Delete Entry ...", wrapper(ctx.clone(), delete::entry));

@@ -20,9 +20,38 @@ use super::show_message;
 use super::get_selected_entry_name;
 use crate::clip::set_clipboard;
 use super::queue;
-use super::format_pw_entry;
+use super::copy_pw_entry_contents;
+use super::FormatterFunc;
 
-pub fn entry(s: &mut Cursive, state_for_copy_entry: Arc<Mutex<AppState>>, show_confirmation: bool) {
+pub fn contents(s: &mut Cursive, state_for_copy_entry: Arc<Mutex<AppState>>, show_confirmation: bool) {
+    let entry_name = match get_selected_entry_name(s) {
+        Some(name) => name,
+        None => {
+            show_message(s, "Unable to determine selected entry");
+            return;
+        }
+    };
+
+    let h = match state_for_copy_entry.lock().unwrap().store.get(&entry_name) {
+        Some(c) => c,
+        None => { show_message(s, "Unable to read value of entry"); return }
+    };
+
+    let content = String::from(copy_pw_entry_contents(&entry_name, &h).trim());
+
+    match set_clipboard(String::from(state_for_copy_entry.lock().unwrap().copy_command.clone()), Box::new(content)) {
+        true => {
+            show_message(s, "Unable to set clipboad");
+        },
+        false => {
+            if show_confirmation {
+                show_message(s, "Contents of the selected entry copied to clipboard");
+            }
+        }
+    }
+}
+
+pub fn entry(s: &mut Cursive, state_for_copy_entry: Arc<Mutex<AppState>>, show_confirmation: bool, formatter: FormatterFunc) {
     let entry_name = match get_selected_entry_name(s) {
         Some(name) => name,
         None => {
@@ -36,8 +65,8 @@ pub fn entry(s: &mut Cursive, state_for_copy_entry: Arc<Mutex<AppState>>, show_c
         None => { show_message(s, "Unable to read value of entry"); return }
     };
 
-    h = format_pw_entry(&entry_name, &h);
-    let mut content = queue::get_entries(state_for_copy_entry.clone());
+    h = formatter(&entry_name, &h);
+    let mut content = queue::get_entries(state_for_copy_entry.clone(), formatter);
     content.push_str(h.as_str());
 
     match set_clipboard(String::from(state_for_copy_entry.lock().unwrap().copy_command.clone()), Box::new(content)) {

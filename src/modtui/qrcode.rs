@@ -41,8 +41,8 @@ fn ask_for_deletion(s: &mut Cursive, file_name: String) {
         .child(TextView::new("In order to not let a secret presist on disk it is advisable to delete"))
         .child(TextView::new("this file as soon as possible."))
         .child(TextView::new("\n"))
-        .child(TextView::new("So scan the QR code and after that select 'Delete Now' to delete it."))
-        .child(TextView::new("If you want to remove the file by hand later select 'Cancel'"))
+        .child(TextView::new("So scan the QR code, close the viewer and after that select 'Delete Now' to"))
+        .child(TextView::new("delete it. If you want to remove the file by hand later select 'Cancel'"))
     )
     .button("Cancel", |s| { s.pop_layer(); })            
     .button("Delete Now", move |s| {

@@ -10,9 +10,10 @@ over SSH.
 Under Linux and macOS use `cargo build --release` to build with all features enabled. Under Windows you should call the batch file `build_win.bat` from a
 Visual Studio Developer prompt for this purpose. On top of that there is a separate section in this README that deals with building under Windows. If you want
 a minimal set of features (and therefore a minimal set of dependencies) you can use `cargo build --release --no-default-features` under Linux, macOS and Windows.
-In this case the password cache, support for WebDAV, additional crypto algorithms and the automatic local backup feature are not available.
+In this case the password cache, support for WebDAV, additional crypto algorithms, the automatic local backup feature and the possibility to encode an entry in
+a QR code are not available.
 
-If you have an older version of this repo on your  machine you need to perform a `cargo update` after pulling this release otherwise the official version 0.21 of
+If you have an older version of this repo on your  machine you may need to perform a `cargo update` after pulling this release otherwise the official version 0.21 of
 cursive will not build. I am curently using version 1.91.0 of `rustc`.
 
 # How to run the software
@@ -151,6 +152,13 @@ This menu entry can be used to copy the value of the currently selected password
 this tool can be confgured by calling `rustpwman cfg`. When you use `clip.exe` under Windows for this purpose you have to be aware that non ASCII characters may not be displayed
 correctly after pasting the clipboard data. The reason for this is that `clip.exe` expects a character encoding different from UTF-8 which is the default for Rust. If you want to
 prevent this problem you can use `paste_utf8.exe -c` instead of `clip.exe`. Instead of selecting this menu entry you can alternatively press F2.
+
+### Copy contents
+
+Via this menu entry you can copy the unformatted (white space is trimmed!) contents of the entry to the clipboard. In other words if an entry only contains a secret or a password
+you can use this entry to copy the password to the clipboard and paste it directly into the corresponding password dialog. As there is, at least in my primary usecases, quite
+a bit of additional information (for instance URLs, comments or explanatory text) in most entries this is not a general solution for speeding up login to a simple copy and
+paste operation. When selecting this entry the queue contents (see below) is ignored. Instead of selecting this menu entry you can alternatively press F5.
 
 ### Add entry
 

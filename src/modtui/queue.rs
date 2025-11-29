@@ -19,7 +19,7 @@ use cursive::Cursive;
 use super::AppState;
 use super::get_selected_entry_name;
 use super::show_message;
-use super::format_pw_entry;
+use super::FormatterFunc;
 
 
 pub fn add(s: &mut Cursive, state_for_q_add: Arc<Mutex<AppState>>) {
@@ -52,7 +52,7 @@ pub fn clear(_s: &mut Cursive, state_for_q_clear: Arc<Mutex<AppState>>) {
     state_for_q_clear.lock().unwrap().entry_queue.clear();
 }
 
-fn get_entries_int(state_for_q_clear: Arc<Mutex<AppState>>, clear: bool) -> String {
+fn get_entries_int(state_for_q_clear: Arc<Mutex<AppState>>, clear: bool, formatter: FormatterFunc) -> String {
     let mut state = state_for_q_clear.lock().unwrap();
     let mut res = String::from("");
 
@@ -64,7 +64,7 @@ fn get_entries_int(state_for_q_clear: Arc<Mutex<AppState>>, clear: bool) -> Stri
             }
         };
 
-        res.push_str(format_pw_entry(i, &entry_data).as_str());
+        res.push_str(formatter(i, &entry_data).as_str());
         res.push_str("\n");
     }
 
@@ -74,6 +74,6 @@ fn get_entries_int(state_for_q_clear: Arc<Mutex<AppState>>, clear: bool) -> Stri
 
     return res;
 }
-pub fn get_entries(state_for_q_clear: Arc<Mutex<AppState>>) -> String {
-    return get_entries_int(state_for_q_clear, true);
+pub fn get_entries(state_for_q_clear: Arc<Mutex<AppState>>, formatter: FormatterFunc) -> String {
+    return get_entries_int(state_for_q_clear, true, formatter);
 }
