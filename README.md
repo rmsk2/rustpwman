@@ -215,7 +215,8 @@ Secondly copying to the clipboard is possible as soon as `rustpwman` has stopped
 The third implemented option is the possibility to copy an entry as a whole to the clipboard by spawning a process that runs a program which is able to transfer the data it
 receives via stdin to the clipboard. As Rust uses the UTF-8 character encoding this works best when the tool used for this purpose also expects its data in UTF-8.
 
-As an additional workaround there is a possibility to load data from a file into an existing entry using the `Load entry` menu entry.
+As an additional workarounds there is a possibility to load data from a file into an existing entry using the `Load entry` menu entry and to export the contents of an entry
+as a QR code.
 
 # Configuration or the functionality of the `cfg` command
 
