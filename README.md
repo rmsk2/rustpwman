@@ -226,7 +226,7 @@ which will open a window similar to this one
 
 ![](/scrshot_cfg.png?raw=true "Screenshot of rustpwman cfg")
 
-This screenshot was taken while running a version which was compiled with the `webdav` and the `qrcode` feature. Here is an example for `rustpwman` configuration file:
+This screenshot was taken while running a version which was compiled with the `webdav` and the `qrcode` feature. Here is an example for a `rustpwman` configuration file:
 
 ```
 [defaults]
