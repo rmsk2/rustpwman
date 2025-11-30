@@ -216,14 +216,16 @@ Via this menu entry the queue can be emptied.
 It has to be noted that copying and pasting text in its most basic form is not possible in a terminal window while the cursive application is running. This in turn is probably
 an unfixable problem as cursive by definition controls the cursor in the terminal window, which most likely precludes the OS from "doing its thing".
 
-`rustpwman` works around this problem in three ways. At first pasting from the clipboard is emulated by spawning a new process in which a command is executed that writes the clipboard contents to stdout. `rustpwman` can then read the output of that process and write it into the TUI. `rustpwman` expects that the data to be read from stdout is UTF-8 encoded.
+`rustpwman` works around this problem in three ways. At first pasting from the clipboard is emulated by spawning a new process in which a command is executed that writes the clipboard
+contents to stdout. `rustpwman` can then read the output of that process and write it into the TUI. `rustpwman` expects that the data to be read from stdout is UTF-8 encoded.
 
-Secondly copying to the clipboard is possible as soon as `rustpwman` has stopped. When selecting `Quit and print` from the main menu `rustpwman` is stopped and the contents of the currently selected entry is printed to the terminal window. The necessary information can now be copied from the terminal into the clipboard and pasted where needed.
+Secondly copying to the clipboard is possible as soon as `rustpwman` has stopped. When selecting `Quit and print` from the main menu `rustpwman` is stopped and the contents of the
+currently selected entry is printed to the terminal window. The necessary information can now be copied from the terminal into the clipboard and pasted where needed.
 
 The third implemented option is the possibility to copy an entry as a whole to the clipboard by spawning a process that runs a program which is able to transfer the data it
 receives via stdin to the clipboard. As Rust uses the UTF-8 character encoding this works best when the tool used for this purpose also expects its data in UTF-8.
 
-As an additional workarounds there is a possibility to load data from a file into an existing entry using the `Load entry` menu entry and to export the contents of an entry
+As additional workarounds there are a possibility to load data from a file into an existing entry using the `Load entry` menu entry and to export the contents of an entry
 as a QR code.
 
 # Configuration or the functionality of the `cfg` command
