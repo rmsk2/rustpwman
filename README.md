@@ -104,12 +104,11 @@ file was saved.
 ### Quit and print
 
 Selecting this entry ends the program and prints the value of the currently selected entry as well as the values of all queued entries to the CLI window after the TUI has
-been closed. About the reasoning behind this idea have a look at the section [A note about using the clipboard](#a-note-about-using-the-clipboard).
+been closed. About the reasoning behind this idea have a look at the section [A note about using the clipboard](#a-note-about-using-the-clipboard). Instead of selecting this
+menu entry you can alternatively press F4.
 
-Tip: You can pipe the output of `rustpwman` to a program that places the data it reads via stdin in the clipboard. This works even under Windows which offers the `clip`
-command for this purpose. Under Linux `xsel` can be used and MacOS provides the `pbcopy` command. When you use `clip` under Windows you have to be aware that non ASCII
-characters may not be displayed correctly when pasting the data copied by `clip.exe`. Alternatively you can use the `Copy to clipboard` menu entry for this purpose or
-use `paste_utf8.exe -c ` (see below) instead of `clip.exe`. Instead of selecting this menu entry you can alternatively press F4.
+If your primary goal is to store the contents of an entry in the clipboard you can do that directly by selecting the `Copy to clipboard` or `Copy contents` entries from the
+`Entry` menu.
 
 ### Quit
 
