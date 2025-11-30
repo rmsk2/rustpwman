@@ -18,7 +18,6 @@ use rand::RngCore;
 use base64::prelude::*;
 use std::io::{Error, ErrorKind};
 use rand::Rng;
-use num_bigint::BigUint;
 
 use crate::modtui::PW_MAX_SEC_LEVEL;
 const GEN_BASE64: &str = "base64";
@@ -60,8 +59,8 @@ impl GenerationStrategy {
             GenerationStrategy::Base64 => &|| { return Box::new(B64Generator::new()) },
             GenerationStrategy::Hex => &|| { return Box::new(HexGenerator::new()) },
             GenerationStrategy::Special => &|| { return Box::new(SpecialGenerator::new(false)) },
-            GenerationStrategy::Numeric => &|| { return Box::new(NumericGenerator::new()) },
-            GenerationStrategy::Custom => &|| { return Box::new(BaseNGenerator::new(&vec!['a', 'b'])) },
+            GenerationStrategy::Numeric => &|| { return Box::new(NumDigitGenerator::new(&vec!['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'])) },
+            GenerationStrategy::Custom => &|| { return Box::new(NumDigitGenerator::new(&vec!['a', 'b'])) },
         }
     }
 
@@ -246,112 +245,45 @@ impl PasswordGenerator for SpecialGenerator {
     }
 }
 
-pub struct NumericGenerator (GeneratorBase);
-
-impl NumericGenerator {
-    pub fn new() -> NumericGenerator {
-        return NumericGenerator(GeneratorBase::new())
-    }
-}
-
-impl PasswordGenerator for NumericGenerator {
-    fn gen_password(&mut self, num_bytes: usize) -> Option<String> {
-        let digits = vec!['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-        let security_level: f64 = (8 * num_bytes) as f64;
-        let sec_level_in_decimal = security_level / 3.32;
-        let number_of_digits: usize = sec_level_in_decimal.ceil() as usize;
-        let mut res = String::from("");
-
-        for _ in 0..number_of_digits {
-            let rand_digit = self.0.rng.random_range(0..10);
-            res.push(digits[rand_digit])
-        }
-
-        return Some(res);
-    }    
-}
-
-pub struct BaseNGenerator {
+pub struct NumDigitGenerator {
     base: GeneratorBase,
-    digits: Vec<char>,
-    zero_digit: String
+    digits: Vec<char>
 }
 
-impl BaseNGenerator {
-    pub fn new(d: &Vec<char>) -> BaseNGenerator {            
+impl NumDigitGenerator {
+    pub fn new(d: &Vec<char>) -> NumDigitGenerator {
         if d.len() < 2 {
-            panic!("Not a valid radix")
+            panic!("Not a valid selection of chars")
         }
 
-        let mut zero = String::from("");
-        zero.push(d[0]);
-
-        return BaseNGenerator { 
+        return NumDigitGenerator {
             base: GeneratorBase::new(), 
             digits: d.clone(),
-            zero_digit: zero,
         }
     }
 
-    pub fn get_max_digits(&self, num_bytes: usize) -> usize {
-        // determine max length of generated value in order to spot leading
-        // zeros further on.
-        let len_test: [u8; PW_MAX_SEC_LEVEL] = [0xFF; PW_MAX_SEC_LEVEL];
-        let j = BigUint::from_bytes_be(&len_test[..num_bytes]);
-
-        return j.to_radix_be(self.digits.len() as u32).len();
-    }
-
-    pub fn from_string(s: &String) -> BaseNGenerator {
-        let mut res = BaseNGenerator::new(&vec!['a', 'b']);
-        res.set_custom(s);
-        
-        return res;
-    }
-
-    pub fn buf_to_base_n(&self, base_256_num: &[u8], num_bytes: usize) -> String {
-        let i = BigUint::from_bytes_be(base_256_num);
-        // perform radix conversion using self.digits.len() as the base
-        let raw_digits = i.to_radix_be(self.digits.len() as u32);
-
-        // transform numeric values for digits to actual characters
-        let mut res = String::from("");
-        for i in raw_digits {
-            res.push(self.digits[i as usize]);
-        }
-
-        let max_len = self.get_max_digits(num_bytes);
-
-        // add leading zeros if neccessary
-        while res.len() < max_len {
-            res.insert_str(0, &self.zero_digit);
-        }
-
-        return res;
+    pub fn sec_level_in_digits(&self, sec_level_in_bits: usize) -> usize {
+        ((sec_level_in_bits as f64) / (self.digits.len() as f64).log2()).ceil() as usize
     }
 }
 
-impl PasswordGenerator for BaseNGenerator {
+impl PasswordGenerator for NumDigitGenerator {
     fn gen_password(&mut self, num_bytes: usize) -> Option<String> {
-        let _ = match self.base.fill_buffer(num_bytes) {
-            Err(_) => return None,
-            Ok(b) => b 
-        };        
-        
-        let res = self.buf_to_base_n(&self.base.buffer[..num_bytes], num_bytes);
+        let mut res = String::from("");
+
+        for _ in 0..self.sec_level_in_digits(num_bytes * 8) {
+            let rand_digit = self.base.rng.random_range(0..self.digits.len());
+            res.push(self.digits[rand_digit])
+        }
 
         return Some(res);
     }
 
     fn set_custom(&mut self, s: &String) {
-        let mut v: Vec<char> = vec![];
-
-        for i in s.chars() {
-            v.push(i);
+        if s.len() < 2 {
+            panic!("Not a valid selection of chars")
         }
-        
-        self.digits = v.clone();
-        self.zero_digit = String::from("");
-        self.zero_digit.push(v[0]);
+
+        self.digits = s.chars().collect();
     }
 }

@@ -23,6 +23,8 @@ use crate::fcrypt;
 #[cfg(test)]
 use crate::jots;
 #[cfg(test)]
+use crate::pwgen::NumDigitGenerator;
+#[cfg(test)]
 use crate::pwgen::PasswordGenerator;
 #[cfg(test)]
 use crate::undo;
@@ -40,8 +42,6 @@ use std::env;
 use std::fs::remove_file;
 #[cfg(test)]
 use crate::obfuscate;
-#[cfg(test)]
-use crate::pwgen::BaseNGenerator;
 #[cfg(test)]
 use crate::jots::CryptorGen;
 
@@ -534,31 +534,16 @@ fn test_obfuscator() {
 }
 
 #[test]
-fn test_base_n_conversion() {
-    let num_bytes = 4;
-    // base 31
-    let digits = String::from("abcdefghijklmnopqrstuvwxyz23456");
-    let zero_byte: u8 = 0;    
-    let one_byte: u8 = 1;
-    let generator = BaseNGenerator::from_string(&digits);
-
-    let buf: [u8;4] = [zero_byte, zero_byte, zero_byte, zero_byte];
-    assert_eq!(generator.buf_to_base_n(&buf, num_bytes), String::from("aaaaaaa"));
-
-    let buf2: [u8;4] = [0xFF, one_byte, one_byte, one_byte];
-    assert_eq!(generator.buf_to_base_n(&buf2, num_bytes), String::from("eznrae6"));
-}
-
-#[test]
-fn test_base_n_gen() {
+fn test_n_digit_gen() {
     let num_bytes = 4;
     // base 32
     let digits = String::from("abcdefghijklmnopqrstuvwxyz234567");
-    let mut generator = BaseNGenerator::from_string(&digits);
+    let mut generator = NumDigitGenerator::new(&digits.chars().collect());
+    let sec_level_in_digits = generator.sec_level_in_digits(num_bytes * 8);
 
     for _i in 0..100 {
         let pw = generator.gen_password(num_bytes).unwrap();
         println!("{}", &pw);
-        assert_eq!(generator.get_max_digits(num_bytes), pw.len());
+        assert_eq!(sec_level_in_digits, pw.len());
     }
 }
