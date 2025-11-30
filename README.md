@@ -262,7 +262,7 @@ webdav_server = ""
 
 The default value for `clip_cmd` is `xsel -ob`, which works on Linux to retrieve the contents of the clipboard, which is filled via `CTRL+C` or after activating the `Copy`
 item from the context menu. If you want to use the primary selection, where text only has to be selected and not explicitly copied then use `xsel -op`. Remark: I had
-to manually install `xsel` on Ubuntu 22.04. Under MacOS `pbpaste -Prefer txt` can be used. For usage under Windows `rustpwman` provides the ("slightly" overengineered ;-))
+to manually install `xsel` on Ubuntu. Under MacOS `pbpaste -Prefer txt` can be used. For usage under Windows `rustpwman` provides the ("slightly" overengineered ;-))
 tool `paste_utf8.exe` which can be built in a Visual Studio developer prompt using the `build_paste_utf8.bat` batch file.
 
 The value `copy_cmd` uses `xsel -ib` as a default. This should work under Linux. Use `pbcopy` under MacOS and `clip.exe` or `paste_utf8.exe -c` under Windows.
