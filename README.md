@@ -155,10 +155,10 @@ prevent this problem you can use `paste_utf8.exe -c` instead of `clip.exe`. Inst
 
 ### Copy contents
 
-Via this menu entry you can copy the unformatted (white space is trimmed!) contents of the entry to the clipboard. In other words if an entry only contains a secret or a password
-you can use this entry to copy the password to the clipboard and paste it directly into the corresponding password dialog. As there is, at least in my primary usecases, quite
-a bit of additional information (for instance URLs, comments or explanatory text) in most entries this is not a general solution for speeding up login to a simple copy and
-paste operation. When selecting this entry the queue contents (see below) is ignored. Instead of selecting this menu entry you can alternatively press F5.
+Via this menu entry you can copy the unformatted (leading and trailing white space is trimmed!) contents of the entry to the clipboard. In other words if an entry only contains a
+secret or a password you can use this entry to copy the password to the clipboard and paste it directly into the corresponding password dialog. As there is, at least in my primary
+usecases, quite a bit of additional information (for instance URLs, comments or explanatory text) in most entries this is not a general solution for speeding up login to a simple
+copy and paste operation. When selecting this entry the queue contents (see below) is ignored. Instead of selecting this menu entry you can alternatively press F5.
 
 ### Add entry
 
