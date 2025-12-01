@@ -60,7 +60,7 @@ impl GenerationStrategy {
             GenerationStrategy::Hex => &|| { return Box::new(NumDigitGenerator::new(&vec!['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'])) },
             GenerationStrategy::Special => &|| { return Box::new(SpecialGenerator::new(false)) },
             GenerationStrategy::Numeric => &|| { return Box::new(NumDigitGenerator::new(&vec!['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'])) },
-            GenerationStrategy::Custom => &|| { return Box::new(NumDigitGenerator::new(&vec!['a', 'b'])) },
+            GenerationStrategy::Custom => &|| { return Box::new(NumDigitGenerator::new(&vec!['a', 'b'])) }
         }
     }
 
@@ -70,7 +70,7 @@ impl GenerationStrategy {
             GenerationStrategy::Hex => GEN_HEX,
             GenerationStrategy::Special => GEN_SPECIAL,
             GenerationStrategy::Numeric => GEN_NUMERIC,
-            GenerationStrategy::Custom => GEN_CUSTOM,
+            GenerationStrategy::Custom => GEN_CUSTOM
         }
     }
 
