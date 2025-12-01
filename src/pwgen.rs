@@ -57,7 +57,7 @@ impl GenerationStrategy {
     pub fn to_creator(self) -> &'static StrategyCreator {
         return match self {
             GenerationStrategy::Base64 => &|| { return Box::new(B64Generator::new()) },
-            GenerationStrategy::Hex => &|| { return Box::new(HexGenerator::new()) },
+            GenerationStrategy::Hex => &|| { return Box::new(NumDigitGenerator::new(&vec!['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'])) },
             GenerationStrategy::Special => &|| { return Box::new(SpecialGenerator::new(false)) },
             GenerationStrategy::Numeric => &|| { return Box::new(NumDigitGenerator::new(&vec!['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'])) },
             GenerationStrategy::Custom => &|| { return Box::new(NumDigitGenerator::new(&vec!['a', 'b'])) },
@@ -80,7 +80,7 @@ impl GenerationStrategy {
 
     pub fn get_known_ids() -> Vec<GenerationStrategy> {
         return vec![GenerationStrategy::Base64, GenerationStrategy::Hex, GenerationStrategy::Special, GenerationStrategy::Numeric];
-    }    
+    }
 }
 
 pub struct GeneratorBase {
@@ -128,28 +128,6 @@ impl PasswordGenerator for B64Generator {
         help = help.replace("+", "!");
 
         Some(help)
-    }
-}
-
-pub struct HexGenerator ( GeneratorBase );
-
-impl HexGenerator {
-    pub fn new() ->  HexGenerator {
-        return HexGenerator (GeneratorBase::new())
-    }
-}
-
-impl PasswordGenerator for HexGenerator {
-    fn gen_password(&mut self, num_bytes: usize) -> Option<String> {
-        let buf = match self.0.fill_buffer(num_bytes) {
-            Err(_) => return None,
-            Ok(b) => b 
-        };
-
-        let mut res = String::from("");
-        buf.into_iter().for_each(|i| res.push_str(&format!("{:02X}", i)));
-
-        Some(res)
     }
 }
 

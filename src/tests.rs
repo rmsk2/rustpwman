@@ -30,6 +30,9 @@ use crate::pwgen::PasswordGenerator;
 use crate::undo;
 #[cfg(test)]
 use argon2::AssociatedData;
+//use base64::engine::general_purpose;
+#[cfg(test)]
+use rand::Rng;
 #[cfg(test)]
 use scrypt::scrypt;
 #[cfg(test)]
@@ -531,6 +534,42 @@ fn test_obfuscator() {
     assert_eq!(password, plain_again);
 
     println!("{}", &ob_val);
+}
+
+#[test]
+fn test_n_digit_gen_2() {
+    let alphabet = String::from("abcdefghijklmnopqrstuvwxyz234567ABCDE");
+    let mut rng = rand::rng();
+    let temp_alpha: Vec<char> = alphabet.chars().collect();
+
+    for _i in 0..100 {
+        let num_bytes = rng.random_range(1..=24);
+        let alpha_end = rng.random_range(2..=alphabet.len());
+        let temp_alpha = Vec::from(&temp_alpha[0..alpha_end]);
+
+        let mut generator = NumDigitGenerator::new(&temp_alpha);
+        let pw = generator.gen_password(num_bytes).unwrap();
+
+        let float_sec_level = (num_bytes as f64) * 8.0;
+        let ld_alpha_len = (temp_alpha.len() as f64).log2();
+        let expected_len = (float_sec_level / ld_alpha_len).ceil() as usize;
+
+        println!("{}", &pw);
+        assert_eq!(pw.len(), expected_len);
+    }
+}
+
+#[test]
+fn test_n_digit_hex_gen() {
+    let num_bytes = 8;
+    let digits = String::from("0123456789ABCDEF");
+    let mut generator = NumDigitGenerator::new(&digits.chars().collect());
+
+    for _i in 0..100 {
+        let pw = generator.gen_password(num_bytes).unwrap();
+        println!("{}", &pw);
+        assert_eq!(2 * num_bytes, pw.len());
+    }
 }
 
 #[test]
