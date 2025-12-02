@@ -134,7 +134,7 @@ for an attacker when performing a brute force password search. The default secur
 
 Additionally the user is able to select the set of characters which may appear in the randomly generated password. Currently the following alternatives are offered:
 
-- Base64, (Upper and lower case letters, the digits 0-9 and two sepcial characters: Here `$` and `!` ).
+- Base64, (Upper and lower case letters, the digits 0-9 and two special characters: Here `$` and `!` ).
 - Hex (The digits 0-9 and the upper case letters `A`-`F`)
 - Numeric (The digits 0-9)
 - Special: This password generator aims to create pronouncable passwords which are constructed from the following elements: A sequence of two letter groups which consist of a consonant followed by a vowel. There are 420 such groups. Therefore when selecting one of these groups at random each one contains 8.7 bits of entropy. The final four character group is a consonant followed by a three digit number. There are 52*1000 such four character groups so it has an entropy of 15.6 Bits when one is chosen randomly.
