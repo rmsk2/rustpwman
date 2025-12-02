@@ -14,12 +14,8 @@ limitations under the License. */
 
 #![allow(dead_code)]
 
-use rand::RngCore;
-use base64::prelude::*;
-use std::io::{Error, ErrorKind};
 use rand::Rng;
 
-use crate::modtui::PW_MAX_SEC_LEVEL;
 const GEN_BASE64: &str = "base64";
 const GEN_HEX: &str = "hex";
 const GEN_SPECIAL: &str = "special";
@@ -56,7 +52,7 @@ impl GenerationStrategy {
 
     pub fn to_creator(self) -> &'static StrategyCreator {
         return match self {
-            GenerationStrategy::Base64 => &|| { return Box::new(B64Generator::new()) },
+            GenerationStrategy::Base64 => &|| { return Box::new(NumDigitGenerator::base64()) },
             GenerationStrategy::Hex => &|| { return Box::new(NumDigitGenerator::new(&vec!['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'])) },
             GenerationStrategy::Special => &|| { return Box::new(SpecialGenerator::new(false)) },
             GenerationStrategy::Numeric => &|| { return Box::new(NumDigitGenerator::new(&vec!['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'])) },
@@ -80,54 +76,6 @@ impl GenerationStrategy {
 
     pub fn get_known_ids() -> Vec<GenerationStrategy> {
         return vec![GenerationStrategy::Base64, GenerationStrategy::Hex, GenerationStrategy::Special, GenerationStrategy::Numeric];
-    }
-}
-
-pub struct GeneratorBase {
-    rng: rand::prelude::ThreadRng,
-    buffer: [u8; PW_MAX_SEC_LEVEL]
-}
-
-impl GeneratorBase {
-    pub fn new() -> GeneratorBase {
-        return GeneratorBase {
-            rng: rand::rng(),
-            buffer: [0; PW_MAX_SEC_LEVEL]
-        }
-    }
-
-    pub fn fill_buffer(&mut self, num_bytes: usize) -> Result<&[u8], std::io::Error> {
-        if num_bytes > PW_MAX_SEC_LEVEL {
-            return Err(Error::new(ErrorKind::Other, "Security level not supported"));
-        }
-
-        self.rng.fill_bytes(&mut self.buffer);
-
-        return Ok(&self.buffer[..num_bytes]);
-    }
-}
-
-pub struct B64Generator ( GeneratorBase );
-
-impl B64Generator {
-    pub fn new() ->  B64Generator {
-        return B64Generator (GeneratorBase::new())
-    }
-}
-
-impl PasswordGenerator for B64Generator {
-    fn gen_password(&mut self, num_bytes: usize) -> Option<String> {
-        let buf = match self.0.fill_buffer(num_bytes) {
-            Err(_) => return None,
-            Ok(b) => b 
-        };
-
-        let mut help = BASE64_STANDARD.encode(buf);
-        help = help.replace("=", "");
-        help = help.replace("/", "$");
-        help = help.replace("+", "!");
-
-        Some(help)
     }
 }
 
@@ -224,7 +172,7 @@ impl PasswordGenerator for SpecialGenerator {
 }
 
 pub struct NumDigitGenerator {
-    base: GeneratorBase,
+    rng: rand::prelude::ThreadRng,
     digits: Vec<char>
 }
 
@@ -235,9 +183,19 @@ impl NumDigitGenerator {
         }
 
         return NumDigitGenerator {
-            base: GeneratorBase::new(), 
+            rng: rand::rng(),
             digits: d.clone(),
         }
+    }
+
+    pub fn base64() -> NumDigitGenerator {
+        let upper_chars = String::from("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+
+        let mut all_chars = upper_chars + "abcdefghijklmnopqrstuvwxyz";
+        all_chars = all_chars + "0123456789";
+        all_chars = all_chars + "$!";
+
+        return NumDigitGenerator::new(&all_chars.chars().collect());
     }
 
     pub fn sec_level_in_digits(&self, sec_level_in_bits: usize) -> usize {
@@ -250,7 +208,7 @@ impl PasswordGenerator for NumDigitGenerator {
         let mut res = String::from("");
 
         for _ in 0..self.sec_level_in_digits(num_bytes * 8) {
-            let rand_digit = self.base.rng.random_range(0..self.digits.len());
+            let rand_digit = self.rng.random_range(0..self.digits.len());
             res.push(self.digits[rand_digit])
         }
 

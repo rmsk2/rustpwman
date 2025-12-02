@@ -129,16 +129,16 @@ password and insert it at the current cursor position or insert the current cont
 
 When inserting a random password into the current entry the user has to specify some parameters which will influence the password generation process. One parameter is the
 security level in bits (of entropy). This describes how large the set of passwords should be from which the generator selects one at random. A security level of `k` bits
-means that there are `2**k` passwords to choose from. This parameter in essence determines the difficulty for an attacker when performing a brute force password search.
-The default security level is 80 bits but this can be changed by a config file (see below).
+in the context of `rustpwman` means that there are *at least* `2**k` passwords to choose from (but there may be more). This parameter in essence determines the difficulty 
+for an attacker when performing a brute force password search. The default security level is 80 bits but this can be changed by a config file (see below).
 
 Additionally the user is able to select the set of characters which may appear in the randomly generated password. Currently the following alternatives are offered:
 
-- Base64, where the potential padding character `=` is removed and the the special characters `/` and `+` are replaced by `$` and `!`
-- Hex
-- Numeric
+- Base64, (Upper and lower case letters, the digits 0-9 and two sepcial characters: Here `$` and `!` ).
+- Hex (The digits 0-9 and the upper case letters `A`-`F`)
+- Numeric (The digits 0-9)
 - Special: This password generator aims to create pronouncable passwords which are constructed from the following elements: A sequence of two letter groups which consist of a consonant followed by a vowel. There are 420 such groups. Therefore when selecting one of these groups at random each one contains 8.7 bits of entropy. The final four character group is a consonant followed by a three digit number. There are 52*1000 such four character groups so it has an entropy of 15.6 Bits when one is chosen randomly.
-- Custom: When selecting this option the user can customize the character set which is used to generate the password. What happens here is in essence a radix conversion of a random binary number, which has the selected number of bits, into the base which is derived from the number `N` of unique characters in the custom character set. Each character in that set is then used as a base `N` digit. While the security level of the generated password is guaranteed to be equal to the selected value it has to be noted that this does not mean that all digits appear in all positions with equal probability.
+- Custom: When selecting this option the user can customize the character set which is used to generate the password.
 
 ![](/custom.png?raw=true "Screenshot of password generation dialog")
 
