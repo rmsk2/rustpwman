@@ -53,10 +53,10 @@ impl GenerationStrategy {
     pub fn to_creator(self) -> &'static StrategyCreator {
         return match self {
             GenerationStrategy::Base64 => &|| { return Box::new(NumDigitGenerator::base64()) },
-            GenerationStrategy::Hex => &|| { return Box::new(NumDigitGenerator::new(&vec!['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'])) },
+            GenerationStrategy::Hex => &|| { return Box::new(NumDigitGenerator::hex()) },
             GenerationStrategy::Special => &|| { return Box::new(SpecialGenerator::new(false)) },
-            GenerationStrategy::Numeric => &|| { return Box::new(NumDigitGenerator::new(&vec!['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'])) },
-            GenerationStrategy::Custom => &|| { return Box::new(NumDigitGenerator::new(&vec!['a', 'b'])) }
+            GenerationStrategy::Numeric => &|| { return Box::new(NumDigitGenerator::numeric()) },
+            GenerationStrategy::Custom => &|| { return Box::new(NumDigitGenerator::default()) },
         }
     }
 
@@ -188,6 +188,22 @@ impl NumDigitGenerator {
         }
     }
 
+    pub fn from_string(alpha: &String) -> NumDigitGenerator {
+        return NumDigitGenerator::new(&alpha.chars().collect());
+    }
+
+    pub fn default() -> NumDigitGenerator {
+        return NumDigitGenerator::from_string(&String::from("AB"));
+    }
+
+    pub fn numeric() -> NumDigitGenerator {
+        return NumDigitGenerator::from_string(&String::from("0123456789"));
+    }
+
+    pub fn hex() -> NumDigitGenerator {
+        return NumDigitGenerator::from_string(&String::from("0123456789ABCDEF"));
+    }
+
     pub fn base64() -> NumDigitGenerator {
         let upper_chars = String::from("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 
@@ -195,7 +211,7 @@ impl NumDigitGenerator {
         all_chars = all_chars + "0123456789";
         all_chars = all_chars + "$!";
 
-        return NumDigitGenerator::new(&all_chars.chars().collect());
+        return NumDigitGenerator::from_string(&all_chars);
     }
 
     pub fn sec_level_in_digits(&self, sec_level_in_bits: usize) -> usize {
