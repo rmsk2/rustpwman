@@ -12,44 +12,25 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-//use core::slice::SlicePattern;
-#[cfg(test)]
 use std;
 
-#[cfg(test)]
 use std::collections::HashMap;
-#[cfg(test)]
 use crate::fcrypt;
-#[cfg(test)]
 use crate::jots;
-#[cfg(test)]
 use crate::pwgen::NumDigitGenerator;
-#[cfg(test)]
 use crate::pwgen::PasswordGenerator;
-#[cfg(test)]
 use crate::undo;
-#[cfg(test)]
 use argon2::AssociatedData;
-//use base64::engine::general_purpose;
-#[cfg(test)]
 use rand::Rng;
-#[cfg(test)]
 use scrypt::scrypt;
-#[cfg(test)]
 use scrypt::Params;
-#[cfg(test)]
 use crate::tomlconfig;
-#[cfg(test)]
 use std::env;
-#[cfg(test)]
 use std::fs::remove_file;
-#[cfg(test)]
 use crate::obfuscate;
-#[cfg(test)]
 use crate::jots::CryptorGen;
 
 
-#[cfg(test)]
 pub fn test_fcrypt_enc_dec_generic(generator: CryptorGen) {
     let (d, i) = fcrypt::KdfId::Sha256.to_named_func();
     let mut ctx = generator(d, i);
@@ -85,7 +66,6 @@ pub fn test_fcrypt_enc_dec_chacha20() {
 }
 
 
-#[cfg(test)]
 pub fn test_fcrypt_enc_dec_empty_generic(generator: CryptorGen) {
     let (d, i) = fcrypt::KdfId::Sha256.to_named_func();
     let mut ctx = generator(d, i);
@@ -126,7 +106,6 @@ pub fn test_fcrypt_enc_dec_empty_chacha20() {
     test_fcrypt_enc_dec_empty_generic(Box::new(make_chacha20_cryptor));
 }
 
-#[cfg(test)]
 pub fn test_fcrypt_dec_failure_generic(generator: CryptorGen) {
     let (d, i) = fcrypt::KdfId::Sha256.to_named_func();
     let mut ctx = generator(d, i);
@@ -160,7 +139,6 @@ pub fn test_fcrypt_dec_failure_chacha20() {
 }
 
 
-#[cfg(test)]
 pub fn test_fcrypt_enc_dec_with_json_generic(generator: CryptorGen) {
     let data_raw: Vec<u8> = vec![0; 32];
     let mut cipher_json: Vec<u8> = Vec::new();
@@ -201,17 +179,14 @@ pub fn test_fcrypt_enc_dec_with_json_generic(generator: CryptorGen) {
     }
 }
 
-#[cfg(test)]
 pub fn make_chacha20_cryptor(d: fcrypt::KeyDeriver, i: fcrypt::KdfId) -> Box<dyn fcrypt::Cryptor> {
     return fcrypt::CipherId::ChaCha20Poly1305.make(d, i);
 }
 
-#[cfg(test)]
 pub fn make_aes_gcm_cryptor(d: fcrypt::KeyDeriver, i: fcrypt::KdfId) -> Box<dyn fcrypt::Cryptor> {
     return fcrypt::CipherId::Aes256Gcm.make(d, i);
 }
 
-#[cfg(test)]
 pub fn make_aes192_gcm_cryptor(d: fcrypt::KeyDeriver, i: fcrypt::KdfId) -> Box<dyn fcrypt::Cryptor> {
     return fcrypt::CipherId::Aes192Gcm.make(d, i);
 }
@@ -337,7 +312,6 @@ pub fn test_jots_iter_empty() {
     assert_eq!(count, -1);
 }
 
-#[cfg(test)]
 fn vec_to_hex(buf: &Vec<u8>) -> String {
     let mut result = String::from("");
     
