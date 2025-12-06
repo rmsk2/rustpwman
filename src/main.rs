@@ -40,6 +40,7 @@ const RUSTPWMAN_VIEWER: &str = "RUSTPWMAN_VIEWER";
 const PWMAN_CONFIG: &str = "PWMAN_CONFIG";
 
 use std::env;
+use std::fmt;
 use std::path::PathBuf;
 use dirs;
 use clap::{Arg, Command, ArgAction};
@@ -101,6 +102,20 @@ struct RustPwMan {
 enum CfgFailReaction {
     Reset,
     Abort
+}
+#[derive(PartialEq)]
+#[derive(Debug)]
+enum CfgSource {
+    Environment,
+    CLI,
+    Default,
+    Nothing
+}
+
+impl fmt::Display for CfgSource {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Debug::fmt(self, f)
+    }
 }
 
 #[allow(unused_variables)]
@@ -176,33 +191,6 @@ impl RustPwMan {
         }
     }
 
-    fn get_config_name(&mut self, config_matches: &clap::ArgMatches) -> Option<PathBuf> {
-        let a: Option<&String> = config_matches.get_one(ARG_CONFIG_FILE);
-
-        match a {
-            Some(f_name) => {
-                // cfgfile was specified on command line
-                return Some(PathBuf::from(f_name));
-            },
-            None => {
-                if let Ok(file_name) = env::var(PWMAN_CONFIG) {
-                    // PWMAN_CONFIG was set
-                    return Some(PathBuf::from(file_name));
-                }
-
-                // Use .rustpwman in user's home directory
-                let mut home_dir = match dirs::home_dir() {
-                    Some(p) => p,
-                    None => return None
-                };
-
-                home_dir.push(CFG_FILE_NAME);
-
-                return Some(home_dir);
-            }
-        }
-    }
-
     #[cfg(feature = "writebackup")]
     pub fn get_backup_file_name() -> Option<std::path::PathBuf> {
         let file_name = match env::var(ENV_BKP) {
@@ -216,7 +204,7 @@ impl RustPwMan {
         return Some(path);
     }
 
-    fn load_named_config(&mut self, cfg_file: &PathBuf, fail_reaction: CfgFailReaction) -> Option<String>{
+    fn load_named_config(&mut self, cfg_file: &PathBuf, fail_reaction: CfgFailReaction, source: CfgSource) -> Option<String>{
         let mut file_was_read = false;
 
         if let Ok(loaded_config) = tomlconfig::load(&cfg_file, &mut file_was_read) {
@@ -246,7 +234,18 @@ impl RustPwMan {
             } else {
                 match fail_reaction {
                     CfgFailReaction::Abort => {
-                        return Some(String::from("Specified config file was not found!"));
+                        if source != CfgSource::Default {
+                            let error_message = match cfg_file.as_os_str().to_str() {
+                                Some(s) => format!("Config file '{}' as specified through the '{}' was not found!", s, source),
+                                None => String::from("Config file not fount and could not convert the file name to UTF-8")
+                            };
+                            return Some(error_message);
+                        } else {
+                            // We do not abort when the user has not specified a dedicated config file through the CLI or the
+                            // environment and the default config file does not exist (yet).
+                            self.reset_config();
+                            return None;                            
+                        }                        
                     },
                     CfgFailReaction::Reset => {
                         self.reset_config();
@@ -257,10 +256,38 @@ impl RustPwMan {
         }
     }
 
+    fn get_config_name(&mut self, config_matches: &clap::ArgMatches) -> (CfgSource, Option<PathBuf>) {
+        let a: Option<&String> = config_matches.get_one(ARG_CONFIG_FILE);
+
+        match a {
+            Some(f_name) => {
+                // cfgfile was specified on command line
+                return (CfgSource::CLI, Some(PathBuf::from(f_name)));
+            },
+            None => {
+                if let Ok(file_name) = env::var(PWMAN_CONFIG) {
+                    // PWMAN_CONFIG was set
+                    return (CfgSource::Environment, Some(PathBuf::from(file_name)));
+                }
+
+                // Use .rustpwman in user's home directory
+                let mut home_dir = match dirs::home_dir() {
+                    Some(p) => p,
+                    None => return (CfgSource::Nothing, None)
+                };
+
+                home_dir.push(CFG_FILE_NAME);
+
+                return (CfgSource::Default, Some(home_dir));
+            }
+        }
+    }
+
     fn load_config(&mut self, matches: &clap::ArgMatches, fail_reaction: CfgFailReaction) -> (PathBuf, Option<String>) {
         let config_file_name: std::path::PathBuf;
+        let (cfg_type, file_path) = self.get_config_name(matches);
 
-        match self.get_config_name(matches) {
+        match file_path {
             Some(f_name) => {
                 config_file_name = std::path::PathBuf::from(f_name);
             },
@@ -270,7 +297,7 @@ impl RustPwMan {
         };
 
         let h = config_file_name.clone();
-        return (config_file_name, self.load_named_config(&h, fail_reaction));
+        return (config_file_name, self.load_named_config(&h, fail_reaction, cfg_type));
     }
 
     fn str_to_gen_strategy(&self, strategy_name: &str) -> GenerationStrategy {
