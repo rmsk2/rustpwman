@@ -276,7 +276,7 @@ be useful during testing or when using password files on several WebDAV servers.
 
 ## Environment variables
 
-You can influence the beahviour of `rustpwman` via the values of the following environment variables:
+You can influence the behaviour of `rustpwman` via the values of the following environment variables:
 
 |Name | Intended use |
 |-|-|
