@@ -229,6 +229,8 @@ as a QR code.
 
 # Configuration or the functionality of the `cfg` command
 
+## The `cfg` command
+
 Rustpwman uses a TOML config file for setting the default security level for newly generated passwords, the default password generator,
 the default PBKDF, CLI commands which can be used to set and retrieve the contents of the clipboard and to view images containing QR codes and 
 optionally the parameters needed for a WebDAV connection. The most convenient way to edit the config file is to use the `rustpwman cfg` command 
@@ -271,6 +273,18 @@ As the value of `viewer_cmd` you can use `eog` (Gnome) or `xdg-open` on Linux, `
 As a default the config file is stored in the users' home directory in a file named `.rustpwman` and you can alternatively edit it by hand instead of calling `rustpwman cfg`.
 If the environment variable `PWMAN_CONFIG` is set to a value, then `rustpwman` will interpret its value as the file name of a separate config file. This can
 be useful during testing or when using password files on several WebDAV servers.
+
+## Environment variables
+
+You can influence the beahviour of `rustpwman` via the values of the following environment variables:
+
+|Name | Intended use |
+|-|-|
+|`PWMANCIPHER`| If the `chacha20` feature is active and this variable is set then the values `AES192` and `AES256` select AES-192 GCM or AES-256 GCM as a cipher. Any other value selects ChaCha20-Poly1305. If not set AES-256 GCM is used. If an algo is specified on the command line then it takes precendence over the contents of this environment variable. |
+|`PWMANBKP`| If the feature `writebackup` is active the contents of this variable specifies the file name to store the backup in. If the variable is not set the default value `rustpwman_last.enc` will be used. |
+|`RUSTPWMAN_OBFUSCATION`| Key used to obfuscate WebDAV access data, if the `webdav`  feature is active. |
+|`RUSTPWMAN_VIEWER`| Prefix for the command to start an image viewer to which the file name of the image (containing a QR code) is appended if the `qrcode` feature is enabled. If the value `viewer_cmd` in the config file is set it takes precendence over the environment variable. |
+|`PWMAN_CONFIG`| Full path to alternative config file. When using the `rustpwman cfg` command the value of the `-c/--cfgfile` option takes precedence over the environment variable if the option is specified. |
 
 # Using `rustpwman` to generate passwords or the `gen` command
 
