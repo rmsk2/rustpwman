@@ -284,7 +284,7 @@ You can influence the behaviour of `rustpwman` via the values of the following e
 |`PWMANBKP`| If the feature `writebackup` is active the contents of this variable specifies the file name to store the backup in. If the variable is not set the default value `rustpwman_last.enc` will be used. |
 |`RUSTPWMAN_OBFUSCATION`| Key used to obfuscate WebDAV access data, if the `webdav`  feature is active. |
 |`RUSTPWMAN_VIEWER`| Prefix for the command to start an image viewer to which the file name of the image (containing a QR code) is appended if the `qrcode` feature is enabled. If the value `viewer_cmd` in the config file is set it takes precendence over the environment variable. |
-|`PWMAN_CONFIG`| Full path to alternative config file. When using the `rustpwman cfg` command the value of the `-c/--cfgfile` option takes precedence over the environment variable if the option is specified. If the environment variable is not set then the `.rustpwman` file in the user's home directory will be used as a default. |
+|`PWMAN_CONFIG`| Full path to an alternative config file. When using the `rustpwman cfg` command the value of the `-c/--cfgfile` option takes precedence over the environment variable if the option is specified. If the environment variable is not set then the `.rustpwman` file in the user's home directory will be used as a default. |
 
 # Using `rustpwman` to generate passwords or the `gen` command
 
