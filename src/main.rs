@@ -40,6 +40,7 @@ const RUSTPWMAN_VIEWER: &str = "RUSTPWMAN_VIEWER";
 const PWMAN_CONFIG: &str = "PWMAN_CONFIG";
 
 use std::env;
+use std::path::PathBuf;
 use dirs;
 use clap::{Arg, Command, ArgAction};
 use fcrypt::CipherId;
@@ -97,6 +98,11 @@ struct RustPwMan {
     webdav_server: String
 }
 
+enum CfgFailReaction {
+    Reset,
+    Abort
+}
+
 #[allow(unused_variables)]
 pub fn make_cryptor(id: &str, d: fcrypt::KeyDeriver, i: fcrypt::KdfId) -> Box<dyn fcrypt::Cryptor> {
     #[cfg(not(feature = "chacha20"))]
@@ -127,7 +133,7 @@ impl RustPwMan {
     fn new() -> Self {
         let (default_kdf, _) = DEFAULT_KDF_ID.to_named_func();
 
-        return RustPwMan {
+        let mut res = RustPwMan {
             default_deriver: default_kdf,
             default_deriver_id: DEFAULT_KDF_ID,
             default_sec_level: modtui::PW_SEC_LEVEL,
@@ -135,10 +141,28 @@ impl RustPwMan {
             paste_command: String::from(DEFAULT_PASTE_CMD),
             copy_command: String::from(DEFAULT_COPY_CMD),
             viewer_command: RustPwMan::get_viewer_from_env(),
-            webdav_user: String::from(""),
-            webdav_pw: String::from(""),
-            webdav_server: String::from(""),
-        }
+            webdav_user: String::new(),
+            webdav_pw: String::new(),
+            webdav_server: String::new(),
+        };
+
+        res.reset_config();
+        return res;
+    }
+
+    fn reset_config(&mut self) {
+        let (default_kdf, _) = DEFAULT_KDF_ID.to_named_func();
+
+        self.default_deriver = default_kdf;
+        self.default_deriver_id = DEFAULT_KDF_ID;
+        self.default_sec_level = modtui::PW_SEC_LEVEL;
+        self.default_pw_gen = GenerationStrategy::Base64;
+        self.paste_command = String::from(DEFAULT_PASTE_CMD);
+        self.copy_command = String::from(DEFAULT_COPY_CMD);
+        self.viewer_command = RustPwMan::get_viewer_from_env();
+        self.webdav_user = String::from("");
+        self.webdav_pw = String::from("");
+        self.webdav_server = String::from("");
     }
 
     fn is_option_present(matches: &clap::ArgMatches, id: &str) -> bool {
@@ -152,19 +176,31 @@ impl RustPwMan {
         }
     }
 
-    pub fn get_cfg_file_name() -> Option<std::path::PathBuf> {
-        if let Ok(file_name) = env::var(PWMAN_CONFIG) {
-            return Some(std::path::PathBuf::from(file_name));
+    fn get_config_name(&mut self, config_matches: &clap::ArgMatches) -> Option<PathBuf> {
+        let a: Option<&String> = config_matches.get_one(ARG_CONFIG_FILE);
+
+        match a {
+            Some(f_name) => {
+                // cfgfile was specified on command line
+                return Some(PathBuf::from(f_name));
+            },
+            None => {
+                if let Ok(file_name) = env::var(PWMAN_CONFIG) {
+                    // PWMAN_CONFIG was set
+                    return Some(PathBuf::from(file_name));
+                }
+
+                // Use .rustpwman in user's home directory
+                let mut home_dir = match dirs::home_dir() {
+                    Some(p) => p,
+                    None => return None
+                };
+
+                home_dir.push(CFG_FILE_NAME);
+
+                return Some(home_dir);
+            }
         }
-
-        let mut home_dir = match dirs::home_dir() {
-            Some(p) => p,
-            None => return None
-        };
-
-        home_dir.push(CFG_FILE_NAME);
-
-        return Some(home_dir);
     }
 
     #[cfg(feature = "writebackup")]
@@ -180,43 +216,61 @@ impl RustPwMan {
         return Some(path);
     }
 
-    fn load_config(&mut self) {
-        let cfg_file = match RustPwMan::get_cfg_file_name() {
-            Some(p) => p,
-            None => return
-        };
-
+    fn load_named_config(&mut self, cfg_file: &PathBuf, fail_reaction: CfgFailReaction) -> Option<String>{
         let mut file_was_read = false;
 
-        let loaded_config = match tomlconfig::load(&cfg_file, &mut file_was_read) {
-            Ok(c) => c,
-            Err(_) => {
-                if file_was_read {
-                    panic!("A config file was found but it seems to be corrupt!");
-                } else {
-                    return;
+        if let Ok(loaded_config) = tomlconfig::load(&cfg_file, &mut file_was_read) {
+            let (k, id) = self.str_to_deriver(&loaded_config.pbkdf[..]);
+
+            self.default_deriver = k;
+            self.default_deriver_id = id;
+            self.default_pw_gen = self.str_to_gen_strategy(&loaded_config.pwgen[..]);
+            self.default_sec_level = self.verify_sec_level(loaded_config.seclevel);
+            self.paste_command = loaded_config.clip_cmd;
+            self.copy_command = loaded_config.copy_cmd;
+
+            // If the config contains a viewer command prefix. Use this instead of the value
+            // read from the environment.
+            if loaded_config.viewer_cmd != None {
+                self.viewer_command = loaded_config.viewer_cmd;
+            }
+
+            self.webdav_user = loaded_config.webdav_user;
+            self.webdav_pw = loaded_config.webdav_pw;
+            self.webdav_server = loaded_config.webdav_server;
+
+            return None;
+        } else {
+            if file_was_read {
+                return Some(String::from("A config file was found but it seems to be corrupt!"));
+            } else {
+                match fail_reaction {
+                    CfgFailReaction::Abort => {
+                        return Some(String::from("Specified config file was not found!"));
+                    },
+                    CfgFailReaction::Reset => {
+                        self.reset_config();
+                        return None;
+                    }
                 }
+            }
+        }
+    }
+
+    fn load_config(&mut self, matches: &clap::ArgMatches, fail_reaction: CfgFailReaction) -> (PathBuf, Option<String>) {
+        let config_file_name: std::path::PathBuf;
+
+        match self.get_config_name(matches) {
+            Some(f_name) => {
+                config_file_name = std::path::PathBuf::from(f_name);
+            },
+            None => {
+                return (PathBuf::new(), Some(String::from("Unable to determine config file!")));
             }
         };
 
-        let (k, id) = self.str_to_deriver(&loaded_config.pbkdf[..]);
-
-        self.default_deriver = k;
-        self.default_deriver_id = id;
-        self.default_pw_gen = self.str_to_gen_strategy(&loaded_config.pwgen[..]);
-        self.default_sec_level = self.verify_sec_level(loaded_config.seclevel);
-        self.paste_command = loaded_config.clip_cmd;
-        self.copy_command = loaded_config.copy_cmd;
-
-        // If the config contains a viewer command prefix. Use this instead of the value
-        // read from the environment.
-        if loaded_config.viewer_cmd != None {
-            self.viewer_command = loaded_config.viewer_cmd;
-        }
-
-        self.webdav_user = loaded_config.webdav_user;
-        self.webdav_pw = loaded_config.webdav_pw;
-        self.webdav_server = loaded_config.webdav_server;
+        let h = config_file_name.clone();
+        return (config_file_name, self.load_named_config(&h, fail_reaction));
     }
 
     fn str_to_gen_strategy(&self, strategy_name: &str) -> GenerationStrategy {
@@ -293,6 +347,11 @@ impl RustPwMan {
     }
 
     fn perform_encrypt_command(&mut self, encrypt_matches: &clap::ArgMatches) {
+        if let (_, Some(error_message)) = self.load_config(encrypt_matches, CfgFailReaction::Abort)  {
+            eprintln!("{}", error_message.as_str());
+            return;
+        }
+
         self.set_pbkdf_from_command_line(encrypt_matches);
         let (file_in, file_out) = RustPwMan::determine_in_out_files(encrypt_matches);
 
@@ -344,6 +403,11 @@ impl RustPwMan {
     }
 
     fn perform_decrypt_command(&mut self, decrypt_matches: &clap::ArgMatches) {
+        if let (_, Some(error_message)) = self.load_config(decrypt_matches, CfgFailReaction::Abort)  {
+            eprintln!("{}", error_message.as_str());
+            return;
+        }
+
         self.set_pbkdf_from_command_line(decrypt_matches);
         let (file_in, file_out) = RustPwMan::determine_in_out_files(decrypt_matches);
 
@@ -449,6 +513,11 @@ impl RustPwMan {
     }
 
     fn perform_gui_command(&mut self, gui_matches: &clap::ArgMatches) {
+        if let (_, Some(error_message)) = self.load_config(gui_matches, CfgFailReaction::Abort)  {
+            eprintln!("{}", error_message.as_str());
+            return;
+        }
+
         self.set_pbkdf_from_command_line(gui_matches);
 
         let a:Option<&String> = gui_matches.get_one(ARG_INPUT_FILE);
@@ -508,62 +577,27 @@ impl RustPwMan {
     }
 
     fn perform_config_command(&mut self, config_matches: &clap::ArgMatches) {
-        let config_file_name: std::path::PathBuf;
-        let a: Option<&String> = config_matches.get_one(ARG_CONFIG_FILE);
+        let (config_file_name, err_msg) = self.load_config(config_matches, CfgFailReaction::Reset);
 
-        match a {
-            Some(f_name) => {
-                config_file_name = std::path::PathBuf::from(f_name);
-            },
-            None => {
-                config_file_name = match RustPwMan::get_cfg_file_name() {
-                    Some(p) => p,
-                    None => {
-                        eprintln!("Unable to determine config file!");
-                        return;
-                    }
-                };
-            }
+        if let Some(error_message) = err_msg  {
+            eprintln!("{}", error_message.as_str());
+            return;
         }
-
-        let mut file_was_loaded = false;
-
-        let loaded_config = match tomlconfig::load(&config_file_name, &mut file_was_loaded) {
-            Ok(c) => c,
-            Err(_) => {
-                if file_was_loaded {
-                    eprintln!("A config file was found but it seems to be corrupt!");
-                    return;
-                }
-
-                tomlconfig::RustPwManSerialize {
-                    seclevel: modtui::PW_SEC_LEVEL,
-                    pbkdf: DEFAULT_KDF_ID.to_string(),
-                    pwgen: GenerationStrategy::Base64.to_string(),
-                    clip_cmd: String::from(crate::modtui::DEFAULT_PASTE_CMD),
-                    copy_cmd: String::from(crate::modtui::DEFAULT_COPY_CMD),
-                    viewer_cmd: RustPwMan::get_viewer_from_env(),
-                    webdav_user: String::from(""),
-                    webdav_pw: String::from(""),
-                    webdav_server: String::from("")
-                }
-            }
-        };
-
-        let sec_level = self.verify_sec_level(loaded_config.seclevel);
-        let pw_gen_strategy = self.str_to_gen_strategy(&loaded_config.pwgen);
-        let (_, pbkdf_id) = self.str_to_deriver(&loaded_config.pbkdf);
 
         let mut viewer_cmd = RustPwMan::get_viewer_from_env();
-        if loaded_config.viewer_cmd != None {
-            viewer_cmd = loaded_config.viewer_cmd;
+        if self.viewer_command != None {
+            viewer_cmd = self.viewer_command.clone();
         }
 
-        tuiconfig::config_main(config_file_name, sec_level, pw_gen_strategy, pbkdf_id, &loaded_config.clip_cmd, &loaded_config.copy_cmd,
-                               &loaded_config.webdav_user, &loaded_config.webdav_pw, &loaded_config.webdav_server, &viewer_cmd);
+        tuiconfig::config_main(config_file_name, self.default_sec_level, self.default_pw_gen, self.default_deriver_id, &self.paste_command, &self.copy_command, &self.webdav_user, &self.webdav_pw, &self.webdav_server, &viewer_cmd);
     }
 
-    fn perform_generate_command(&mut self) {
+    fn perform_generate_command(&mut self, generate_matches: &clap::ArgMatches) {
+        if let (_, Some(error_message)) = self.load_config(generate_matches, CfgFailReaction::Abort)  {
+            eprintln!("{}", error_message.as_str());
+            return;
+        }
+
         tuigen::generate_main(self.default_sec_level, self.default_pw_gen);
     }
 }
@@ -622,6 +656,10 @@ fn main() {
                     .required(true)
                     .num_args(1)
                     .help("Encrypted output file"))
+                .arg(Arg::new(ARG_CONFIG_FILE)
+                    .long(ARG_CONFIG_FILE)
+                    .num_args(1)
+                    .help("Name of config file. Default is .rustpwman"))
                 .arg(add_kdf_param())
                 .arg(add_cipher_param()))
         .subcommand(
@@ -639,6 +677,10 @@ fn main() {
                     .required(true)
                     .num_args(1)
                     .help("Name of plaintext file"))
+                .arg(Arg::new(ARG_CONFIG_FILE)
+                    .long(ARG_CONFIG_FILE)
+                    .num_args(1)
+                    .help("Name of config file. Default is .rustpwman"))
                 .arg(add_kdf_param())
                 .arg(add_cipher_param()))
         .subcommand(
@@ -656,7 +698,11 @@ fn main() {
                     .long(ARG_EXPORT)
                     .required(false)
                     .action(ArgAction::SetTrue)
-                    .help("Allow to create a plaintext backup during startup")))
+                    .help("Allow to create a plaintext backup during startup"))
+                .arg(Arg::new(ARG_CONFIG_FILE)
+                    .long(ARG_CONFIG_FILE)
+                    .num_args(1)
+                    .help("Name of config file. Default is .rustpwman")))
         .subcommand(
             Command::new(COMMAND_CONFIG)
                 .about("Change configuration")
@@ -667,14 +713,18 @@ fn main() {
                     .help("Name of config file. Default is .rustpwman")))
         .subcommand(
             Command::new(COMMAND_GENERATE)
-                .about("Generate passwords"))
+                .about("Generate passwords")
+                .arg(Arg::new(ARG_CONFIG_FILE)
+                    .short('c')
+                    .long(ARG_CONFIG_FILE)
+                    .num_args(1)
+                    .help("Name of config file. Default is .rustpwman")))
         .subcommand(
             Command::new(COMMAND_OBFUSCATE)
                 .about("Obfuscate WebDAV password")
         );
 
     let mut rustpwman = RustPwMan::new();
-    rustpwman.load_config();
 
     let matches = app.clone().get_matches();
     let subcommand = matches.subcommand();
@@ -694,8 +744,8 @@ fn main() {
                 (COMMAND_CONFIG, cfg_matches) => {
                     rustpwman.perform_config_command(cfg_matches);
                 },
-                (COMMAND_GENERATE, _) => {
-                    rustpwman.perform_generate_command();
+                (COMMAND_GENERATE, generate_matches) => {
+                    rustpwman.perform_generate_command(generate_matches);
                 },
                 (COMMAND_OBFUSCATE, _) => {
                     rustpwman.perform_obfuscate_command();
