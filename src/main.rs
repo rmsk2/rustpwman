@@ -77,10 +77,8 @@ const MULTIPLE_CIPHER_DEFAULT_ENV_NOT_SET: CipherId = CipherId::Aes256Gcm;
 #[cfg(feature = "chacha20")]
 const MULTIPLE_CIPHER_DEFAULT_ENV_SET: CipherId = CipherId::ChaCha20Poly1305;
 pub const CFG_FILE_NAME: &str = ".rustpwman";
-#[cfg(feature = "writebackup")]
 pub const BACKUP_FILE_NAME: &str = "rustpwman_last.enc";
 pub const ENV_CIPHER: &str = "PWMANCIPHER";
-#[cfg(feature = "writebackup")]
 pub const ENV_BKP: &str = "PWMANBKP";
 
 use fcrypt::DEFAULT_KDF_ID;
@@ -94,6 +92,7 @@ struct RustPwMan {
     paste_command: String,
     copy_command: String,
     viewer_command: Option<String>,
+    bkp_file_name: Option<String>,
     webdav_user: String,
     webdav_pw: String,
     webdav_server: String
@@ -155,6 +154,7 @@ impl RustPwMan {
             default_pw_gen: GenerationStrategy::Base64,
             paste_command: String::from(DEFAULT_PASTE_CMD),
             copy_command: String::from(DEFAULT_COPY_CMD),
+            bkp_file_name: RustPwMan::get_bkp_file_name_from_env(),
             viewer_command: RustPwMan::get_viewer_from_env(),
             webdav_user: String::new(),
             webdav_pw: String::new(),
@@ -175,6 +175,7 @@ impl RustPwMan {
         self.paste_command = String::from(DEFAULT_PASTE_CMD);
         self.copy_command = String::from(DEFAULT_COPY_CMD);
         self.viewer_command = RustPwMan::get_viewer_from_env();
+        self.bkp_file_name = RustPwMan::get_bkp_file_name_from_env();
         self.webdav_user = String::from("");
         self.webdav_pw = String::from("");
         self.webdav_server = String::from("");
@@ -191,15 +192,33 @@ impl RustPwMan {
         }
     }
 
-    #[cfg(feature = "writebackup")]
-    pub fn get_backup_file_name() -> std::path::PathBuf {
-        let file_name = match env::var(ENV_BKP) {
-            Ok(s) => String::from(s.as_str()),
-            Err(_) => String::from(BACKUP_FILE_NAME)
+    fn get_viewer_from_env() -> Option<String> {
+        let viewer = match env::var(RUSTPWMAN_VIEWER) {
+            Ok(s) => {
+                let temp = s.clone();
+                Some(temp)
+            },
+            Err(_) => None
         };
 
+        return viewer;
+    }
+    
+    fn get_bkp_file_name_from_env() -> Option<String> {
+        #[cfg(not(feature = "writebackup"))]
+        return None;
+
+        #[cfg(feature = "writebackup")]
+        return match env::var(ENV_BKP) {
+            Ok(s) => Some(String::from(s.as_str())),
+            Err(_) => Some(String::from(BACKUP_FILE_NAME))            
+        };
+    }
+
+    #[allow(dead_code)]
+    pub fn get_backup_file_name(&self) -> std::path::PathBuf {
         let mut path = std::path::PathBuf::new();
-        path.push(file_name);
+        path.push(self.bkp_file_name.clone().unwrap());
 
         return path;
     }
@@ -217,10 +236,16 @@ impl RustPwMan {
             self.paste_command = loaded_config.clip_cmd;
             self.copy_command = loaded_config.copy_cmd;
 
-            // If the config contains a viewer command prefix. Use this instead of the value
+            // If the config contains a viewer command prefix use this instead of the value
             // read from the environment.
             if loaded_config.viewer_cmd != None {
                 self.viewer_command = loaded_config.viewer_cmd;
+            }
+
+            // If the config contains a backup file name use this instead of the value
+            // read from the environment.            
+            if loaded_config.bkp_file_name != None {
+                self.bkp_file_name = loaded_config.bkp_file_name;
             }
 
             self.webdav_user = loaded_config.webdav_user;
@@ -527,18 +552,6 @@ impl RustPwMan {
         return persist_closure;
     }
 
-    fn get_viewer_from_env() -> Option<String> {
-        let viewer = match env::var(RUSTPWMAN_VIEWER) {
-            Ok(s) => {
-                let temp = s.clone();
-                Some(temp)
-            },
-            Err(_) => None
-        };
-
-        return viewer;
-    }
-
     fn perform_gui_command(&mut self, gui_matches: &clap::ArgMatches) {
         if let (_, Some(error_message)) = self.load_config(gui_matches, CfgFailReaction::Abort)  {
             eprintln!("{}", error_message.as_str());
@@ -581,7 +594,7 @@ impl RustPwMan {
 
                 let persist_closure = self.make_persist_creator(&u, &p, &s, &data_file_name);
 
-                modtui::tuimain::main(data_file_name, self.default_sec_level, self.default_deriver, self.default_deriver_id,
+                modtui::tuimain::main(self, data_file_name, self.default_sec_level, self.default_deriver, self.default_deriver_id,
                                       self.default_pw_gen, self.paste_command.clone(), self.copy_command.clone(), persist_closure, cr_gen_gen, gui_matches.get_flag(ARG_EXPORT), self.viewer_command.clone());
             },
             None => {

@@ -39,12 +39,12 @@ use super::pwentry;
 use super::cache;
 use super::init;
 use super::export;
-#[cfg(feature = "writebackup")]
 use crate::RustPwMan;
 use super::show_message;
 
 
-pub fn main(data_file_name: String, default_sec_bits: usize, derive_func: KeyDeriver, deriver_id: fcrypt::KdfId, default_pw_gen: GenerationStrategy,
+#[allow(unused_variables)]
+pub fn main(app: &RustPwMan, data_file_name: String, default_sec_bits: usize, derive_func: KeyDeriver, deriver_id: fcrypt::KdfId, default_pw_gen: GenerationStrategy,
             paste_cmd: String, copy_cmd: String, make_default: persist::PersistCreator, crypt_gen: Box<dyn Fn() -> CryptorGen + Send + Sync>, export: bool, qr_viewer: Option<String>) {
     let (tx, rx): (Sender<String>, Receiver<String>) = mpsc::channel();
 
@@ -57,16 +57,19 @@ pub fn main(data_file_name: String, default_sec_bits: usize, derive_func: KeyDer
 
     let p = make_default(&data_file_name);
 
+    #[cfg(feature = "writebackup")]
+    let backup_f_name = app.get_backup_file_name();
+
     // stuff to run after successfull password entry
     let pw_callback = Box::new(move |s: &mut Cursive, password: &String, pw_cached: bool| {
+        #[cfg(feature = "writebackup")]
+        let backup_file_name = backup_f_name.clone();
         let p_cb = make_default(&capture_file_name);
         let mut jots_store = jots::Jots::new(derive_func, deriver_id, crypt_gen());
 
         #[cfg(feature = "writebackup")]
-        {
-            let backup_file_name = RustPwMan::get_backup_file_name();
+        {            
             let bkp_cb = move |data: &Vec<u8>| { return fs::write(backup_file_name.clone(), data);};
-
             jots_store.backup_cb = Some(Box::new(bkp_cb));
         }
 

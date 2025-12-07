@@ -28,20 +28,22 @@ pub struct RustPwManSerialize {
     pub clip_cmd: String,
     pub copy_cmd: String,
     pub viewer_cmd: Option<String>,
+    pub bkp_file_name: Option<String>,
     pub webdav_user: String,
     pub webdav_pw: String,
     pub webdav_server: String,
 }
 
 impl RustPwManSerialize {
-    pub fn new(seclevel: usize, pbkdf: &str, pwgen: &str, clip_command: &str, copy_command: &str, user: &str, pw: &str, server: &str, view: Option<String>) -> Self {
+    pub fn new(seclevel: usize, pbkdf: &str, pwgen: &str, clip_command: &str, copy_command: &str, user: &str, pw: &str, server: &str, view: Option<String>, bkp_file: Option<String>) -> Self {
         return RustPwManSerialize {
             seclevel: seclevel,
             pbkdf: String::from(pbkdf),
             pwgen: String::from(pwgen),
             clip_cmd: String::from(clip_command),
             copy_cmd: String::from(copy_command),
-            viewer_cmd: view.clone(),
+            viewer_cmd: view,
+            bkp_file_name: bkp_file,
             webdav_user: String::from(user),
             webdav_pw: String::from(pw),
             webdav_server: String::from(server),

@@ -175,7 +175,7 @@ pub fn save_new_config(s: &mut Cursive, u: &String, p: &String, srv: &String, co
     let strategy = strat.selection();
     let pbkdf = &pbkdf.selection();
 
-    let new_config = RustPwManSerialize::new(rand_bytes, pbkdf.to_str(), strategy.to_str(), clip_command.as_str(), copy_command.as_str(), user.as_str(), pw.as_str(), server.as_str(), viewer_command);
+    let new_config = RustPwManSerialize::new(rand_bytes, pbkdf.to_str(), strategy.to_str(), clip_command.as_str(), copy_command.as_str(), user.as_str(), pw.as_str(), server.as_str(), viewer_command, None);
 
     match tomlconfig::save(config_file, new_config) {
         Some(e) => {
