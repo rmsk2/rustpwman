@@ -52,6 +52,7 @@ pub const DEFAULT_COPY_CMD: &str = "xsel -ib";
 pub type FormatterFunc = fn(&String, &String) -> String;
 static DEFAULT_FORMATTER: FormatterFunc = format_pw_entry;
 
+use crate::fcrypt::KdfId;
 use crate::persist::SendSyncPersister;
 use cursive::theme::ColorStyle;
 use cursive::traits::*;
@@ -69,7 +70,7 @@ use std::sync::mpsc::Sender;
 use std::io::{Error, ErrorKind};
 
 use crate::pwgen::GenerationStrategy;
-use crate::jots;
+use crate::{CfgSource, jots};
 
 #[allow(dead_code)]
 pub struct AppState {
@@ -85,11 +86,14 @@ pub struct AppState {
     last_custom_selection: String,
     pw_is_chached: bool,
     entry_queue: Vec<String>,
+    cfg_type: CfgSource,
+    cfg_name: String,
+    kdf_id: KdfId,
 }
 
 impl AppState {
     pub fn new(s: jots::Jots, f_name: &String, default_sec: usize, default_gen: GenerationStrategy,
-               paste_cmd: &String, copy_cmd: &String, p: SendSyncPersister, is_pw_cached: bool, qr_viewer: &Option<String>) -> Self {
+               paste_cmd: &String, copy_cmd: &String, p: SendSyncPersister, is_pw_cached: bool, qr_viewer: &Option<String>, cfg_type: CfgSource, cfg_name: &String, kdf_id: KdfId) -> Self {
         return AppState {
             store: s,
             password: None,
@@ -102,7 +106,10 @@ impl AppState {
             persister: p,
             last_custom_selection: String::from(""),
             pw_is_chached: is_pw_cached,
-            entry_queue: Vec::new()
+            entry_queue: Vec::new(),
+            cfg_type: cfg_type,
+            cfg_name: cfg_name.clone(),
+            kdf_id: kdf_id
         }
     }
 

@@ -60,6 +60,8 @@ pub fn main(app: &RustPwMan, data_file_name: String, default_sec_bits: usize, de
     #[cfg(feature = "writebackup")]
     let backup_f_name = app.get_backup_file_name();
 
+    let infos = app.get_info().unwrap();
+
     // stuff to run after successfull password entry
     let pw_callback = Box::new(move |s: &mut Cursive, password: &String, pw_cached: bool| {
         #[cfg(feature = "writebackup")]
@@ -80,7 +82,7 @@ pub fn main(app: &RustPwMan, data_file_name: String, default_sec_bits: usize, de
 
         let f_name = capture_file_name.clone();
 
-        let state = AppState::new(jots_store, &f_name, default_sec_bits, default_pw_gen, &paste_cmd, &copy_cmd, p_cb, pw_cached, &qr_viewer);
+        let state = AppState::new(jots_store, &f_name, default_sec_bits, default_pw_gen, &paste_cmd, &copy_cmd, p_cb, pw_cached, &qr_viewer, infos.cfg_source, &infos.cfg_name, infos.kdf_id);
 
         // No else branch is neccessary as open_file performs error handling
         if let Some(state_after_open) = open::storage(s, password, state) {

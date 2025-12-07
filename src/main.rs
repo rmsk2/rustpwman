@@ -83,6 +83,14 @@ pub const ENV_BKP: &str = "PWMANBKP";
 
 use fcrypt::DEFAULT_KDF_ID;
 
+use crate::fcrypt::KdfId;
+
+#[derive(Clone)]
+pub struct InfoParams {
+    cfg_source: CfgSource,
+    cfg_name: String,
+    kdf_id: KdfId
+}
 
 struct RustPwMan {
     default_deriver: fcrypt::KeyDeriver,
@@ -95,7 +103,8 @@ struct RustPwMan {
     bkp_file_name: Option<String>,
     webdav_user: String,
     webdav_pw: String,
-    webdav_server: String
+    webdav_server: String,
+    info: Option<InfoParams>
 }
 
 enum CfgFailReaction {
@@ -103,7 +112,7 @@ enum CfgFailReaction {
     Abort
 }
 #[derive(PartialEq)]
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 enum CfgSource {
     Environment,
     CLI,
@@ -159,6 +168,7 @@ impl RustPwMan {
             webdav_user: String::new(),
             webdav_pw: String::new(),
             webdav_server: String::new(),
+            info: None
         };
 
         res.reset_config();
@@ -179,6 +189,7 @@ impl RustPwMan {
         self.webdav_user = String::from("");
         self.webdav_pw = String::from("");
         self.webdav_server = String::from("");
+        self.info = None;
     }
 
     fn is_option_present(matches: &clap::ArgMatches, id: &str) -> bool {
@@ -190,6 +201,10 @@ impl RustPwMan {
             }
             None => false
         }
+    }
+
+    fn get_info(&self) -> Option<InfoParams> {
+        return self.info.clone();
     }
 
     fn get_viewer_from_env() -> Option<String> {
@@ -312,7 +327,7 @@ impl RustPwMan {
         }
     }
 
-    fn load_config(&mut self, matches: &clap::ArgMatches, fail_reaction: CfgFailReaction) -> (PathBuf, Option<String>) {
+    fn load_config(&mut self, matches: &clap::ArgMatches, fail_reaction: CfgFailReaction) -> (CfgSource, PathBuf, Option<String>) {
         let config_file_name: std::path::PathBuf;
         let (cfg_type, file_path) = self.get_config_name(matches);
 
@@ -321,12 +336,12 @@ impl RustPwMan {
                 config_file_name = std::path::PathBuf::from(f_name);
             },
             None => {
-                return (PathBuf::new(), Some(String::from("Unable to determine config file!")));
+                return (CfgSource::Default, PathBuf::new(), Some(String::from("Unable to determine config file!")));
             }
         };
 
         let h = config_file_name.clone();
-        return (config_file_name, self.load_named_config(&h, fail_reaction, cfg_type));
+        return (cfg_type, config_file_name, self.load_named_config(&h, fail_reaction, cfg_type));
     }
 
     fn str_to_gen_strategy(&self, strategy_name: &str) -> GenerationStrategy {
@@ -403,7 +418,7 @@ impl RustPwMan {
     }
 
     fn perform_encrypt_command(&mut self, encrypt_matches: &clap::ArgMatches) {
-        if let (_, Some(error_message)) = self.load_config(encrypt_matches, CfgFailReaction::Abort)  {
+        if let (_, _, Some(error_message)) = self.load_config(encrypt_matches, CfgFailReaction::Abort)  {
             eprintln!("{}", error_message.as_str());
             return;
         }
@@ -459,7 +474,7 @@ impl RustPwMan {
     }
 
     fn perform_decrypt_command(&mut self, decrypt_matches: &clap::ArgMatches) {
-        if let (_, Some(error_message)) = self.load_config(decrypt_matches, CfgFailReaction::Abort)  {
+        if let (_, _, Some(error_message)) = self.load_config(decrypt_matches, CfgFailReaction::Abort)  {
             eprintln!("{}", error_message.as_str());
             return;
         }
@@ -557,12 +572,23 @@ impl RustPwMan {
     }
 
     fn perform_gui_command(&mut self, gui_matches: &clap::ArgMatches) {
-        if let (_, Some(error_message)) = self.load_config(gui_matches, CfgFailReaction::Abort)  {
+        let (cfg_type, cfg_file ,error_msg) = self.load_config(gui_matches, CfgFailReaction::Abort);
+
+        if  let Some(error_message) = error_msg {
             eprintln!("{}", error_message.as_str());
             return;
         }
 
         self.set_pbkdf_from_command_line(gui_matches);
+
+        self.info = Some(InfoParams {
+            cfg_source: cfg_type,
+            cfg_name: match cfg_file.as_os_str().to_str() {
+                None => String::from("Can not convert name of config file to UTF-8"),
+                Some(str) => String::from(str)
+            },
+            kdf_id: self.default_deriver_id
+        });
 
         let a:Option<&String> = gui_matches.get_one(ARG_INPUT_FILE);
         let u = self.webdav_user.clone();
@@ -621,7 +647,7 @@ impl RustPwMan {
     }
 
     fn perform_config_command(&mut self, config_matches: &clap::ArgMatches) {
-        let (config_file_name, err_msg) = self.load_config(config_matches, CfgFailReaction::Reset);
+        let (_, config_file_name, err_msg) = self.load_config(config_matches, CfgFailReaction::Reset);
 
         if let Some(error_message) = err_msg  {
             eprintln!("{}", error_message.as_str());
@@ -637,7 +663,7 @@ impl RustPwMan {
     }
 
     fn perform_generate_command(&mut self, generate_matches: &clap::ArgMatches) {
-        if let (_, Some(error_message)) = self.load_config(generate_matches, CfgFailReaction::Abort)  {
+        if let (_, _, Some(error_message)) = self.load_config(generate_matches, CfgFailReaction::Abort)  {
             eprintln!("{}", error_message.as_str());
             return;
         }

@@ -19,8 +19,8 @@ use cursive::views::{Dialog, TextView};
 
 use super::AppState;
 use super::show_message;
-use crate::VERSION_STRING;
-use crate::fcrypt;
+use crate::{CfgSource, VERSION_STRING};
+use crate::fcrypt::{self, KdfId};
 
 
 pub fn show(s: &mut Cursive, state_for_info: Arc<Mutex<AppState>>) {
@@ -28,7 +28,10 @@ pub fn show(s: &mut Cursive, state_for_info: Arc<Mutex<AppState>>) {
     let mut msg_str = String::from("");
     let info2: String;
     let algo_name: &str;
+    let config_file_name: String;
+    let config_type: CfgSource;
     let password_chached: bool;
+    let kdf_id: KdfId;
     
     info2 = match state_for_info.lock().unwrap().persister.get_canonical_path() {
         Ok(m) => m,
@@ -40,13 +43,19 @@ pub fn show(s: &mut Cursive, state_for_info: Arc<Mutex<AppState>>) {
         let (deriver, id) = fcrypt::KdfId::Argon2.to_named_func();
         algo_name = (s.store.cr_gen)(deriver, id).algo_name();
         password_chached = s.pw_is_chached;
+        config_file_name = s.cfg_name.clone();
+        config_type = s.cfg_type;
+        kdf_id = s.kdf_id;
     }
 
     msg_str.push_str(format!("Entry count  : {}\n", num_entries).as_str());
     msg_str.push_str(format!("Location     : {}\n", info2).as_str());
     msg_str.push_str(format!("Access method: {}\n", state_for_info.lock().unwrap().persister.get_type()).as_str());
     msg_str.push_str(format!("Cipher       : {}\n", algo_name).as_str());
+    msg_str.push_str(format!("KDF          : {}\n", kdf_id.to_string()).as_str());
     msg_str.push_str(format!("PW chached   : {}\n", password_chached).as_str());
+    msg_str.push_str(format!("Config file  : {}\n", config_file_name).as_str());
+    msg_str.push_str(format!("Config ref by: {}\n", config_type).as_str());
 
     let res = Dialog::new()
     .title("Rustpwman info")
