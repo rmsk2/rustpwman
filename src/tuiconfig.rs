@@ -22,6 +22,7 @@ use crate::tomlconfig::RustPwManSerialize;
 use crate::pwgen;
 use crate::fcrypt;
 use crate::modtui;
+use crate::RustPwMan;
 use crate::tuiconfig;
 #[cfg(feature = "webdav")]
 use crate::OBFUSCATION_ENV_VAR;
@@ -39,6 +40,9 @@ const EDIT_PASTE_COMMAND: &str = "pastecmd";
 const EDIT_COPY_COMMAND: &str = "copycmd";
 #[cfg(feature = "qrcode")]
 const EDIT_VIEWER_COMMAND: &str = "viewercmd";
+#[cfg(feature = "writebackup")]
+const EDIT_BACKUP_FILE: &str = "backupfile";
+
 
 pub fn show_yes_no_decision(siv: &mut Cursive, msg: &str) {
     siv.add_layer(
@@ -96,7 +100,7 @@ pub fn obfuscate_password(s: &mut Cursive) {
     s.call_on_name("webdav_password", |view: &mut EditView| { view.set_content(pw) });
 }
 
-pub fn save_new_config(s: &mut Cursive, u: &String, p: &String, srv: &String, config_file: &std::path::PathBuf, strat: &RadioGroup<pwgen::GenerationStrategy>, pbkdf: &RadioGroup<fcrypt::KdfId>, vwr: &Option<String>) {
+pub fn save_new_config(s: &mut Cursive, u: &String, p: &String, srv: &String, config_file: &std::path::PathBuf, strat: &RadioGroup<pwgen::GenerationStrategy>, pbkdf: &RadioGroup<fcrypt::KdfId>, vwr: &Option<String>, bkp_file: &Option<String>) {
     #[allow(unused_mut, unused_assignments)]
     let mut user = u.clone();
     #[allow(unused_mut, unused_assignments)]
@@ -105,6 +109,8 @@ pub fn save_new_config(s: &mut Cursive, u: &String, p: &String, srv: &String, co
     let mut server = srv.clone();
     #[allow(unused_mut, unused_assignments)]
     let mut viewer_command = vwr.clone();
+    #[allow(unused_mut, unused_assignments)]
+    let mut backup_file_name = bkp_file.clone();
 
     let rand_bytes = match s.call_on_name(SLIDER_SEC_NAME, |view: &mut SliderView| { view.get_value() }) {
         Some(v) => v,
@@ -147,6 +153,23 @@ pub fn save_new_config(s: &mut Cursive, u: &String, p: &String, srv: &String, co
         }
     }
 
+    #[cfg(feature = "writebackup")]
+    {
+        let backup_file_name_txt = match s.call_on_name(EDIT_BACKUP_FILE, |view: &mut EditView| { view.get_content() }) {
+            Some(v) => v,
+            None => {
+                show_message(s, "Unable to determine backup file name");
+                return;
+            }
+        };
+
+        if backup_file_name_txt.len() != 0 {
+            backup_file_name = Some(String::from(backup_file_name_txt.as_str()));
+        } else {
+            backup_file_name = None;
+        }
+    }
+
 
     #[cfg(feature = "webdav")]
     if let Some(t) = s.call_on_name("webdav_user", |view: &mut EditView| { view.get_content() }) {
@@ -175,7 +198,7 @@ pub fn save_new_config(s: &mut Cursive, u: &String, p: &String, srv: &String, co
     let strategy = strat.selection();
     let pbkdf = &pbkdf.selection();
 
-    let new_config = RustPwManSerialize::new(rand_bytes, pbkdf.to_str(), strategy.to_str(), clip_command.as_str(), copy_command.as_str(), user.as_str(), pw.as_str(), server.as_str(), viewer_command, None);
+    let new_config = RustPwManSerialize::new(rand_bytes, pbkdf.to_str(), strategy.to_str(), clip_command.as_str(), copy_command.as_str(), user.as_str(), pw.as_str(), server.as_str(), viewer_command, backup_file_name);
 
     match tomlconfig::save(config_file, new_config) {
         Some(e) => {
@@ -187,7 +210,8 @@ pub fn save_new_config(s: &mut Cursive, u: &String, p: &String, srv: &String, co
     };
 }
 
-pub fn config_main(config_file: std::path::PathBuf, sec_level: usize, pw_gen_strategy: pwgen::GenerationStrategy, pbkdf_id: fcrypt::KdfId,
+#[allow(unused_variables)]
+pub fn config_main(app: &RustPwMan, config_file: std::path::PathBuf, sec_level: usize, pw_gen_strategy: pwgen::GenerationStrategy, pbkdf_id: fcrypt::KdfId,
                    clp_cmd: &String, cpy_cmd: &String, webdav_user: &String, webdav_pw: &String, webdav_server: &String, viewer_cmd: &Option<String>) {
     let mut siv = cursive::default();
 
@@ -289,6 +313,22 @@ pub fn config_main(config_file: std::path::PathBuf, sec_level: usize, pw_gen_str
             .title("Helper commands")
     );
 
+    #[cfg(feature = "writebackup")]
+    {
+        config_panels.add_child(
+            Panel::new(
+                PaddedView::new(Margins::lrtb(1,1,1,1),
+                    LinearLayout::horizontal()
+                        .child(TextView::new("Filename: "))
+                        .child(EditView::new()
+                            .with_name(EDIT_BACKUP_FILE)
+                            .fixed_width(65))
+            )
+        )
+        .title("Name of file to use for automatic backup")
+        );
+    }
+
     #[cfg(feature = "webdav")]
     {
         config_panels.add_child(
@@ -344,8 +384,10 @@ pub fn config_main(config_file: std::path::PathBuf, sec_level: usize, pw_gen_str
     let p = webdav_pw.clone();
     let serv = webdav_server.clone();
     let vwr = viewer_cmd.clone();
+    let bkp_f = app.get_backup_file_name_str();
+    let bkp_f_helper = bkp_f.clone();
 
-    res.add_button("OK", move |s| save_new_config(s, &u, &p, &serv, &config_file, &strategy_group, &pbkdf_group, &vwr));
+    res.add_button("OK", move |s| save_new_config(s, &u, &p, &serv, &config_file, &strategy_group, &pbkdf_group, &vwr, &bkp_f));
     res.add_button("Cancel", |s| s.quit() );
 
     #[cfg(feature = "webdav")]
@@ -355,6 +397,15 @@ pub fn config_main(config_file: std::path::PathBuf, sec_level: usize, pw_gen_str
     show_sec_bits(&mut siv, sec_level);
     siv.call_on_name(EDIT_PASTE_COMMAND, |view: &mut EditView| { view.set_content(clp_cmd) });
     siv.call_on_name(EDIT_COPY_COMMAND, |view: &mut EditView| { view.set_content(cpy_cmd) });
+
+    #[cfg(feature = "writebackup")]
+    {
+        if let Some(bkp) = bkp_f_helper {
+            siv.call_on_name(EDIT_BACKUP_FILE, |view: &mut EditView| { view.set_content(bkp.clone()) });
+        } else {
+            siv.call_on_name(EDIT_BACKUP_FILE, |view: &mut EditView| { view.set_content(String::from("")) });
+        }
+    }
 
     #[cfg(feature = "webdav")]
     {

@@ -215,6 +215,10 @@ impl RustPwMan {
         };
     }
 
+    pub fn get_backup_file_name_str(&self) -> Option<String> {
+        return self.bkp_file_name.clone();
+    }
+
     #[allow(dead_code)]
     pub fn get_backup_file_name(&self) -> std::path::PathBuf {
         let mut path = std::path::PathBuf::new();
@@ -629,7 +633,7 @@ impl RustPwMan {
             viewer_cmd = self.viewer_command.clone();
         }
 
-        tuiconfig::config_main(config_file_name, self.default_sec_level, self.default_pw_gen, self.default_deriver_id, &self.paste_command, &self.copy_command, &self.webdav_user, &self.webdav_pw, &self.webdav_server, &viewer_cmd);
+        tuiconfig::config_main(self, config_file_name, self.default_sec_level, self.default_pw_gen, self.default_deriver_id, &self.paste_command, &self.copy_command, &self.webdav_user, &self.webdav_pw, &self.webdav_server, &viewer_cmd);
     }
 
     fn perform_generate_command(&mut self, generate_matches: &clap::ArgMatches) {

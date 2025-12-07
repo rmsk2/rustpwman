@@ -238,7 +238,7 @@ which will open a window similar to this one
 
 ![](/scrshot_cfg.png?raw=true "Screenshot of rustpwman cfg")
 
-This screenshot was taken while running a version which was compiled with the `webdav` and the `qrcode` feature. Here is an example for a `rustpwman` configuration file:
+This screenshot was taken while running a version which was compiled with all features. Here is an example for a `rustpwman` configuration file:
 
 ```
 [defaults]
@@ -248,18 +248,22 @@ pwgen = "special"
 clip_cmd = "xsel -ob"
 copy_cmd = "xsel -ib"
 viewer_cmd = "xdg-open"
+bkp_file_name = "/home/user/backup_file.enc"
 webdav_user = ""
 webdav_pw = ""
 webdav_server = ""
 ```
+
+Where the entries have the following semantics:
 
 - `seclevel` has to be an integer between 0 and 31. The security level in bits is calculated as (`seclevel` + 1) * 8.
 - `pbkdf` is a string that can assume the values `scrypt`, `argon2`, `sha256`
 - `pwgen` is one of the strings `base64`, `hex`, `numeric` or `special`
 - `clip_cmd` is a string which specifies a command that can be used to write the current contents of the clipboard to stdout.
 - `copy_cmd` is a string which specifies a command that can be used to transfer the data sent to it via stdin to the clipboard.
-- `viewer_cmd` is a string which specifies a command that can be used to show an image. This entry is optional.
-- See below for an explanation of  the `webdav_xx` entries.
+- `viewer_cmd` is a string which specifies a command that can be used to show an image, when the `qrcode` feature is active. This entry is optional.
+- `bkp_file_name` is a string which specifies the name of a file in which to store automatic backup when the `writebackup` feature is active. This entry is optional.
+- See [below](#webdav-support) for an explanation of  the `webdav_xx` entries.
 
 The default value for `clip_cmd` is `xsel -ob`, which works on Linux to retrieve the contents of the clipboard, which is filled via `CTRL+C` or after activating the `Copy`
 item from the context menu. If you want to use the primary selection, where text only has to be selected and not explicitly copied then use `xsel -op`. Remark: I had
@@ -282,7 +286,7 @@ You can influence the behaviour of `rustpwman` via the values of the following e
 |Name | Intended use |
 |-|-|
 |`PWMANCIPHER`| If the `chacha20` feature is active and this variable is set then the values `AES192` and `AES256` select AES-192 GCM or AES-256 GCM as a cipher. Any other value selects ChaCha20-Poly1305. If not set AES-256 GCM is used. If an algo is specified on the command line then it takes precendence over the contents of this environment variable. |
-|`PWMANBKP`| If the feature `writebackup` is active the contents of this variable specifies the file name to store the backup in. If the variable is not set the default value `rustpwman_last.enc` will be used. |
+|`PWMANBKP`| If the feature `writebackup` is active the contents of this variable specifies the file name to store the backup in. If neither this variable nor the config entry `bkp_file_name` is set then the default value `rustpwman_last.enc` will be used. If the config entry is present it takes precedence over the environment variable. |
 |`RUSTPWMAN_OBFUSCATION`| Key used to obfuscate WebDAV access data, if the `webdav`  feature is active. |
 |`RUSTPWMAN_VIEWER`| Prefix for the command to start an image viewer to which the file name of the image (containing a QR code) is appended if the `qrcode` feature is enabled. If the value `viewer_cmd` in the config file is set it takes precendence over the environment variable. |
 |`PWMAN_CONFIG`| Full path to an alternative config file. The `-c/--cfgfile` option takes precedence over the environment variable if the option is specified. If neither the environment variable nor the option is used then the `.rustpwman` file in the user's home directory will be utilized as a default. |
@@ -372,7 +376,7 @@ the encryption key used by `rustpwman` in the first place. There are even some (
 I mostly use `rustpwman` to access a password file which resides on a WebDAV share stored at a cloud provider. This is all fine and dandy as long as one can access cloud resources.
 This may not be the case at times when there is no internet connection or if the cloud provider is offline. If the feature `writebackup` is active `rustpwman` stores a local copy
 of the data file after its password has been successfully verified. As a default the backup file is stored in the current directory using the name `rustpwman_last.enc`. This
-default can be overriden by setting the environment variable `PWMANBKP` to the desired name of the backup file. This feature is active by default.
+default can be overriden by setting the environment variable `PWMANBKP` or the config entry `bkp_file_name` to the desired name of the backup file. This feature is active by default.
 
 ## Encoding stored data as a QR code
 
