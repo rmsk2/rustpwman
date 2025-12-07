@@ -448,10 +448,11 @@ or to derive the key from the specified password using the following calculation
 SHA-256( password | salt | password )
 ```
 
-where `salt` is a random value and `|` symbolizes concatenation. It is also possible to select this or another password based key derivation function
-(PBKDF) through the `--kdf` option or by a config file. Currently `scrypt`, `argon2` and `sha256` are valid as a parameter for this option and as a config
-file entry. As a source for the PBKDF parameter choices https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html has been used. The
-salt length is always 128 bit.
+where `salt` is a random value and `|` symbolizes concatenation. The sole purpose of the SHA-256 based KDF is to offer compatibility to (very) old password files. There is
+no good reason to use this KDF for new password files. If you still use it then you should migrate your password file to a new KDF using the `dec` and `enc` commands. It is
+also possible to select a password based key derivation function (PBKDF) through the `--kdf` option or by a config file. Currently `scrypt`, `argon2` and `sha256` are valid
+as a parameter for this option and as a config file entry. As a source for the PBKDF parameter choices
+https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html has been used. The salt length is always 128 bit.
 
 ## Format of payload data
 
