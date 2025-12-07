@@ -192,7 +192,7 @@ impl RustPwMan {
     }
 
     #[cfg(feature = "writebackup")]
-    pub fn get_backup_file_name() -> Option<std::path::PathBuf> {
+    pub fn get_backup_file_name() -> std::path::PathBuf {
         let file_name = match env::var(ENV_BKP) {
             Ok(s) => String::from(s.as_str()),
             Err(_) => String::from(BACKUP_FILE_NAME)
@@ -201,7 +201,7 @@ impl RustPwMan {
         let mut path = std::path::PathBuf::new();
         path.push(file_name);
 
-        return Some(path);
+        return path;
     }
 
     fn load_named_config(&mut self, cfg_file: &PathBuf, fail_reaction: CfgFailReaction, source: CfgSource) -> Option<String>{

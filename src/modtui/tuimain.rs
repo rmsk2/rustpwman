@@ -44,18 +44,6 @@ use crate::RustPwMan;
 use super::show_message;
 
 
-#[cfg(feature = "writebackup")]
-pub fn write_backup_file(data: &Vec<u8>) -> std::io::Result<()> {
-    let backup_file = match RustPwMan::get_backup_file_name() {
-        None => {
-            return Err(std::io::Error::new(std::io::ErrorKind::Other, "Unable to determine path of backup file"))
-        },
-        Some(p) => p
-    };
-
-    return fs::write(backup_file, data);
-}
-
 pub fn main(data_file_name: String, default_sec_bits: usize, derive_func: KeyDeriver, deriver_id: fcrypt::KdfId, default_pw_gen: GenerationStrategy,
             paste_cmd: String, copy_cmd: String, make_default: persist::PersistCreator, crypt_gen: Box<dyn Fn() -> CryptorGen + Send + Sync>, export: bool, qr_viewer: Option<String>) {
     let (tx, rx): (Sender<String>, Receiver<String>) = mpsc::channel();
@@ -76,7 +64,10 @@ pub fn main(data_file_name: String, default_sec_bits: usize, derive_func: KeyDer
 
         #[cfg(feature = "writebackup")]
         {
-            jots_store.backup_cb = Some(write_backup_file);
+            let backup_file_name = RustPwMan::get_backup_file_name();
+            let bkp_cb = move |data: &Vec<u8>| { return fs::write(backup_file_name.clone(), data);};
+
+            jots_store.backup_cb = Some(Box::new(bkp_cb));
         }
 
         #[cfg(not(feature = "writebackup"))]

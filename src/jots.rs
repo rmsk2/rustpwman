@@ -28,7 +28,7 @@ use fcrypt::Cryptor;
 
 
 pub type CryptorGen = Box<dyn Fn(KeyDeriver, KdfId) -> Box<dyn Cryptor>  + Send + Sync>;
-pub type BackupCallback = fn(&Vec<u8>) -> std::io::Result<()>;
+pub type BackupCallback = Box<dyn Fn(&Vec<u8>) -> std::io::Result<()> + Send + Sync> ;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct KvEntry {
@@ -297,7 +297,7 @@ impl Jots {
 
         let (data, raw_data) = ctx.retrieve(p)?;
 
-        if let Some(cb) = self.backup_cb {
+        if let Some(cb) = &self.backup_cb {
             // ignore result
             _ = cb(&raw_data);
         }
