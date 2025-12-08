@@ -423,7 +423,7 @@ to keep the `pancurses` backend.
 
 As expected, building `rustpwman` for WSL works without problems after installing all dependencies like `git`, `gcc`, `libssl-dev` and `libncurses`. The resulting
 application also works but there is a perceptible decrease in performance (TUI flickers a bit when updating the screen) when compared to the native version which uses the
-`pancurses` backend.
+`pancurses` or the `crossterm` backend. I have not tested `rustpwman` on WSL in a while.
 
 # Some technical information
 
