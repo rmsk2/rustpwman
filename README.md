@@ -415,7 +415,7 @@ It opens a new window. On top of that this window, let's call it the `pancurses`
 is used if you right click on the title bar of the `pancurses` window.
 
 When using the `crossterm` backend `rustpwman` is started in the same window in which the command was issued and where the font rendering by `pancurses` is at times a bit blurry it is
-absolutely clear when using `crossterm`. On top of that `crossterm` is the default backend of cursive. Beginning with version 2.6.4 I have thereofre decided to build the Windows version
+absolutely clear when using `crossterm`. On top of that `crossterm` is the default backend of cursive. Beginning with version 2.6.4 I have therefore decided to build also the Windows version
 against the `crossterm` backend. I have tested this on Windows 11 using the Windows terminal and it works well. You can uncomment the relevant lines in `Cargo.toml` if you want
 to keep the `pancurses` backend.
 
