@@ -395,9 +395,9 @@ This feature alone adds about 80 dependencies to the project. If you do not plan
 
 ## Native
 
-The good news is that it works and it even works well. I have tested the `pancurses` backend of `cursive` under Windows. The [`pancurses`](https://github.com/ihalila/pancurses) backend
+The good news is that it works and it even works well. I have tested the `pancurses` and the `crossterm` backend of `cursive` under Windows. The [`pancurses`](https://github.com/ihalila/pancurses) backend
 uses a binding to a C library and requires an [installed C compiler](https://github.com/ihalila/pdcurses-sys) in order to build. On the other hand Rust itself is dependent on a C
-compiler when used under Windows.
+compiler when used under Windows. Both backends seem to work.
 
 In order to build `rustpwman` with all optional features you have to use the command `cargo build --release --no-default-features --features pwmanclientwin,chacha20,webdav,writebackup,qrcode`.
 Alternatively you can call the batch file `build_win.bat` which executes this command and calls `build_paste_utf8.bat` (see below). If you do not care about the
@@ -413,6 +413,11 @@ I have tested `rustpwman` with the `pancurses` backend in the normal `cmd.exe` c
 Both work well. It has to be noted though that the `pancurses` version does not run in the console window from which it was started:
 It opens a new window. On top of that this window, let's call it the `pancurses` window, remembers its size from session to session. You can change the font type and size which
 is used if you right click on the title bar of the `pancurses` window.
+
+When using the `crossterm` backend `rustpwman` is started in the same window in which the command was issued and where the font rendering by `pancurses` is at times a bit blurry it is
+absolutely clear when using `crossterm`. On top of that `crossterm` is the default backend of cursive. Beginning with version 2.6.4 I have thereofre decided to build the Windows version
+against the `crossterm` backend. I have tested this on Windows 11 using the Windows terminal and it works well. You can uncomment the relevant lines in `Cargo.toml` if you want
+to keep the `pancurses` backend.
 
 ## Windows Subsystem for Linux (WSL)
 
@@ -480,7 +485,7 @@ This section provides information about stuff which is in my view suboptimal and
 
 - At the moment I do not attempt to overwrite memory that holds sensitive information when `rustpwman` is closed. This may be a problem when `rustpwman` is used in an environment where an attacker can gain access to unsanitized memory previously used by `rustpwman`. On the other hand it is probably impossible to defend against an attacker who has that level of access and in the end the information stored in `rustpwman` is used in other applications which most probably do not sanitize their memory.
 - When the list of entries changes (after an add or delete) it may be possible that the entry selected after the change is not visible in the `ScrollView` on the left. I was not successfull in forcing cursive to scroll to the newly selected entry. This is most probably my fault and meanwhile an appropriate warning dialog is displayed.
-- On Windows a spurious Escape sequence `ESC[?1002l` is printed to stdout when the TUI application stops. This does not happen on Linux or MacOS. By piping the output of `rustpwman` to `winfilter.exe` you can remove this unwanted data from the output.
+- On Windows when using the `pancurses` backend a spurious Escape sequence `ESC[?1002l` is printed to stdout when the TUI application stops. This does not happen on Linux or MacOS. By piping the output of `rustpwman` to `winfilter.exe` you can remove this unwanted data from the output.
 - In non `--release` builds scrypt with the chosen parameters is *extremely* slow
 - At the moment I use release candidates of the crypto routines as their last official releases can not be built without warnings with a reasonably up-to-date rust toolchain
 

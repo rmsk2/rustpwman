@@ -1,6 +1,6 @@
 [package]
 name = "rustpwman"
-version = "2.6.3"
+version = "2.6.4"
 authors = ["Martin <rmsk2@gmx.de>"]
 edition = "2024"
 
@@ -44,14 +44,14 @@ version = "0.21"
 [target.'cfg(target_os = "macos")'.dependencies.cursive]
 version = "0.21"
 
-[target.'cfg(windows)'.dependencies]
-pancurses = "0.17"
-pdcurses-sys = "0.7"
+#[target.'cfg(windows)'.dependencies]
+#pancurses = "0.17"
+#pdcurses-sys = "0.7"
 
 [target.'cfg(windows)'.dependencies.cursive]
 version = "0.21"
-default-features = false
-features = ["pancurses-backend"]
+#default-features = false
+#features = ["pancurses-backend"]
 
 [features]
 default = ["pwmanclientux", "chacha20", "webdav", "writebackup", "qrcode"]
