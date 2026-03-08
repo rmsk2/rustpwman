@@ -76,21 +76,23 @@ impl Cfb8 {
         return self.process(data, Cfb8::decrypt_byte);
     }
 
-    fn encrypt_byte(&mut self, in_byte: u8) -> u8 {
+    fn process_byte(&mut self, in_byte: u8) -> u8 {
         let mut block = cipher::Array::try_from(self.cur_iv.clone().as_slice()).unwrap();
         self.aes.encrypt_block(&mut block);
 
         let res = in_byte ^ block[0];
+        return res
+    }
+
+    fn encrypt_byte(&mut self, in_byte: u8) -> u8 {
+        let res = self.process_byte(in_byte);
         self.shift_left(res);
 
         return res;
     }
 
     fn decrypt_byte(&mut self, in_byte: u8) -> u8 {
-        let mut block = cipher::Array::try_from(self.cur_iv.clone().as_slice()).unwrap();
-        self.aes.encrypt_block(&mut block);
-
-        let res = in_byte ^ block[0];
+        let res = self.process_byte(in_byte);
         self.shift_left(in_byte);
 
         return res;
