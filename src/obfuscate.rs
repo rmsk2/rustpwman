@@ -16,13 +16,10 @@ limitations under the License. */
 use std::env;
 use sha2::{Sha256, Digest};
 use std::str;
-use aes::cipher::{AsyncStreamCipher, KeyIvInit};
-use cfb8;
+use aes::Aes128;
+use aes::cipher::{BlockCipherEncrypt, KeyInit};
 
 pub const PREFIX: &str = "##obfuscated##:";
-
-type Aes128Cfb8Enc = cfb8::Encryptor<aes::Aes128>;
-type Aes128Cfb8Dec = cfb8::Decryptor<aes::Aes128>;
 
 pub fn is_obfuscation_possible(env_name: &str) -> bool {
     match env::var(env_name) {
@@ -34,6 +31,70 @@ pub fn is_obfuscation_possible(env_name: &str) -> bool {
 #[allow(dead_code)]
 pub fn is_obfuscated(val: &String) -> bool {
     val.starts_with(PREFIX)
+}
+
+type ByteTransform = fn(&mut Cfb8, u8) -> u8;
+
+pub struct Cfb8 {
+    aes: Aes128,
+    cur_iv: Vec<u8>,
+}
+
+impl Cfb8 {
+    pub fn new_aes_128_cfb(k: Vec<u8>, i: Vec<u8> ) -> Cfb8 {
+        let iv = i.clone();
+        let key = cipher::Array::try_from(k.as_slice()).unwrap();
+        let a = Aes128::new(&key);
+
+        return Cfb8 {
+            aes: a,
+            cur_iv: iv
+        }
+    }
+
+    fn shift_left(&mut self, n: u8) {
+        for i in 0..self.cur_iv.len()-1 {
+            self.cur_iv[i] = self.cur_iv[i+1]
+        }
+
+        let l = self.cur_iv.len()-1;
+
+        self.cur_iv[l] = n;
+    }
+
+    fn process(&mut self, data: &mut [u8], t: ByteTransform) {
+        for i in 0..data.len() {
+            data[i] = t(self, data[i]);
+        }
+    }
+
+    pub fn encrypt(&mut self, data: &mut [u8]) {
+        return self.process(data, Cfb8::encrypt_byte);
+    }
+
+    pub fn decrypt(&mut self, data: &mut [u8]) {
+        return self.process(data, Cfb8::decrypt_byte);
+    }
+
+    fn encrypt_byte(&mut self, in_byte: u8) -> u8 {
+        let mut block = cipher::Array::try_from(self.cur_iv.clone().as_slice()).unwrap();
+        self.aes.encrypt_block(&mut block);
+
+        let res = in_byte ^ block[0];
+        self.shift_left(res);
+
+        return res;
+    }
+
+    fn decrypt_byte(&mut self, in_byte: u8) -> u8 {
+        let mut block = cipher::Array::try_from(self.cur_iv.clone().as_slice()).unwrap();
+        self.aes.encrypt_block(&mut block);
+
+        let res = in_byte ^ block[0];
+        self.shift_left(in_byte);
+
+        return res;
+    }
 }
 
 fn do_crypt(v: &mut [u8], env_name: &str, do_enc: bool) {
@@ -49,15 +110,14 @@ fn do_crypt(v: &mut [u8], env_name: &str, do_enc: bool) {
     let hash_res = sha_256.finalize();
 
     let k: Vec<u8> = hash_res.clone().into_iter().take(16).collect();
-    let key = cipher::Array::try_from(k.as_slice()).unwrap();
-
     let i: Vec<u8> = hash_res.clone().into_iter().skip(16).collect();
-    let iv = cipher::Array::try_from(i.as_slice()).unwrap();
-    
+
+    let mut c = Cfb8::new_aes_128_cfb(k, i);
+
     if do_enc {
-        Aes128Cfb8Enc::new(&key, &iv).encrypt(v);
+        c.encrypt(v);
     } else {
-        Aes128Cfb8Dec::new(&key, &iv).decrypt(v);
+        c.decrypt(v);
     }
 }
 

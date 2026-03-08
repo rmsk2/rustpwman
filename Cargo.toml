@@ -1,6 +1,6 @@
 [package]
 name = "rustpwman"
-version = "2.6.5"
+version = "2.7.0"
 authors = ["Martin <rmsk2@gmx.de>"]
 edition = "2024"
 
@@ -24,14 +24,13 @@ uds_windows =  {version ="1.1", optional = true}
 users = {version = "0.11", optional = true}
 reqwest = {version = "0.12", optional = true, features = ["blocking"]}
 
-digest = "=0.11.0-rc.11"
+digest = "0.11"
 sha2 = "=0.11.0-rc.5"
 md-5 = "=0.11.0-rc.5"
 aes-gcm = "=0.11.0-rc.3"
 chacha20poly1305 = "=0.11.0-rc.3"
-cipher = "=0.5.0-rc.8"
+cipher = "0.5"
 aes = "=0.9.0-rc.4"
-cfb8 = "=0.9.0-rc.3"
 aead = "=0.6.0-rc.10"
 scrypt = "=0.12.0-rc.10"
 argon2 = "=0.6.0-rc.7"
