@@ -521,7 +521,7 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
     );
 
     s.add_layer(tui);
-    redraw_tui(s, state_for_fill_tui.clone());
+    redraw_tui(s, state_for_fill_tui);
 }
 
 
