@@ -461,8 +461,7 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
     file_tree.add_leaf("Undo changes ...", wrapper(ctx.clone(), tuiundo::undo));
     file_tree.add_delimiter();
     file_tree.add_leaf("Quit and print        F4", wrapper2(ctx.clone(), quit_and_print));
-    file_tree.add_leaf("Quit                  F3", wrapper2(ctx.clone(), quit_without_print)
-    );
+    file_tree.add_leaf("Quit                  F3", wrapper2(ctx.clone(), quit_without_print));
 
     let mut entry_tree = Tree::new();
     entry_tree.add_leaf("Copy to clipboard ... F2", wrapper4(ctx.clone(), copy::entry, true, DEFAULT_FORMATTER));
