@@ -11,10 +11,10 @@ Under Linux and macOS use `cargo build --release` to build with all features ena
 Visual Studio Developer prompt for this purpose. On top of that there is a separate section in this README that deals with building under Windows. If you want
 a minimal set of features (and therefore a minimal set of dependencies) you can use `cargo build --release --no-default-features` under Linux, macOS and Windows.
 In this case the password cache, support for WebDAV, additional crypto algorithms, the automatic local backup feature and the possibility to encode an entry in
-a QR code are not available.
+a QR code are not available. If you want to select features one by one you will find a list of feature names [below](#feature-overwiew).
 
 If you have an older version of this repo on your  machine you may need to perform a `cargo update` after pulling this release otherwise the official version 0.21 of
-cursive will not build. I am curently using version 1.91.0 of `rustc`.
+cursive will not build. I am curently using version 1.93.0 of `rustc`.
 
 # How to run the software
 
@@ -25,7 +25,8 @@ the moment. In order to start the program use
 rustpwman gui -i <file_name>
 ```
 
-or `cargo run --release -- gui -i <file_name>` which will result, after a successful password entry, in a window similar to this one.
+You can alternatively use `cargo run --release -- gui -i <file_name>` to build and run `rustpwman` from the project directory. Running the program will result, after a successful
+password entry, in a window similar to this one.
 
 ![](/screenshot.png?raw=true "Screenshot of rustpwman")
 
@@ -310,9 +311,9 @@ create a JSON file of the form described [below](#format-of-payload-data) you ca
 
 ## Password cache
 
-Beginning with version 1.2.0 `rustpwman` is being built with support for the password cache implemented in [`pwman`](https://github.com/rmsk2/pwman). This feature can be
-disabled by issuing the command `cargo build --release --no-default-features` on all supported platforms. When the feature is active `rustpwman` attempts to read the
-password for the data file specified by the `-i` option from the cache provided by `pwserv`.
+Beginning with version 1.2.0 `rustpwman` is being built with support for the password cache implemented in [`pwman`](https://github.com/rmsk2/pwman) as a default. See 
+[below](#feature-overwiew) for information about how to build `rustpwman` without this feature. When it is active `rustpwman` attempts to read the password for
+the data file specified by the `-i` option from the cache provided by `pwserv`.
 
 If this does not succeed, the user is requested to enter a password as was the case in Version 1.1.0 and below. If on the other hand the password was successfully read, the
 user is asked to confirm that it should be used. Through the correspondig dialog the user is also able to clear the password from the cache. This can come in handy when
@@ -391,11 +392,32 @@ generated image file manually.
 
 This feature alone adds about 80 dependencies to the project. If you do not plan to use QR codes then build `rustpwman` without it.
 
+## Feature overwiew
+
+| Feature name | Description |
+|-|-|
+| `pwmanclientux` | Use password cache when building for Linux or macOS |
+| `pwmanclientwin` | Use password cache when building for Windows |
+| `webdav` | Use WebDAV access |
+| `qrcode` | Allow to represent values as a QR-code|
+| `chacha20` | Provide additional choices for the encryption algorithm|
+| `writebackup` | Write a backup of the last file which was successfully opened |
+
+The theme feature is always compiled into the binary. It is optional in that sense that it has no effect when no `theme.json` file is present. You can build `rustpwman` using
+any number of these features through the command:
+
+```
+cargo build --release --no-default-features --features feature1,feature2,...
+```
+
+If you simply use `cargo build --release` then the default feature set `pwmanclientux,webdav,qrcode,chacha20,writebackup` will be used. I.e. the default feature set can not be
+used to build a Windows binary.
+
 # Rustpwman under Windows
 
 ## Native
 
-The good news is that it works and it even works well. I have tested the `pancurses` and the `crossterm` backend of `cursive` under Windows. The [`pancurses`](https://github.com/ihalila/pancurses) backend
+`rustpwan` works on Windows and it even works well. I have tested the `pancurses` and the `crossterm` backend of `cursive` under Windows. The [`pancurses`](https://github.com/ihalila/pancurses) backend
 uses a binding to a C library and requires an [installed C compiler](https://github.com/ihalila/pdcurses-sys) in order to build. On the other hand Rust itself is dependent on a C
 compiler when used under Windows. Both backends seem to work.
 
