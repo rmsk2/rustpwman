@@ -169,8 +169,6 @@ pub fn de_obfuscate(to_de_obfuscate: &String, env_name: &str) -> Option<String> 
 
     return match str::from_utf8(to_decrypt.as_slice()) {
         Ok(s) => Some(String::from(s)),
-        Err(_) => {
-            return None;
-        }
+        Err(_) => None
     }
 }
