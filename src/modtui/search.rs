@@ -14,9 +14,10 @@ limitations under the License. */
 
 
 use cursive::Cursive;
-use cursive::views::{Dialog, LinearLayout, Panel, TextView, SelectView, EditView};
+use cursive::views::{Dialog, LinearLayout, Panel, TextView, SelectView, EditView, OnEventView};
 use cursive::traits::*;
 use std::sync::{Arc, Mutex};
+use cursive::event::Key;
 
 use super::AppState;
 use super::show_message;
@@ -88,15 +89,19 @@ pub fn do_select(s: &mut Cursive, state_for_select: Arc<Mutex<AppState>>) {
 }
 
 pub fn entry(s: &mut Cursive, state_for_search_entry: Arc<Mutex<AppState>>) {
-    let select_view = SelectView::<String>::new();
     let state_for_perf_search = state_for_search_entry.clone();
     let state_for_select = state_for_search_entry.clone();
+    let state_for_enter_callback = state_for_perf_search.clone();
 
+    let select_view = SelectView::<String>::new();
     let named_select_view = select_view
     .autojump()
     .with_name(SELECT_VIEW);
-    
-    let scroll_view = named_select_view
+
+    let mut event_wrapped_select_view = OnEventView::new(named_select_view);
+    event_wrapped_select_view.set_on_event(Key::Enter, move |s| { do_select(s, state_for_enter_callback.clone()); });
+
+    let scroll_view = event_wrapped_select_view
     .scrollable()
     .fixed_height(NUM_SCROLL_ELEMENTS);
 

@@ -192,6 +192,13 @@ you have to specify the file name in which to store the QR code.
 
 After you have scanned the QR code with your device you most probably want to delete the file again. `rustpwman` offers to do that for you immedeately after starting the image viewer.
 
+### Search Entry
+
+This entry opens a dialog which allows to specify a search term which is then used to search in all keys of the current password file. The search is case insensitive. All found keys are
+subsequently shown. Clicking on the `Select` button of the dialog or pressing the `Enter` key in the list of found entries causes `rustpwman` to jump to the entry which is currently selected
+in the result list. The search term and the result list are cleared after cllicking on the `Clear all` button. You can close the dialog by clicking on the `Cancel` button. This menu
+entry is also activated by pressing `F6`.
+
 ## The Queue menu
 
 In version 2.2.0 the notion of an entry queue has been introduced to `rustpwman`. The idea behind this is that at certain times it is known beforehand that several entries of the
