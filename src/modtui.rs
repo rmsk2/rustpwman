@@ -33,6 +33,7 @@ mod export;
 mod queue;
 #[cfg(feature = "qrcode")]
 mod qrcode;
+mod search;
 pub mod tuimain;
 pub mod tuitheme;
 
@@ -428,6 +429,7 @@ fn build_entry_select_panel(ctx: &AppCtx) -> NamedView<Panel<NamedView<ScrollVie
     event_wrapped_select_view.set_on_event(Key::F1, wrapper(ctx.clone(), queue::add));
     event_wrapped_select_view.set_on_event(Key::F2, wrapper4(ctx.clone(), copy::entry, false, DEFAULT_FORMATTER));
     event_wrapped_select_view.set_on_event(Key::F5, wrapper3(ctx.clone(), copy::contents, false));
+    event_wrapped_select_view.set_on_event(Key::F6, wrapper(ctx.clone(), search::entry));
 
     let select_view_scrollable = event_wrapped_select_view
         .fixed_width(40)
@@ -475,6 +477,8 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
 
     #[cfg(feature = "qrcode")]
     entry_tree.add_leaf("To QR-Code ...", wrapper(ctx.clone(), qrcode::create));
+
+    entry_tree.add_leaf("Search Entry ...      F6", wrapper(ctx.clone(), search::entry));
 
     s.menubar()
         .add_subtree("File", file_tree)

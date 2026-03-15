@@ -268,6 +268,39 @@ pub fn test_jots_serialize_deserialize() {
 }
 
 #[test]
+pub fn test_jots_search() {
+    let t1 = String::from("test1");
+    let t2 = String::from("test2");
+    let t3 = String::from("test3");
+    let d1 = String::from("data1");
+    let d2 = String::from("data2");
+    let d3 = String::from("data3");
+
+    let (d, i) = fcrypt::KdfId::Sha256.to_named_func();
+    let mut j = jots::Jots::new_id(d, i, Box::new(make_aes_gcm_cryptor));
+    j.add(&t1, &d1);
+    j.add(&t2, &d2);
+    j.add(&t3, &d3);
+
+    let term1 = String::from("3");
+    let res1 = j.search(&term1);
+
+    assert_eq!(res1.len(), 1);
+    assert_eq!(res1[0], "test3");
+
+    let term2 = String::from("test");
+    let res2 = j.search(&term2);
+
+    assert_eq!(res2.len(), 3);
+
+    let term3 = String::from("egal");
+    let res3 = j.search(&term3);
+
+    assert_eq!(res3.len(), 0);
+
+}
+
+#[test]
 pub fn test_jots_iter() {
     let t1 = String::from("test1");
     let t2 = String::from("test2");

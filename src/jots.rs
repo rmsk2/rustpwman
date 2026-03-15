@@ -343,7 +343,23 @@ impl Jots {
         self.mark_as_clean();
 
         return Ok(());
-    }    
+    }
+
+    pub fn search(&self, search_term: &String) -> Vec<String> {
+        let mut res = vec![];
+        let search_lower = search_term.to_lowercase();
+
+        let search_res: Vec<&String> = self.into_iter().filter(|&x| x.to_lowercase().contains(&search_lower)).collect();
+
+        if search_res.len() != 0 {
+            for i in search_res {
+                let h = String::from(i.as_str());
+                res.push(h);
+            }
+        }
+
+        return res;
+    }
 }
 
 impl<'a> IntoIterator for &'a Jots {
