@@ -52,7 +52,7 @@ pub fn entry(s: &mut Cursive, state_temp_del: Arc<Mutex<AppState>>) {
                 visualize_if_modified(s, state_temp_del.clone());
                 redraw_tui(s, state_temp_del.clone());
                 s.pop_layer();
-                show_message(s, "Entry deleted successfully. The first remaning element has been selected\nYou may need to scroll to it manually."); 
+                //show_message(s, "Entry deleted successfully. The first remaning element has been selected\nYou may need to scroll to it manually.");
             });
             
             s.add_layer(res); 

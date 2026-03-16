@@ -137,7 +137,7 @@ pub fn entry(s: &mut Cursive, state_for_edit_entry: Arc<Mutex<AppState>>, entry_
         s.pop_layer();
 
         if show_scroll_message {
-            show_message(s, "Entry created successfully. It has been selected\n but you may need to scroll to it manually.");            
+            show_message(s, "Entry created successfully.");
         }
     })
     .button("Insert Password ...", move |s: &mut Cursive| {
@@ -165,7 +165,7 @@ pub fn entry(s: &mut Cursive, state_for_edit_entry: Arc<Mutex<AppState>>, entry_
     .button("Cancel", move |s| { 
         s.pop_layer(); 
         if show_scroll_message {
-            show_message(s, "Entry created successfully. It has been selected\n but you may need to scroll to it manually.");            
+            show_message(s, "Entry created successfully.");
         }  
     });                
     

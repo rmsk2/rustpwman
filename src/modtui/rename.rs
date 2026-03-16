@@ -84,7 +84,7 @@ pub fn entry(s: &mut Cursive, state_for_rename_entry: Arc<Mutex<AppState>>) {
         redraw_tui(s, state_for_rename_entry.clone());
         s.pop_layer();
         display_entry(s, state_for_rename_entry.clone(), &new_entry_name, true);
-        show_message(s, "Entry renamed successfully. The renamed entry has been selected\n but you may need to scroll to it manually.");
+        //show_message(s, "Entry renamed successfully. The renamed entry has been selected\n but you may need to scroll to it manually.");
     })
     .button("Cancel", |s| { s.pop_layer(); });                
     

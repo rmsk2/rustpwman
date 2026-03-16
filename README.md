@@ -11,7 +11,8 @@ Under Linux and macOS use `cargo build --release` to build with all features ena
 Visual Studio Developer prompt for this purpose. On top of that there is a separate section in this README that deals with building under Windows. If you want
 a minimal set of features (and therefore a minimal set of dependencies) you can use `cargo build --release --no-default-features` under Linux, macOS and Windows.
 In this case the password cache, support for WebDAV, additional crypto algorithms, the automatic local backup feature and the possibility to encode an entry in
-a QR code are not available. If you want to select features one by one you will find a list of feature names [below](#feature-overwiew).
+a QR code are not available. If you want to select features one by one you will find a list of feature names [below](#feature-overwiew). On Linux you will have to
+install `libssl-dev` if you want to use the WebDAV feature and `ncurses` if you prefer to use the `ncurses` backend.
 
 If you have an older version of this repo on your  machine you may need to perform a `cargo update` after pulling this release otherwise the official version 0.21 of
 cursive will not build. I am curently using version 1.93.0 of `rustc`.
@@ -424,9 +425,9 @@ used to build a Windows binary.
 
 ## Native
 
-`rustpwan` works on Windows and it even works well. I have tested the `pancurses` and the `crossterm` backend of `cursive` under Windows. The [`pancurses`](https://github.com/ihalila/pancurses) backend
-uses a binding to a C library and requires an [installed C compiler](https://github.com/ihalila/pdcurses-sys) in order to build. On the other hand Rust itself is dependent on a C
-compiler when used under Windows. Both backends seem to work.
+Even though its main development platform is Linux/macOS `rustpwan` works on Windows and it even works well. I have tested the `pancurses` and the `crossterm` backend of `cursive` under
+Windows. The [`pancurses`](https://github.com/ihalila/pancurses) backend uses a binding to a C library and requires an [installed C compiler](https://github.com/ihalila/pdcurses-sys)
+in order to build. On the other hand Rust itself is dependent on a C compiler when used under Windows. Both backends seem to work.
 
 In order to build `rustpwman` with all optional features you have to use the command `cargo build --release --no-default-features --features pwmanclientwin,chacha20,webdav,writebackup,qrcode`.
 Alternatively you can call the batch file `build_win.bat` which executes this command and calls `build_paste_utf8.bat` (see below). If you do not care about the
@@ -513,7 +514,6 @@ size.
 This section provides information about stuff which is in my view suboptimal and the user should be aware of:
 
 - At the moment I do not attempt to overwrite memory that holds sensitive information when `rustpwman` is closed. This may be a problem when `rustpwman` is used in an environment where an attacker can gain access to unsanitized memory previously used by `rustpwman`. On the other hand it is probably impossible to defend against an attacker who has that level of access and in the end the information stored in `rustpwman` is used in other applications which most probably do not sanitize their memory.
-- When the list of entries changes (after an add or delete) it may be possible that the entry selected after the change is not visible in the `ScrollView` on the left. I was not successfull in forcing cursive to scroll to the newly selected entry. This is most probably my fault and meanwhile an appropriate warning dialog is displayed.
 - On Windows when using the `pancurses` backend a spurious Escape sequence `ESC[?1002l` is printed to stdout when the TUI application stops. This does not happen on Linux or MacOS. By piping the output of `rustpwman` to `winfilter.exe` you can remove this unwanted data from the output.
 - In non `--release` builds scrypt with the chosen parameters is *extremely* slow
 - At the moment I use release candidates of the crypto routines as their last official releases can not be built without warnings with a reasonably up-to-date rust toolchain

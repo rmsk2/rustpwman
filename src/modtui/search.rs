@@ -29,7 +29,7 @@ const NUM_SCROLL_ELEMENTS: usize = 20;
 
 
 pub fn perform_search(s: &mut Cursive, state_for_add_entry: Arc<Mutex<AppState>>) {
-    let mut search_res: Vec<String> = vec![];
+    let search_res: Vec<String>;
 
     let search_term = match s.call_on_name(EDIT_SEARCH_TERM, |view: &mut EditView| { view.get_content() }) {
         Some(s) => {
@@ -61,6 +61,22 @@ pub fn perform_search(s: &mut Cursive, state_for_add_entry: Arc<Mutex<AppState>>
     }
 }
 
+pub fn perform_incremental_search(s: &mut Cursive, state_for_incremental_search: Arc<Mutex<AppState>>) {
+    let search_term = match s.call_on_name(EDIT_SEARCH_TERM, |view: &mut EditView| { view.get_content() }) {
+        Some(s) => {
+            s.clone()
+        },
+        None => { show_message(s, "Unable to read search term"); return }
+    };
+
+    if search_term.is_empty() {
+        s.call_on_name(SELECT_VIEW, |view: &mut SelectView| { view.clear(); } );
+        return
+    }
+
+    perform_search(s, state_for_incremental_search.clone());
+}
+
 pub fn do_select(s: &mut Cursive, state_for_select: Arc<Mutex<AppState>>) {
     let id_opt = match s.call_on_name(SELECT_VIEW, |view: &mut SelectView| { view.selected_id() }) {
         Some(i) => i,
@@ -82,16 +98,16 @@ pub fn do_select(s: &mut Cursive, state_for_select: Arc<Mutex<AppState>>) {
 
         s.pop_layer();
         display_entry(s, state_for_select.clone(), &entry_name, true);
-        show_message(s, "The entry has been successfully selected\nbut you may need to scroll to it manually.");
+        //show_message(s, "The entry has been successfully selected\nbut you may need to scroll to it manually.");
     } else {
         show_message(s, "No element selected");
     }
 }
 
 pub fn entry(s: &mut Cursive, state_for_search_entry: Arc<Mutex<AppState>>) {
-    let state_for_perf_search = state_for_search_entry.clone();
     let state_for_select = state_for_search_entry.clone();
-    let state_for_enter_callback = state_for_perf_search.clone();
+    let state_for_enter_callback = state_for_search_entry.clone();
+    let state_for_incremental = state_for_search_entry.clone();
 
     let select_view = SelectView::<String>::new();
     let named_select_view = select_view
@@ -118,11 +134,12 @@ pub fn entry(s: &mut Cursive, state_for_search_entry: Arc<Mutex<AppState>>) {
             LinearLayout::horizontal()
                 .child(TextView::new("Search for: "))
                 .child(EditView::new()
+                    .on_edit(move |s, _, _| { perform_incremental_search(s, state_for_incremental.clone()); })
                     .with_name(EDIT_SEARCH_TERM)
                     .fixed_width(60))            
         )
     )
-    .button("Search", move |s| { perform_search(s, state_for_perf_search.clone()); })
+    //.button("Search", move |s| { perform_search(s, state_for_perf_search.clone()); })
     .button("Select", move |s| { do_select(s, state_for_select.clone()); })
     .button("Clear all", move |s| {
         s.call_on_name(SELECT_VIEW, |view: &mut SelectView| { view.clear(); } );

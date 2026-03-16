@@ -249,6 +249,7 @@ fn display_entry(siv: &mut Cursive, state: Arc<Mutex<AppState>>, entry_name: &St
     } else {
         siv.call_on_name(TEXT_AREA_MAIN, |view: &mut TextArea| { view.set_content(entry_text.clone()); });
         siv.call_on_name(TEXT_AREA_TITLE, |view: &mut TextArea| { view.set_content(entry_name.clone()); });
+        siv.call_on_name(SCROLL_VIEW, |view: &mut ScrollView<ResizedView<OnEventView<NamedView<SelectView>>>> | { view.scroll_to_important_area(); });
     }
 }
 
