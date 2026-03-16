@@ -425,7 +425,7 @@ used to build a Windows binary.
 
 ## Native
 
-Even though its main development platform is Linux/macOS `rustpwan` works on Windows and it even works well. I have tested the `pancurses` and the `crossterm` backend of `cursive` under
+Even though its main development platform is Linux/macOS `rustpwman` works on Windows and it even works well. I have tested the `pancurses` and the `crossterm` backend of `cursive` under
 Windows. The [`pancurses`](https://github.com/ihalila/pancurses) backend uses a binding to a C library and requires an [installed C compiler](https://github.com/ihalila/pdcurses-sys)
 in order to build. On the other hand Rust itself is dependent on a C compiler when used under Windows. Both backends seem to work.
 
