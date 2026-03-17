@@ -21,6 +21,9 @@ cursive will not build. I am curently using version 1.93.0 of `rustc`.
 scrypt is not supported for the moment (see [below](#caveats)). Keep a copy of your older version and continue to use it or alternatively decrypt your password file
 using the `dec` command and then reencrypt it with the `enc` commmand and the argon2 PBKDF. After that you can switch to a version 2.9.0 or later.
 
+If you have lost all binaries which still support scrypt and your password file uses scrypt, you can use [pwman](https://github.com/rmsk2/pwman) to migrate your password 
+file to argon2.
+
 # How to run the software
 
 The basic concept of `rustpwman` is to manage a set of entries which have a value or content. The entries are presented in a flat list and no further structuring is offered at
