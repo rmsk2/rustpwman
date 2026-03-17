@@ -53,7 +53,7 @@ version = "0.21"
 #features = ["pancurses-backend"]
 
 [features]
-default = ["pwmanclientux", "chacha20", "webdav", "writebackup", "qrcode", "withscrypt"]
+default = ["pwmanclientux", "chacha20", "webdav", "writebackup", "qrcode"]
 pwmanclient = []
 pwmanclientux = ["dep:users", "pwmanclient"]
 pwmanclientwin = ["dep:uds_windows", "pwmanclient"]
