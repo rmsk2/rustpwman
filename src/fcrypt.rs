@@ -290,9 +290,15 @@ impl AeadContext {
     }
 
     pub fn fill_random(&mut self) {
-        // ThreadRng, provided by the thread_rng function, is a handle to a thread-local CSPRNG with periodic 
-        // seeding from OsRng. Because this is local, it is typically much faster than OsRng. It should be secure, 
-        // though the paranoid may prefer OsRng.        
+        // Security must be considered relative to a threat model and validation requirements. The Rand project can provide no guarantee of fitness for purpose. The design criteria for ThreadRng are as follows:
+        //
+        // - Automatic seeding via SysRng and after every 64 kB of output. Limitation: there is no automatic reseeding on process fork (see below).
+        // - A rigorusly analyzed, unpredictable (cryptographic) pseudo-random generator (see the book on security). The currently selected algorithm is ChaCha (12-rounds). See also StdRng documentation.
+        // - Not to leak internal state through Debug or serialization implementations.
+        // - No further protections exist to in-memory state. In particular, the implementation is not required to zero memory on exit (of the process or thread). (This may change in the future.)
+        // - Be fast enough for general-purpose usage. Note in particular that ThreadRng is designed to be a “fast, reasonably secure generator” (where “reasonably secure” implies the above criteria).
+        //
+        // We leave it to the user to determine whether this generator meets their security requirements. For an alternative, see SysRng.        
         let mut rng = rand::rng();
         
         // ToDo: Error handling with fill_bytes()?
