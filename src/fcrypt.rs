@@ -24,7 +24,7 @@ use std::io::Read;
 use std::io::Write;
 use std::io::BufWriter;
 use std::io::{Error, ErrorKind};
-use rand::RngCore;
+use rand::Rng;
 
 use serde::{Serialize, Deserialize};
 use cipher::consts::{U12, U16};
@@ -93,6 +93,7 @@ pub trait Cryptor {
 
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
 pub enum KdfId {
+    #[cfg(feature = "withscrypt")]
     Scrypt,
     Argon2,
     Sha256
@@ -105,6 +106,7 @@ impl KdfId {
 
     pub fn to_str(self) -> &'static str {
         match self {
+            #[cfg(feature = "withscrypt")]
             KdfId::Scrypt => KDF_SCRYPT,
             KdfId::Argon2 => KDF_ARGON2,
             KdfId::Sha256 => KDF_SHA256
@@ -112,7 +114,10 @@ impl KdfId {
     }
 
     pub fn get_known_ids() -> Vec<KdfId> {
-        return vec![KdfId::Scrypt, /*KdfId::Bcrypt,*/ KdfId::Argon2, KdfId::Sha256];
+        #[cfg(feature = "withscrypt")]
+        return vec![KdfId::Scrypt, KdfId::Argon2, KdfId::Sha256];
+        #[cfg(not(feature = "withscrypt"))]
+        return vec![KdfId::Argon2, KdfId::Sha256];
     }
 
     pub fn from_str(name: &str) -> Option<Self> {
@@ -121,6 +126,7 @@ impl KdfId {
 
     pub fn to_named_func(self) -> (KeyDeriver, KdfId) {
         match self {
+            #[cfg(feature = "withscrypt")]
             KdfId::Scrypt => (derivers::scrypt_deriver, self),
             KdfId::Argon2 => (derivers::argon2id_deriver, self),
             KdfId::Sha256 => (derivers::sha256_deriver, self)            
@@ -130,6 +136,7 @@ impl KdfId {
     pub fn from_string(name: &String) -> Option<Self> {
         match &name[..] {
             KDF_SHA256 => Some(KdfId::Sha256),
+            #[cfg(feature = "withscrypt")]
             KDF_SCRYPT => Some(KdfId::Scrypt),
             KDF_ARGON2 => Some(KdfId::Argon2),
             _ => None

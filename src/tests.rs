@@ -21,8 +21,10 @@ use crate::pwgen::NumDigitGenerator;
 use crate::pwgen::PasswordGenerator;
 use crate::undo;
 use argon2::AssociatedData;
-use rand::Rng;
+use rand::RngExt;
+#[cfg(feature = "withscrypt")]
 use scrypt::scrypt;
+#[cfg(feature = "withscrypt")]
 use scrypt::Params;
 use crate::tomlconfig;
 use std::env;
@@ -368,6 +370,7 @@ pub fn test_sha256_key_gen() {
     assert_eq!(res, "8bbb8e596fdeb564b5ded3d60af1cf790a326309ada0045cc61d07fd982876d2");
 }
 
+#[cfg(feature = "withscrypt")]
 #[test]
 pub fn test_scrypt_params() {
     let parms = Params::new(14, 8, 1).unwrap();

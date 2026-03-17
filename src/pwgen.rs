@@ -14,7 +14,7 @@ limitations under the License. */
 
 #![allow(dead_code)]
 
-use rand::Rng;
+use rand::RngExt;
 
 const GEN_BASE64: &str = "base64";
 const GEN_HEX: &str = "hex";

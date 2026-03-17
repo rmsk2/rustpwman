@@ -14,6 +14,7 @@ limitations under the License. */
 
 
 use sha2::{Sha256, Digest};
+#[cfg(feature = "withscrypt")]
 use scrypt::scrypt;
 use argon2;
 
@@ -32,6 +33,7 @@ pub fn argon2id_deriver(salt: &Vec<u8>, password: &str) -> Vec<u8> {
     return res;        
 }
 
+#[cfg(feature = "withscrypt")]
 pub fn scrypt_deriver(salt: &Vec<u8>, password: &str) -> Vec<u8> {
     // N = 32768 = 2^15, r=8, p=2
     let parms = scrypt::Params::new(15, 8, 2).unwrap();

@@ -93,6 +93,8 @@ fn make_feature_string() -> String {
     #[cfg(feature = "qrcode")]
     msg_str.push_str("- qrcode\n");
 
+    #[cfg(feature = "withscrypt")]
+    msg_str.push_str("- withscrypt\n");
 
     if msg_str == "" {
         msg_str.push_str("-- None --");
