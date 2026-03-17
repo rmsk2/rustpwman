@@ -17,6 +17,10 @@ install `libssl-dev` if you want to use the WebDAV feature and `ncurses` if you 
 If you have an older version of this repo on your machine you may need to perform a `cargo update` after pulling this release otherwise the official version 0.21 of
 cursive will not build. I am curently using version 1.93.0 of `rustc`.
 
+**CAUTION**: If you are using a `rustpwman` **version below 2.9.0 with a password file based on scrypt** please be careful when upgrading to the latest version as
+scrypt is not supported for the moment (see [below](#caveats)). Keep a copy of your older version and continue to use it or alternatively decrypt your password file
+using the `dec` command and then reencrypt it with the `enc` commmand and the argon2 PBKDF. After that you can switch to a version 2.9.0 or later.
+
 # How to run the software
 
 The basic concept of `rustpwman` is to manage a set of entries which have a value or content. The entries are presented in a flat list and no further structuring is offered at
@@ -516,6 +520,6 @@ This section provides information about stuff which is in my view suboptimal and
 - At the moment I do not attempt to overwrite memory that holds sensitive information when `rustpwman` is closed. This may be a problem when `rustpwman` is used in an environment where an attacker can gain access to unsanitized memory previously used by `rustpwman`. On the other hand it is probably impossible to defend against an attacker who has that level of access and in the end the information stored in `rustpwman` is used in other applications which most probably do not sanitize their memory.
 - On Windows when using the `pancurses` backend a spurious Escape sequence `ESC[?1002l` is printed to stdout when the TUI application stops. This does not happen on Linux or MacOS. By piping the output of `rustpwman` to `winfilter.exe` you can remove this unwanted data from the output.
 - In non `--release` builds scrypt with the chosen parameters is *extremely* slow
-- At the moment I use release candidates of the crypto routines as their last official releases can not be built without warnings with a reasonably up-to-date rust toolchain. Unfortunately the current RC of the `pbkdf2` crate (`0.13.0-rc9`) **does not build under Windows**. It builds fine under Linux/macOS.
-- As the `scrypt` crate seems to depend on `pbkdf2` this has the consequence that **starting with version 2.9.0 the Windows version of `rustpwman` looses the ability to use scrypt** as a PBKDF as long as the build problem is not fixed by the rustcrypto authors
+- At the moment I use release candidates of the crypto routines as their last official releases can not be built without warnings with a reasonably up-to-date rust toolchain. Unfortunately the current RC of the `pbkdf2` crate (`0.13.0-rc9`) **does not build**.
+- As the `scrypt` crate seems to depend on `pbkdf2` this has the consequence that **starting with version 2.9.0 `rustpwman` looses the ability to use scrypt** as a PBKDF as long as the build problem is not fixed by the rustcrypto authors
 
