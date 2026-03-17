@@ -517,5 +517,5 @@ This section provides information about stuff which is in my view suboptimal and
 - On Windows when using the `pancurses` backend a spurious Escape sequence `ESC[?1002l` is printed to stdout when the TUI application stops. This does not happen on Linux or MacOS. By piping the output of `rustpwman` to `winfilter.exe` you can remove this unwanted data from the output.
 - In non `--release` builds scrypt with the chosen parameters is *extremely* slow
 - At the moment I use release candidates of the crypto routines as their last official releases can not be built without warnings with a reasonably up-to-date rust toolchain. Unfortunately the current RC of the `pbkdf2` crate (`0.13.0-rc9`) **does not build under Windows**. It builds fine under Linux/macOS.
-- As the `scrypt` crate seems to depend on `pbkdf2` this has the consequence that **starting with version 2.9.0 the Windows version of `rustpwman` looses the ability to use scrypt** as a PBKF as long as the build problem is not fixed by the rustcrypto authors
+- As the `scrypt` crate seems to depend on `pbkdf2` this has the consequence that **starting with version 2.9.0 the Windows version of `rustpwman` looses the ability to use scrypt** as a PBKDF as long as the build problem is not fixed by the rustcrypto authors
 
