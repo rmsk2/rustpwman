@@ -18,11 +18,13 @@ If you have an older version of this repo on your machine you may need to perfor
 cursive will not build. I am curently using version 1.93.0 of `rustc`.
 
 **CAUTION**: If you are using a `rustpwman` **version below 2.9.0 with a password file based on scrypt** please be careful when upgrading to the latest version as
-scrypt is not supported for the moment (see [below](#caveats)). Keep a copy of your older version and continue to use it or alternatively decrypt your password file
+scrypt is not supported as default for the moment (see [below](#caveats)). Keep a copy of your older version and continue to use it or alternatively decrypt your password file
 using the `dec` command and then reencrypt it with the `enc` commmand and the argon2 PBKDF. After that you can switch to a version 2.9.0 or later.
 
-If you have lost all binaries which still support scrypt and your password file uses scrypt, you can use [pwman](https://github.com/rmsk2/pwman) to migrate your password 
-file to argon2.
+If you have lost all binaries which still support scrypt and your password file uses scrypt you can checkout the latest version from GitHub and before starting your build
+rename the file `Cargo.lock_scrypt` to `Cargo.lock`. After that build rustpwman using the `withscrypt` feature.
+
+Alternatively you can use [pwman](https://github.com/rmsk2/pwman) to migrate your password file to argon2. 
 
 # How to run the software
 
@@ -417,6 +419,7 @@ This feature alone adds about 80 dependencies to the project. If you do not plan
 | `qrcode` | Allow to represent values as a QR-code|
 | `chacha20` | Provide additional choices for the encryption algorithm|
 | `writebackup` | Write a backup of the last file which was successfully opened |
+| `withscrypt` | Include support for the scrypt PBKDF  |
 
 The theme feature is always compiled into the binary. It is optional in that sense that it has no effect when no `theme.json` file is present. You can build `rustpwman` using
 any number of these features through the command:
@@ -523,6 +526,6 @@ This section provides information about stuff which is in my view suboptimal and
 - At the moment I do not attempt to overwrite memory that holds sensitive information when `rustpwman` is closed. This may be a problem when `rustpwman` is used in an environment where an attacker can gain access to unsanitized memory previously used by `rustpwman`. On the other hand it is probably impossible to defend against an attacker who has that level of access and in the end the information stored in `rustpwman` is used in other applications which most probably do not sanitize their memory.
 - On Windows when using the `pancurses` backend a spurious Escape sequence `ESC[?1002l` is printed to stdout when the TUI application stops. This does not happen on Linux or MacOS. By piping the output of `rustpwman` to `winfilter.exe` you can remove this unwanted data from the output.
 - In non `--release` builds scrypt with the chosen parameters is *extremely* slow
-- At the moment I use release candidates of the crypto routines as their last official releases can not be built without warnings with a reasonably up-to-date rust toolchain. Unfortunately the current RC of the `pbkdf2` crate (`0.13.0-rc9`) **does not build**.
-- As the `scrypt` crate seems to depend on `pbkdf2` this has the consequence that **starting with version 2.9.0 `rustpwman` looses the ability to use scrypt** as a PBKDF as long as the build problem is not fixed by the rustcrypto authors
+- At the moment I use release candidates of the crypto routines as their last official releases can not be built without warnings with a reasonably up-to-date rust toolchain. Unfortunately the current RC of the `pbkdf2` crate (`0.13.0-rc9`) **does not build**. The reason for that is the `digest` crate which in its most current version `0.11.2` is incompatible with `pbkdf2-0.13.0-rc9`. The version `0.11.2` works but has been yanked.
+- As the `scrypt` crate seems to depend on `pbkdf2` this has the consequence that **starting with version 2.9.0 `rustpwman` looses the ability to use scrypt** as a PBKDF as long as the build problem is not fixed by the rustcrypto authors. See [above](#building-the-software) on how to work around this problem.
 
