@@ -14,17 +14,14 @@ In this case the password cache, support for WebDAV, additional crypto algorithm
 a QR code are not available. If you want to select features one by one you will find a list of feature names [below](#feature-overwiew). On Linux you will have to
 install `libssl-dev` if you want to use the WebDAV feature and `ncurses` if you prefer to use the `ncurses` backend.
 
-If you have an older version of this repo on your machine you may need to perform a `cargo update` after pulling this release otherwise the official version 0.21 of
-cursive will not build. I am curently using version 1.93.0 of `rustc`.
-
 **CAUTION**: If you are using a `rustpwman` **version below 2.9.0 with a password file based on scrypt** please be careful when upgrading to the latest version as
-scrypt is not supported as default for the moment (see [below](#caveats)). Keep a copy of your older version and continue to use it or alternatively decrypt your password file
-using the `dec` command and then reencrypt it with the `enc` commmand and the argon2 PBKDF. After that you can switch to a version 2.9.0 or later.
+for the moment (see [below](#caveats)) scrypt is not supported in the default build. In order to build a version with scrypt support overwrite your `Cargo.lock` file
+with the contents of the file `Cargo.lock_scrypt` contained in this repo and start a release build which includes the feature `withscrypt`.
 
-If you have lost all binaries which still support scrypt and your password file uses scrypt you can checkout the latest version from GitHub and before starting your build
-rename the file `Cargo.lock_scrypt` to `Cargo.lock`. After that build rustpwman using the `withscrypt` feature.
+If you want to migrate from scrypt to argon2 you can use the `dec` command (using scrypt) to decrypt the password data and after that the `enc` command (using argon2)
+to reencrypt the password data again. Alternatively you can use [pwman](https://github.com/rmsk2/pwman) to migrate your password file to argon2 in a similar fashion.
 
-Alternatively you can use [pwman](https://github.com/rmsk2/pwman) to migrate your password file to argon2. 
+If you already use argon2 you can ignore this warning.
 
 # How to run the software
 
@@ -527,5 +524,5 @@ This section provides information about stuff which is in my view suboptimal and
 - On Windows when using the `pancurses` backend a spurious Escape sequence `ESC[?1002l` is printed to stdout when the TUI application stops. This does not happen on Linux or MacOS. By piping the output of `rustpwman` to `winfilter.exe` you can remove this unwanted data from the output.
 - In non `--release` builds scrypt with the chosen parameters is *extremely* slow
 - At the moment I use release candidates of the crypto routines as their last official releases can not be built without warnings with a reasonably up-to-date rust toolchain. Unfortunately the current RC of the `pbkdf2` crate (`0.13.0-rc9`) **does not build**. The reason for that is the `digest` crate which in its most current version `0.11.2` is incompatible with `pbkdf2-0.13.0-rc9`. The version `0.11.1` works but has been yanked.
-- As the `scrypt` crate seems to depend on `pbkdf2` this has the consequence that **starting with version 2.9.0 `rustpwman` looses the ability to use scrypt** as a PBKDF as long as the build problem is not fixed by the rustcrypto authors. See [above](#building-the-software) on how to work around this problem.
+- As the `scrypt` crate seems to depend on `pbkdf2` this has the consequence that **starting with version 2.9.0 `rustpwman` looses the ability to use scrypt** in the default build. See [above](#building-the-software) on how to work around this problem. scrypt will become part of the default build again as soon as the rustcrypto project fixes the build problem.
 

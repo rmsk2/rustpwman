@@ -114,10 +114,14 @@ impl KdfId {
     }
 
     pub fn get_known_ids() -> Vec<KdfId> {
+        let mut res: Vec<KdfId> = vec![];
+
+        res.push(KdfId::Argon2);
+        res.push(KdfId::Sha256);
         #[cfg(feature = "withscrypt")]
-        return vec![KdfId::Scrypt, KdfId::Argon2, KdfId::Sha256];
-        #[cfg(not(feature = "withscrypt"))]
-        return vec![KdfId::Argon2, KdfId::Sha256];
+        res.push(KdfId::Scrypt);
+
+        return res
     }
 
     pub fn from_str(name: &str) -> Option<Self> {
