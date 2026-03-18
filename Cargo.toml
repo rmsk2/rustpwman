@@ -1,6 +1,6 @@
 [package]
 name = "rustpwman"
-version = "2.9.0"
+version = "2.9.1"
 authors = ["Martin <rmsk2@gmx.de>"]
 edition = "2024"
 
@@ -24,7 +24,7 @@ uds_windows =  {version ="1.2", optional = true}
 users = {version = "0.11", optional = true}
 reqwest = {version = "0.13", optional = true, features = ["blocking"]}
 
-digest = "0.11"
+digest = "0.11.1"
 sha2 = "=0.11.0-rc.5"
 md-5 = "=0.11.0-rc.5"
 aes-gcm = "=0.11.0-rc.3"
