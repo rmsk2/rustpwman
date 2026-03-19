@@ -10,9 +10,9 @@ over SSH.
 Under Linux and macOS use `cargo build --release` to build with all features enabled. Under Windows you should call the batch file `build_win.bat` from a
 Visual Studio Developer prompt for this purpose. On top of that there is a separate section in this README that deals with building under Windows. If you want
 a minimal set of features (and therefore a minimal set of dependencies) you can use `cargo build --release --no-default-features` under Linux, macOS and Windows.
-In this case the password cache, support for WebDAV, additional crypto algorithms, the automatic local backup feature and the possibility to encode an entry in
-a QR code are not available. If you want to select features one by one you will find a list of feature names [below](#feature-overwiew). On Linux you will have to
-install `libssl-dev` if you want to use the WebDAV feature and `ncurses` if you prefer to use the `ncurses` backend.
+In this case the password cache, support for WebDAV, additional crypto algorithms, support for scrypt, the automatic local backup feature and the possibility to encode
+an entry in a QR code are not available. If you want to select features one by one you will find a list of feature names [below](#feature-overwiew). On Linux you will
+have to install `libssl-dev` if you want to use the WebDAV feature and `ncurses` if you prefer to use the `ncurses` backend.
 
 **CAUTION**: If you are using a `rustpwman` **version below 2.9.0 with a password file based on scrypt** please be careful when upgrading to the latest version as
 for the moment (see [below](#caveats)) scrypt is not supported in the default build. In order to build a version with scrypt support overwrite your `Cargo.lock` file
@@ -401,6 +401,11 @@ the `gui` command. This may serve as an example: `rustpwman gui -i input_file.en
 ChaCha20 Poly-1305 provides security comparable to AES-256 GCM and so it comes down to a matter of taste which cipher you use. Even though AES-192 has a shorter key than AES-256
 a key length of 192 bits should still be past anyones paranoia level. On top of that it is very unlikely that you use a password with a 192 bit or higher entropy to derive
 the encryption key used by `rustpwman` in the first place. There are even some (more theoretical) attacks which affect AES-192 less than AES-256 so if you want to use it, here it is.
+
+## Support for the scrypt PBKDF
+
+Als an alternative to argon2id `rustpwman` can be built with support for the scrypt PBKDF. The corresponding feature is called `withscrypt`. You can select to use scrypt either via
+the `rustpwman.cfg` file or via the command line parameter `--kdf`
 
 ## Automatic local backup of last successfully opened password file
 
