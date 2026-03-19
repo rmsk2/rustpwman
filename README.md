@@ -16,7 +16,23 @@ install `libssl-dev` if you want to use the WebDAV feature and `ncurses` if you 
 
 **CAUTION**: If you are using a `rustpwman` **version below 2.9.0 with a password file based on scrypt** please be careful when upgrading to the latest version as
 for the moment (see [below](#caveats)) scrypt is not supported in the default build. In order to build a version with scrypt support overwrite your `Cargo.lock` file
-with the contents of the file `Cargo.lock_scrypt` contained in this repo and start a release build which includes the feature `withscrypt`.
+with the contents of the file `Cargo.lock_scrypt` contained in this repo or replace the entry for the `digest` crate in your `Cargo.lock` file with the following data.
+
+```
+[[package]]
+name = "digest"
+version = "0.11.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "285743a676ccb6b3e116bc14cc69319b957867930ae9c4822f8e0f54509d7243"
+dependencies = [
+ "block-buffer",
+ "const-oid",
+ "crypto-common",
+ "ctutils",
+]
+```
+
+After that start a release build which includes the feature `withscrypt`.
 
 If you want to migrate from scrypt to argon2 you can use the `dec` command (using scrypt) to decrypt the password data and after that the `enc` command (using argon2)
 to reencrypt the password data again. Alternatively you can use [pwman](https://github.com/rmsk2/pwman) to migrate your password file to argon2 in a similar fashion.
