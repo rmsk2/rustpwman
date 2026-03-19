@@ -447,7 +447,11 @@ cargo build --release --no-default-features --features feature1,feature2,...
 ```
 
 If you simply use `cargo build --release` then the default feature set `pwmanclientux,webdav,qrcode,chacha20,writebackup` will be used. I.e. the default feature set can not be
-used to build a Windows binary.
+used to build a Windows binary. Here a template for building with all features:
+
+```
+cargo build --release --no-default-features --features webdav,qrcode,chacha20,writebackup,withscrypt,pwmanclient[ux|win]
+```
 
 # Rustpwman under Windows
 
