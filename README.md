@@ -220,7 +220,10 @@ After you have scanned the QR code with your device you most probably want to de
 This entry opens a dialog which allows to specify a search term which is then used to search in all keys of the current password file. The search is case insensitive and is performed in
 an incremental fashion, i.e. the search results are adapted as you type the search term. Pressing the `Enter` key in the list of found entries causes `rustpwman` to jump to the entry which
 is currently selected in the result list. Alternatively you can click on the `Select` button to achieve the same result. The search term and the result list are cleared after clicking on
-the `Clear all` button. You can close the dialog by clicking on the `Cancel` button. This menu entry is also activated by pressing `F6`.
+the `Clear all` button. You can close the dialog by clicking on the `Cancel` button. This menu entry is also activated by pressing `F6`. Here a screenshot of a password file which makes
+use of dummy data
+
+![](/inc_search.png?raw=true "Screenshot of search dialog")
 
 ## The Queue menu
 
@@ -404,7 +407,7 @@ the encryption key used by `rustpwman` in the first place. There are even some (
 
 ## Support for the scrypt PBKDF
 
-Als an alternative to argon2id `rustpwman` can be built with support for the scrypt PBKDF. The corresponding feature is called `withscrypt`. You can select to use scrypt either via
+In addition to argon2id `rustpwman` can be built with support for the scrypt PBKDF. The corresponding feature is called `withscrypt`. You can select to use scrypt either via
 the `rustpwman.cfg` file or via the command line parameter `--kdf`
 
 ## Automatic local backup of last successfully opened password file
