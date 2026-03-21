@@ -14,31 +14,6 @@ In this case the password cache, support for WebDAV, additional crypto algorithm
 an entry in a QR code are not available. If you want to select features one by one you will find a list of feature names [below](#feature-overwiew). On Linux you will
 have to install `libssl-dev` if you want to use the WebDAV feature and `ncurses` if you prefer to use the `ncurses` backend.
 
-**CAUTION**: If you are using a `rustpwman` **version below 2.9.0 with a password file based on scrypt** please be careful when upgrading to the latest version as
-for the moment (see [below](#caveats)) scrypt is not supported in the default build. In order to build a version with scrypt support overwrite your `Cargo.lock` file
-with the contents of the file `Cargo.lock_scrypt` contained in this repo or replace the entry for the `digest` crate in your `Cargo.lock` file with the following data.
-
-```
-[[package]]
-name = "digest"
-version = "0.11.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "285743a676ccb6b3e116bc14cc69319b957867930ae9c4822f8e0f54509d7243"
-dependencies = [
- "block-buffer",
- "const-oid",
- "crypto-common",
- "ctutils",
-]
-```
-
-After that start a release build which includes the feature `withscrypt`.
-
-If you want to migrate from scrypt to argon2 you can use the `dec` command (using scrypt) to decrypt the password data and after that the `enc` command (using argon2)
-to reencrypt the password data again. Alternatively you can use [pwman](https://github.com/rmsk2/pwman) to migrate your password file to argon2 in a similar fashion.
-
-If you already use argon2 you can ignore this warning.
-
 # How to run the software
 
 The basic concept of `rustpwman` is to manage a set of entries which have a value or content. The entries are presented in a flat list and no further structuring is offered at
@@ -449,7 +424,7 @@ any number of these features through the command:
 cargo build --release --no-default-features --features feature1,feature2,...
 ```
 
-If you simply use `cargo build --release` then the default feature set `pwmanclientux,webdav,qrcode,chacha20,writebackup` will be used. I.e. the default feature set can not be
+If you simply use `cargo build --release` then the default feature set `pwmanclientux,webdav,qrcode,chacha20,writebackup,withscrypt` will be used. I.e. the default feature set can not be
 used to build a Windows binary. Here a template for building with all features:
 
 ```
@@ -464,7 +439,7 @@ Even though its main development platform is Linux/macOS `rustpwman` works on Wi
 Windows. The [`pancurses`](https://github.com/ihalila/pancurses) backend uses a binding to a C library and requires an [installed C compiler](https://github.com/ihalila/pdcurses-sys)
 in order to build. On the other hand Rust itself is dependent on a C compiler when used under Windows. Both backends seem to work.
 
-In order to build `rustpwman` with all optional features you have to use the command `cargo build --release --no-default-features --features pwmanclientwin,chacha20,webdav,writebackup,qrcode`.
+In order to build `rustpwman` with all optional features you have to use the command `cargo build --release --no-default-features --features pwmanclientwin,chacha20,webdav,writebackup,qrcode,withscrypt`.
 Alternatively you can call the batch file `build_win.bat` which executes this command and calls `build_paste_utf8.bat` (see below). If you do not care about the
 password cache, WebDAV, additional ciphers or QR codes use `cargo build --release --no-default-features`. You should additionally build the `paste_utf8.exe` tool by
 running `build_paste_utf8.bat` in a Visual Studio developer prompt. This tool enables you to paste the clipboard contents while editing an entry and to copy an entry which
@@ -551,6 +526,5 @@ This section provides information about stuff which is in my view suboptimal and
 - At the moment I do not attempt to overwrite memory that holds sensitive information when `rustpwman` is closed. This may be a problem when `rustpwman` is used in an environment where an attacker can gain access to unsanitized memory previously used by `rustpwman`. On the other hand it is probably impossible to defend against an attacker who has that level of access and in the end the information stored in `rustpwman` is used in other applications which most probably do not sanitize their memory.
 - On Windows when using the `pancurses` backend a spurious Escape sequence `ESC[?1002l` is printed to stdout when the TUI application stops. This does not happen on Linux or MacOS. By piping the output of `rustpwman` to `winfilter.exe` you can remove this unwanted data from the output.
 - In non `--release` builds scrypt with the chosen parameters is *extremely* slow
-- At the moment I use release candidates of the crypto routines as their last official releases can not be built without warnings with a reasonably up-to-date rust toolchain. Unfortunately the current RC of the `pbkdf2` crate (`0.13.0-rc9`) **does not build**. The reason for that is the `digest` crate which in its most current version `0.11.2` is incompatible with `pbkdf2-0.13.0-rc9`. The version `0.11.1` works but has been yanked.
-- As the `scrypt` crate seems to depend on `pbkdf2` this has the consequence that **starting with version 2.9.0 `rustpwman` looses the ability to use scrypt** in the default build. See [above](#building-the-software) on how to work around this problem. scrypt will become part of the default build again as soon as the rustcrypto project fixes its dependency problem.
+- At the moment I use release candidates of the crypto routines as their last official releases can not be built without warnings with a reasonably up-to-date rust toolchain.
 
