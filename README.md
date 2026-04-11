@@ -1,9 +1,9 @@
 # rustpwman
 
-`rustpwman` is a simple password manager written in Rust using the [cursive TUI library](https://github.com/gyscos/cursive). You may wonder why someone writes a TUI
-application in 2025. The main reason is portability without creating a dependency to any of the usual GUI toolkits. `rustpwman` should work on macOS, Linux and Windows and
-it should compile without the necessity to install more or less exotic (or maybe even toxic) toolchains. Additionally I like the retro appeal of it and it can be used
-over SSH.
+`rustpwman` is a simple password manager written in Rust using the [cursive TUI library](https://github.com/gyscos/cursive). You may wonder why someone continues to
+develop a TUI application in 2026. The main reason is portability without creating a dependency to any of the usual GUI toolkits. `rustpwman` should work on macOS, Linux
+and Windows and it should compile without the necessity to install more or less exotic (or maybe even toxic) toolchains. Additionally I like the retro appeal of it and it
+can be used over SSH.
 
 # Building the software
 
@@ -437,7 +437,8 @@ cargo build --release --no-default-features --features webdav,qrcode,chacha20,wr
 
 Even though its main development platform is Linux/macOS `rustpwman` works on Windows and it even works well. I have tested the `pancurses` and the `crossterm` backend of `cursive` under
 Windows. The [`pancurses`](https://github.com/ihalila/pancurses) backend uses a binding to a C library and requires an [installed C compiler](https://github.com/ihalila/pdcurses-sys)
-in order to build. On the other hand Rust itself is dependent on a C compiler when used under Windows. Both backends seem to work.
+in order to build. On the other hand Rust itself is dependent on a C compiler when used under Windows (I use the Visual Studio Community Edition for this project).
+Both backends work well.
 
 In order to build `rustpwman` with all optional features you have to use the command `cargo build --release --no-default-features --features pwmanclientwin,chacha20,webdav,writebackup,qrcode,withscrypt`.
 Alternatively you can call the batch file `build_win.bat` which executes this command and calls `build_paste_utf8.bat` (see below). If you do not care about the
