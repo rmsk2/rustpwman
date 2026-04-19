@@ -17,7 +17,7 @@ use std::collections::HashSet;
 use std::sync::{Arc, Mutex};
 use std::collections::HashMap;
 use cursive::Cursive;
-use cursive::views::{Dialog, LinearLayout, TextView, TextArea, SliderView, RadioGroup, RadioButton, Checkbox, HideableView, EditView, Panel, PaddedView};
+use cursive::views::{Button, Checkbox, Dialog, EditView, HideableView, LinearLayout, PaddedView, Panel, RadioButton, RadioGroup, SliderView, TextArea, TextView};
 use cursive::event::EventResult;
 use cursive::traits::*;
 use cursive::view::Margins;
@@ -35,6 +35,10 @@ const BITS_SEC_VALUE: &str = "securitybits";
 const CUSTOM_HIDEABLE: &str = "hideable_custom";
 const CUSTOM_CHARS: &str = "custom_characters";
 const CHAR_COUNT: &str = "char_count";
+const CHECK_UPPER: &str = "check_upper";
+const CHECK_LOWER: &str = "check_lower";
+const CHECK_DIGITS: &str = "check_digits";
+const CHECK_SPECIAL: &str = "check_special";
 
 
 fn show_sec_bits(s: &mut Cursive, val: usize) {
@@ -201,32 +205,32 @@ fn create_custom_select(last_selection: &String) -> Box<dyn View> {
     check_upper.set_on_change(|s: &mut Cursive, val: bool| on_change_charset(s, val, SelectionType::Upper));
 
     check_boxes.add_child(LinearLayout::horizontal()
-        .child(check_upper) 
-        .child(TextView::new(" Upper case  "))  
+        .child(check_upper.with_name(CHECK_UPPER))
+        .child(TextView::new(" Upper case  "))
     );
 
     let mut check_lower = Checkbox::new().with_checked(false);
     check_lower.set_on_change(|s: &mut Cursive, val: bool| on_change_charset(s, val, SelectionType::Lower));
 
     check_boxes.add_child(LinearLayout::horizontal()
-        .child(check_lower) 
-        .child(TextView::new(" Lower case  "))  
+        .child(check_lower.with_name(CHECK_LOWER))
+        .child(TextView::new(" Lower case  "))
     );
 
     let mut check_num = Checkbox::new().with_checked(false);
     check_num.set_on_change(|s: &mut Cursive, val: bool| on_change_charset(s, val, SelectionType::Digits));
 
     check_boxes.add_child(LinearLayout::horizontal()
-        .child(check_num) 
-        .child(TextView::new(" Digits  "))  
+        .child(check_num.with_name(CHECK_DIGITS))
+        .child(TextView::new(" Digits  "))
     );
 
     let mut check_special = Checkbox::new().with_checked(false);
     check_special.set_on_change(|s: &mut Cursive, val: bool| on_change_charset(s, val, SelectionType::Special));
 
     check_boxes.add_child(LinearLayout::horizontal()
-        .child(check_special) 
-        .child(TextView::new(" Special  "))  
+        .child(check_special.with_name(CHECK_SPECIAL))
+        .child(TextView::new(" Special  "))
     );
 
     return Box::new(Panel::new(
@@ -243,11 +247,22 @@ fn create_custom_select(last_selection: &String) -> Box<dyn View> {
         .child(check_boxes)
         .child(TextView::new("\n"))
         .child(LinearLayout::horizontal()
+            .child(Button::new("Clear custom characters", clear_custom_selection))
+            .child(TextView::new("    "))
             .child(TextView::new("Number of unique characters: "))
             .child(TextView::new("0")
                 .with_name(CHAR_COUNT))
         )
     )).title("Custom character selection"));
+}
+
+pub fn clear_custom_selection(s: &mut Cursive) {
+    s.call_on_name(CUSTOM_CHARS, |view: &mut EditView| { view.set_content(""); });
+    s.call_on_name(CHECK_UPPER, |view: &mut Checkbox| { view.uncheck(); });
+    s.call_on_name(CHECK_LOWER, |view: &mut Checkbox| { view.uncheck(); });
+    s.call_on_name(CHECK_DIGITS, |view: &mut Checkbox| { view.uncheck(); });
+    s.call_on_name(CHECK_SPECIAL, |view: &mut Checkbox| { view.uncheck(); });
+    show_char_count(s, "", 0)
 }
 
 pub fn generate_password(s: &mut Cursive, state_for_gen_pw: Arc<Mutex<AppState>>) {

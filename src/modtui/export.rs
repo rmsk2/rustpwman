@@ -167,7 +167,7 @@ pub fn window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Sen
     .padding_lrtb(2, 2, 1, 1)
     .content(
         LinearLayout::vertical()
-        .child(TextView::new("Please enter file name for saving exported data.\n\n"))
+        .child(TextView::new("Please enter file name for saving exported data in HTML format.\n\n"))
         .child(
             LinearLayout::horizontal()
                 .child(TextView::new("Filename: "))
