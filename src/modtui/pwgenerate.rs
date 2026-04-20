@@ -40,6 +40,11 @@ const CHECK_LOWER: &str = "check_lower";
 const CHECK_DIGITS: &str = "check_digits";
 const CHECK_SPECIAL: &str = "check_special";
 
+const UPPER_CASE: &str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const LOWER_CASE: &str = "abcdefghijklmnopqrstuvwxyz";
+const DEC_DIGITS: &str = "0123456789";
+const SPECIAL_CHARS: &str = "$!#%&";
+
 
 fn show_sec_bits(s: &mut Cursive, val: usize) {
     s.call_on_name(BITS_SEC_VALUE, |view: &mut TextArea| {
@@ -49,9 +54,42 @@ fn show_sec_bits(s: &mut Cursive, val: usize) {
 }
 
 fn show_char_count(s: &mut Cursive, data: &str, _c: usize) {
-    let temp = String::from(data);    
+    let temp = String::from(data);
     let l = eliminate_repititions(&temp).chars().count();
-    s.call_on_name(CHAR_COUNT, |view: &mut TextView| { view.set_content(l.to_string()); });   
+    s.call_on_name(CHAR_COUNT, |view: &mut TextView| { view.set_content(l.to_string()); });
+    check_char_groups(s, &temp);
+}
+
+fn check_char_groups(s: &mut Cursive, data: &String) {
+    let ref_data = set_from_str(data);
+
+    let ref_upper = set_from_str(&String::from(UPPER_CASE));
+    if ref_data.is_disjoint(&ref_upper) {
+        s.call_on_name(CHECK_UPPER, |view: &mut Checkbox| { view.uncheck(); });
+    } else {
+        s.call_on_name(CHECK_UPPER, |view: &mut Checkbox| { view.check(); });
+    }
+
+    let ref_lower = set_from_str(&String::from(LOWER_CASE));
+    if ref_data.is_disjoint(&ref_lower) {
+        s.call_on_name(CHECK_LOWER, |view: &mut Checkbox| { view.uncheck(); });
+    } else {
+        s.call_on_name(CHECK_LOWER, |view: &mut Checkbox| { view.check(); });
+    }
+
+    let ref_digits = set_from_str(&String::from(DEC_DIGITS));
+    if ref_data.is_disjoint(&ref_digits) {
+        s.call_on_name(CHECK_DIGITS, |view: &mut Checkbox| { view.uncheck(); });
+    } else {
+        s.call_on_name(CHECK_DIGITS, |view: &mut Checkbox| { view.check(); });
+    }
+
+    let ref_special = set_from_str(&String::from(SPECIAL_CHARS));
+    if ref_data.is_disjoint(&ref_special) {
+        s.call_on_name(CHECK_SPECIAL, |view: &mut Checkbox| { view.uncheck(); });
+    }  else {
+        s.call_on_name(CHECK_SPECIAL, |view: &mut Checkbox| { view.check(); });
+    }
 }
 
 fn on_strategy_changed(s: &mut Cursive, strategy: &GenerationStrategy) {
@@ -131,10 +169,10 @@ fn on_change_charset(s: &mut Cursive, new_value: bool, st: SelectionType) {
     let operand: HashSet<char>;
 
     operand = match st {
-        SelectionType::Upper => set_from_str(&String::from("ABCDEFGHIJKLMNOPQRSTUVWXYZ")),
-        SelectionType::Lower => set_from_str(&String::from("abcdefghijklmnopqrstuvwxyz")),
-        SelectionType::Digits => set_from_str(&String::from("0123456789")),
-        SelectionType::Special => set_from_str(&String::from("$!#%&")),
+        SelectionType::Upper => set_from_str(&String::from(UPPER_CASE)),
+        SelectionType::Lower => set_from_str(&String::from(LOWER_CASE)),
+        SelectionType::Digits => set_from_str(&String::from(DEC_DIGITS)),
+        SelectionType::Special => set_from_str(&String::from(SPECIAL_CHARS)),
     };
 
     let help = set_from_str(&current_chars);
