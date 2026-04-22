@@ -60,36 +60,23 @@ fn show_char_count(s: &mut Cursive, data: &str, _c: usize) {
     check_char_groups(s, &temp);
 }
 
+macro_rules! sync_checkbox {
+    ($s:expr, $ref_data:expr, $chars:expr, $name:expr) => {
+        if $ref_data.is_disjoint(&set_from_str(&String::from($chars))) {
+            $s.call_on_name($name, |view: &mut Checkbox| { view.uncheck(); });
+        } else {
+            $s.call_on_name($name, |view: &mut Checkbox| { view.check(); });
+        }
+    };
+}
+
 fn check_char_groups(s: &mut Cursive, data: &String) {
     let ref_data = set_from_str(data);
 
-    let ref_upper = set_from_str(&String::from(UPPER_CASE));
-    if ref_data.is_disjoint(&ref_upper) {
-        s.call_on_name(CHECK_UPPER, |view: &mut Checkbox| { view.uncheck(); });
-    } else {
-        s.call_on_name(CHECK_UPPER, |view: &mut Checkbox| { view.check(); });
-    }
-
-    let ref_lower = set_from_str(&String::from(LOWER_CASE));
-    if ref_data.is_disjoint(&ref_lower) {
-        s.call_on_name(CHECK_LOWER, |view: &mut Checkbox| { view.uncheck(); });
-    } else {
-        s.call_on_name(CHECK_LOWER, |view: &mut Checkbox| { view.check(); });
-    }
-
-    let ref_digits = set_from_str(&String::from(DEC_DIGITS));
-    if ref_data.is_disjoint(&ref_digits) {
-        s.call_on_name(CHECK_DIGITS, |view: &mut Checkbox| { view.uncheck(); });
-    } else {
-        s.call_on_name(CHECK_DIGITS, |view: &mut Checkbox| { view.check(); });
-    }
-
-    let ref_special = set_from_str(&String::from(SPECIAL_CHARS));
-    if ref_data.is_disjoint(&ref_special) {
-        s.call_on_name(CHECK_SPECIAL, |view: &mut Checkbox| { view.uncheck(); });
-    }  else {
-        s.call_on_name(CHECK_SPECIAL, |view: &mut Checkbox| { view.check(); });
-    }
+    sync_checkbox!(s, ref_data, UPPER_CASE,    CHECK_UPPER);
+    sync_checkbox!(s, ref_data, LOWER_CASE,    CHECK_LOWER);
+    sync_checkbox!(s, ref_data, DEC_DIGITS,    CHECK_DIGITS);
+    sync_checkbox!(s, ref_data, SPECIAL_CHARS, CHECK_SPECIAL);
 }
 
 fn on_strategy_changed(s: &mut Cursive, strategy: &GenerationStrategy) {
