@@ -53,7 +53,7 @@ fn show_sec_bits(s: &mut Cursive, val: usize) {
     });
 }
 
-fn show_char_count(s: &mut Cursive, data: &str, _c: usize) {
+fn on_char_change(s: &mut Cursive, data: &str, _c: usize) {
     let temp = String::from(data);
     let l = eliminate_repititions(&temp).chars().count();
     s.call_on_name(CHAR_COUNT, |view: &mut TextView| { view.set_content(l.to_string()); });
@@ -172,10 +172,11 @@ fn on_change_charset(s: &mut Cursive, new_value: bool, st: SelectionType) {
     }
 
     let new_chars = str_from_set(&help2).chars().sorted().collect::<String>();
-    let for_measurement = new_chars.clone();
 
-    s.call_on_name(CUSTOM_CHARS, |view: &mut EditView| { view.set_content(new_chars); });
-    show_char_count(s, for_measurement.as_str(), 0)
+    let opt_cb = s.call_on_name(CUSTOM_CHARS, |view: &mut EditView| { view.set_content(new_chars) });
+    if let Some(cb) = opt_cb {
+        cb(s);
+    }
 }
 
 
@@ -264,7 +265,7 @@ fn create_custom_select(last_selection: &String) -> Box<dyn View> {
         .child(LinearLayout::horizontal()
             .child(TextView::new("Custom characters: "))
             .child(EditView::new()
-                .on_edit(show_char_count)
+                .on_edit(on_char_change)
                 .content(last_selection.clone())
                 .with_name(CUSTOM_CHARS)
                 .fixed_width(70)))
@@ -281,13 +282,12 @@ fn create_custom_select(last_selection: &String) -> Box<dyn View> {
     )).title("Custom character selection"));
 }
 
+
 pub fn clear_custom_selection(s: &mut Cursive) {
-    s.call_on_name(CUSTOM_CHARS, |view: &mut EditView| { view.set_content(""); });
-    s.call_on_name(CHECK_UPPER, |view: &mut Checkbox| { view.uncheck(); });
-    s.call_on_name(CHECK_LOWER, |view: &mut Checkbox| { view.uncheck(); });
-    s.call_on_name(CHECK_DIGITS, |view: &mut Checkbox| { view.uncheck(); });
-    s.call_on_name(CHECK_SPECIAL, |view: &mut Checkbox| { view.uncheck(); });
-    show_char_count(s, "", 0)
+    let opt_cb = s.call_on_name(CUSTOM_CHARS, |view: &mut EditView| { view.set_content("") });
+    if let Some(cb) = opt_cb {
+        cb(s);
+    }
 }
 
 pub fn generate_password(s: &mut Cursive, state_for_gen_pw: Arc<Mutex<AppState>>) {
@@ -368,5 +368,5 @@ pub fn generate_password(s: &mut Cursive, state_for_gen_pw: Arc<Mutex<AppState>>
     s.add_layer(res);
     show_sec_bits(s, sec_bits);
     on_strategy_changed(s, &default_strategy);
-    show_char_count(s, for_measurement, 0);
+    on_char_change(s, for_measurement, 0);
 }
