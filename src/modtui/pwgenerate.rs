@@ -73,9 +73,9 @@ macro_rules! sync_checkbox {
 fn check_char_groups(s: &mut Cursive, data: &String) {
     let ref_data = set_from_str(data);
 
-    sync_checkbox!(s, ref_data, UPPER_CASE,    CHECK_UPPER);
-    sync_checkbox!(s, ref_data, LOWER_CASE,    CHECK_LOWER);
-    sync_checkbox!(s, ref_data, DEC_DIGITS,    CHECK_DIGITS);
+    sync_checkbox!(s, ref_data, UPPER_CASE, CHECK_UPPER);
+    sync_checkbox!(s, ref_data, LOWER_CASE, CHECK_LOWER);
+    sync_checkbox!(s, ref_data, DEC_DIGITS, CHECK_DIGITS);
     sync_checkbox!(s, ref_data, SPECIAL_CHARS, CHECK_SPECIAL);
 }
 
