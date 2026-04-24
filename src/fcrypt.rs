@@ -148,6 +148,7 @@ impl KdfId {
     }
 }
 
+#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
 pub enum CipherId {
     Aes256Gcm,
     Aes192Gcm,

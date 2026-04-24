@@ -101,6 +101,7 @@ struct RustPwMan {
     copy_command: String,
     viewer_command: Option<String>,
     bkp_file_name: Option<String>,
+    cipher: Option<String>,
     webdav_user: String,
     webdav_pw: String,
     webdav_server: String,
@@ -127,9 +128,9 @@ impl fmt::Display for CfgSource {
 }
 
 #[allow(unused_variables)]
-pub fn make_cryptor(id: &str, d: fcrypt::KeyDeriver, i: fcrypt::KdfId) -> Box<dyn fcrypt::Cryptor> {
+pub fn determine_cipher_id(id: &str) -> fcrypt::CipherId {
     #[cfg(not(feature = "chacha20"))]
-    return SINGLE_CIPHER_DEFAULT.make(d, i);
+    return SINGLE_CIPHER_DEFAULT;
 
     #[cfg(feature = "chacha20")]
     {
@@ -145,11 +146,16 @@ pub fn make_cryptor(id: &str, d: fcrypt::KeyDeriver, i: fcrypt::KdfId) -> Box<dy
         algo_id = algo_id.to_lowercase();
 
         if let Some(cip_id) = CipherId::from_str(algo_id.as_str()) {
-            return cip_id.make(d, i);
+            return cip_id;
         } else {
-            return MULTIPLE_CIPHER_DEFAULT_ENV_SET.make(d, i);
+            return MULTIPLE_CIPHER_DEFAULT_ENV_SET;
         }
     }
+}
+
+
+pub fn make_cryptor(id: &str, d: fcrypt::KeyDeriver, i: fcrypt::KdfId) -> Box<dyn fcrypt::Cryptor> {
+    return determine_cipher_id(id).make(d, i);
 }
 
 impl RustPwMan {
@@ -168,7 +174,8 @@ impl RustPwMan {
             webdav_user: String::new(),
             webdav_pw: String::new(),
             webdav_server: String::new(),
-            info: None
+            info: None,
+            cipher: None
         };
 
         res.reset_config();
@@ -190,6 +197,7 @@ impl RustPwMan {
         self.webdav_pw = String::from("");
         self.webdav_server = String::from("");
         self.info = None;
+        self.cipher = None;
     }
 
     fn is_option_present(matches: &clap::ArgMatches, id: &str) -> bool {
@@ -242,6 +250,21 @@ impl RustPwMan {
         return path;
     }
 
+    fn get_cipher_id(&self, matches: &clap::ArgMatches) -> String {
+        let mut algo_id = String::from("");
+
+        if let Some(c) = self.cipher.clone() {
+            algo_id = c;
+        }
+
+        let a: Option<&String> = matches.get_one(ARG_CIPHER);
+        if let Some(id) = a {
+            algo_id = String::from(id.as_str());
+        }
+
+        return algo_id;
+    }
+
     fn load_named_config(&mut self, cfg_file: &PathBuf, fail_reaction: CfgFailReaction, source: CfgSource) -> Option<String>{
         let mut file_was_read = false;
 
@@ -262,9 +285,15 @@ impl RustPwMan {
             }
 
             // If the config contains a backup file name use this instead of the value
-            // read from the environment.            
+            // read from the environment.
             if loaded_config.bkp_file_name != None {
                 self.bkp_file_name = loaded_config.bkp_file_name;
+            }
+
+            // If the config contains a cipher name use this instead of the value
+            // read from the environment.
+            if loaded_config.cipher != None {
+                self.cipher = loaded_config.cipher;
             }
 
             self.webdav_user = loaded_config.webdav_user;
@@ -434,11 +463,7 @@ impl RustPwMan {
             Ok(p) => p
         };
 
-        let a: Option<&String> = encrypt_matches.get_one(ARG_CIPHER);
-        let algo_id = match a {
-            Some(s) => String::from(s.as_str()),
-            None => String::from("")
-        };
+        let algo_id = self.get_cipher_id(encrypt_matches);
 
         let cr_gen = Box::new(move |k: fcrypt::KeyDeriver, i: fcrypt::KdfId| -> Box<dyn fcrypt::Cryptor>  {
             return make_cryptor(algo_id.as_str(), k, i);
@@ -482,11 +507,7 @@ impl RustPwMan {
         self.set_pbkdf_from_command_line(decrypt_matches);
         let (file_in, file_out) = RustPwMan::determine_in_out_files(decrypt_matches);
 
-        let a: Option<&String> = decrypt_matches.get_one(ARG_CIPHER);
-        let algo_id = match a {
-            Some(s) => String::from(s.as_str()),
-            None => String::from("")
-        };
+        let algo_id = self.get_cipher_id(decrypt_matches);
 
         let cr_gen = Box::new(move |k: fcrypt::KeyDeriver, i: fcrypt::KdfId| -> Box<dyn fcrypt::Cryptor>  {
             return make_cryptor(algo_id.as_str(), k, i);
@@ -595,11 +616,7 @@ impl RustPwMan {
         let mut p = self.webdav_pw.clone();
         let s = self.webdav_server.clone();
 
-        let cip: Option<&String> = gui_matches.get_one(ARG_CIPHER);
-        let algo_id = match cip {
-            Some(s) => String::from(s.as_str()),
-            None => String::from("")
-        };
+        let algo_id = self.get_cipher_id(gui_matches);
 
         let cr_gen_gen = Box::new(move || -> jots::CryptorGen {
             let h = algo_id.clone();
@@ -659,7 +676,13 @@ impl RustPwMan {
             viewer_cmd = self.viewer_command.clone();
         }
 
-        tuiconfig::config_main(self, config_file_name, self.default_sec_level, self.default_pw_gen, self.default_deriver_id, &self.paste_command, &self.copy_command, &self.webdav_user, &self.webdav_pw, &self.webdav_server, &viewer_cmd);
+        let mut cipher_id = determine_cipher_id("");
+
+        if let Some(id) = self.cipher.clone() {
+            cipher_id = determine_cipher_id(id.as_str());
+        }
+
+        tuiconfig::config_main(self, config_file_name, self.default_sec_level, self.default_pw_gen, self.default_deriver_id, &self.paste_command, &self.copy_command, &self.webdav_user, &self.webdav_pw, &self.webdav_server, &viewer_cmd, cipher_id);
     }
 
     fn perform_generate_command(&mut self, generate_matches: &clap::ArgMatches) {

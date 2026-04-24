@@ -436,7 +436,7 @@ fn test_save_load_config() {
     const TEST_CONF_NAME: &str = "config_test_delete_me.toml";
 
     current_dir.push(TEST_CONF_NAME);
-    let c = tomlconfig::RustPwManSerialize::new(15, "egal1", "egal2", "egal42", "egal43", "user", "password", "server", None, None);
+    let c = tomlconfig::RustPwManSerialize::new(15, "egal1", "egal2", "egal42", "egal43", "user", "password", "server", None, None, None);
 
     match tomlconfig::save(&current_dir, c) {
         Some(e) => panic!("{:?}", e),

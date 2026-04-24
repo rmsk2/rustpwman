@@ -24,6 +24,7 @@ use std::io::Write;
 pub struct RustPwManSerialize {
     pub seclevel: usize,
     pub pbkdf: String,
+    pub cipher: Option<String>,
     pub pwgen: String,
     pub clip_cmd: String,
     pub copy_cmd: String,
@@ -35,10 +36,11 @@ pub struct RustPwManSerialize {
 }
 
 impl RustPwManSerialize {
-    pub fn new(seclevel: usize, pbkdf: &str, pwgen: &str, clip_command: &str, copy_command: &str, user: &str, pw: &str, server: &str, view: Option<String>, bkp_file: Option<String>) -> Self {
+    pub fn new(seclevel: usize, pbkdf: &str, pwgen: &str, clip_command: &str, copy_command: &str, user: &str, pw: &str, server: &str, view: Option<String>, bkp_file: Option<String>, c: Option<String>) -> Self {
         return RustPwManSerialize {
             seclevel: seclevel,
             pbkdf: String::from(pbkdf),
+            cipher: c,
             pwgen: String::from(pwgen),
             clip_cmd: String::from(clip_command),
             copy_cmd: String::from(copy_command),

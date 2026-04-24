@@ -8,7 +8,7 @@ can be used over SSH.
 # Building the software
 
 Under Linux and macOS use `cargo build --release` to build with all features enabled. Under Windows you should call the batch file `build_win.bat` from a
-Visual Studio Developer prompt for this purpose. On top of that there is a separate section in this README that deals with building under Windows. If you want
+Visual Studio Developer prompt for this purpose. On top of that there is a separate section in this README that deals with [building under Windows](#native). If you want
 a minimal set of features (and therefore a minimal set of dependencies) you can use `cargo build --release --no-default-features` under Linux, macOS and Windows.
 In this case the password cache, support for WebDAV, additional crypto algorithms, support for scrypt, the automatic local backup feature and the possibility to encode
 an entry in a QR code are not available. If you want to select features one by one you will find a list of feature names [below](#feature-overwiew). On Linux you will
@@ -253,6 +253,7 @@ This screenshot was taken while running a version which was compiled with all fe
 [defaults]
 seclevel = 18
 pbkdf = "argon2"
+cipher = "aes256"
 pwgen = "special"
 clip_cmd = "xsel -ob"
 copy_cmd = "xsel -ib"
@@ -267,6 +268,7 @@ Where the entries have the following semantics:
 
 - `seclevel` has to be an integer between 0 and 31. The security level in bits is calculated as (`seclevel` + 1) * 8.
 - `pbkdf` is a string that can assume the values `scrypt`, `argon2`, `sha256`
+- `cipher` is a string which can assume the values `aes192`, `aes256` or `chacha20` and selects the encryptio algorithm used by `rustpwman`. This entry is optional. If it is missing you can select a cipher via a command line parameter or an evironment variable. If these are also not present `aes256` is chosen as a default.
 - `pwgen` is one of the strings `base64`, `hex`, `numeric` or `special`
 - `clip_cmd` is a string which specifies a command that can be used to write the current contents of the clipboard to stdout.
 - `copy_cmd` is a string which specifies a command that can be used to transfer the data sent to it via stdin to the clipboard.
@@ -294,7 +296,8 @@ You can influence the behaviour of `rustpwman` via the values of the following e
 
 |Name | Intended use |
 |-|-|
-|`PWMANCIPHER`| If the `chacha20` feature is active and this variable is set then the values `AES192` and `AES256` select AES-192 GCM or AES-256 GCM as a cipher. Any other value selects ChaCha20-Poly1305. If not set AES-256 GCM is used. If an algo is specified on the command line then it takes precendence over the contents of this environment variable. |
+|`PWMANCIPHER`| If the `chacha20` feature is active and this variable is set then the values `AES192` and `AES256` select AES-192 GCM or AES-256 GCM as a cipher. Any other value selects ChaCha20-Poly1305. If not set AES-256 GCM is used. If an algo is specified in the config file then it takes precendence over the contents of this environment variable. If a cipher is
+selected on the command line it overrides values set in the environment or in the config file. |
 |`PWMANBKP`| If the feature `writebackup` is active the contents of this variable specifies the file name to store the backup in. If neither this variable nor the config entry `bkp_file_name` is set then the default value `rustpwman_last.enc` will be used. If the config entry is present it takes precedence over the environment variable. |
 |`RUSTPWMAN_OBFUSCATION`| Key used to obfuscate WebDAV access data, if the `webdav`  feature is active. |
 |`RUSTPWMAN_VIEWER`| Prefix for the command to start an image viewer to which the file name of the image (containing a QR code) is appended if the `qrcode` feature is enabled. If the value `viewer_cmd` in the config file is set it takes precendence over the environment variable. |
@@ -374,7 +377,8 @@ value makes `rustpwman` using ChaCha20 Poly-1305. If the variable is not set whe
 
 As an alternative to setting an environment variable you can also use the `--cipher` or `-c` command line option and one of the parameters
 `aes256`, `aes192` or `chacha20` to determine the cipher which is used by `rustpwman`. This option works with the `enc`, `dec` and
-the `gui` command. This may serve as an example: `rustpwman gui -i input_file.enc -c chacha20`.
+the `gui` command. This may serve as an example: `rustpwman gui -i input_file.enc -c chacha20`. You can also use the same values to specify a cipher via the config
+file entry `cipher`.
 
 ChaCha20 Poly-1305 provides security comparable to AES-256 GCM and so it comes down to a matter of taste which cipher you use. Even though AES-192 has a shorter key than AES-256
 a key length of 192 bits should still be past anyones paranoia level. On top of that it is very unlikely that you use a password with a 192 bit or higher entropy to derive

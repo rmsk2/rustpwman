@@ -100,7 +100,8 @@ pub fn obfuscate_password(s: &mut Cursive) {
     s.call_on_name("webdav_password", |view: &mut EditView| { view.set_content(pw) });
 }
 
-pub fn save_new_config(s: &mut Cursive, u: &String, p: &String, srv: &String, config_file: &std::path::PathBuf, strat: &RadioGroup<pwgen::GenerationStrategy>, pbkdf: &RadioGroup<fcrypt::KdfId>, vwr: &Option<String>, bkp_file: &Option<String>) {
+#[allow(unused_variables)]
+pub fn save_new_config(s: &mut Cursive, u: &String, p: &String, srv: &String, config_file: &std::path::PathBuf, strat: &RadioGroup<pwgen::GenerationStrategy>, pbkdf: &RadioGroup<fcrypt::KdfId>, vwr: &Option<String>, bkp_file: &Option<String>, cipher: &RadioGroup<fcrypt::CipherId>) {
     #[allow(unused_mut, unused_assignments)]
     let mut user = u.clone();
     #[allow(unused_mut, unused_assignments)]
@@ -197,8 +198,19 @@ pub fn save_new_config(s: &mut Cursive, u: &String, p: &String, srv: &String, co
 
     let strategy = strat.selection();
     let pbkdf = &pbkdf.selection();
+    let cipher_id: Option<String>;
 
-    let new_config = RustPwManSerialize::new(rand_bytes, pbkdf.to_str(), strategy.to_str(), clip_command.as_str(), copy_command.as_str(), user.as_str(), pw.as_str(), server.as_str(), viewer_command, backup_file_name);
+    #[cfg(not(feature = "chacha20"))]
+    {
+        cipher_id = None;
+    }
+
+    #[cfg(feature = "chacha20")]
+    {
+        cipher_id = Some(String::from(cipher.selection().to_str()));
+    }
+
+    let new_config = RustPwManSerialize::new(rand_bytes, pbkdf.to_str(), strategy.to_str(), clip_command.as_str(), copy_command.as_str(), user.as_str(), pw.as_str(), server.as_str(), viewer_command, backup_file_name, cipher_id);
 
     match tomlconfig::save(config_file, new_config) {
         Some(e) => {
@@ -212,7 +224,7 @@ pub fn save_new_config(s: &mut Cursive, u: &String, p: &String, srv: &String, co
 
 #[allow(unused_variables)]
 pub fn config_main(app: &RustPwMan, config_file: std::path::PathBuf, sec_level: usize, pw_gen_strategy: pwgen::GenerationStrategy, pbkdf_id: fcrypt::KdfId,
-                   clp_cmd: &String, cpy_cmd: &String, webdav_user: &String, webdav_pw: &String, webdav_server: &String, viewer_cmd: &Option<String>) {
+                   clp_cmd: &String, cpy_cmd: &String, webdav_user: &String, webdav_pw: &String, webdav_server: &String, viewer_cmd: &Option<String>, cipher_id: fcrypt::CipherId) {
     let mut siv = cursive::default();
 
     let mut strategy_group: RadioGroup<pwgen::GenerationStrategy> = RadioGroup::new();
@@ -246,6 +258,37 @@ pub fn config_main(app: &RustPwMan, config_file: std::path::PathBuf, sec_level: 
         linear_layout_pbkdf.add_child(TextView::new(" "));
     }
 
+    let mut cipher_group: RadioGroup<fcrypt::CipherId> = RadioGroup::new();
+
+    let mut linear_layout_cipher = LinearLayout::horizontal()
+        .child(TextView::new("Encryption algorithm   : "));
+
+    for i in &fcrypt::CipherId::get_known_ids() {
+        let mut b = cipher_group.button(*i, i.to_str());
+
+        if *i == cipher_id {
+            b.select();
+        }
+
+        linear_layout_cipher.add_child(b);
+        linear_layout_cipher.add_child(TextView::new(" "));
+    }
+
+    #[cfg(not(feature = "chacha20"))]
+    let algo_panel = Panel::new(
+            PaddedView::new(Margins::lrtb(1,1,1,1), linear_layout_pbkdf)
+        ).title("Default crypto algorithms");
+
+    #[cfg(feature = "chacha20")]
+    let algo_panel = Panel::new(
+        PaddedView::new(Margins::lrtb(1,1,1,1),
+            LinearLayout::vertical()
+            .child(linear_layout_pbkdf)
+            .child(TextView::new("\n"))
+            .child(linear_layout_cipher)
+        )
+    ).title("Default crypto algorithms");
+
     let mut config_panels = LinearLayout::vertical();
 
     config_panels.add_child(Panel::new(
@@ -273,16 +316,11 @@ pub fn config_main(app: &RustPwMan, config_file: std::path::PathBuf, sec_level: 
         .title("Parameters for password generation")
     );
 
-    config_panels.add_child(
-        Panel::new(
-            PaddedView::new(Margins::lrtb(1,1,1,1),
-                linear_layout_pbkdf)
-            ).title("Default PBKDF")
-    );
+    config_panels.add_child(algo_panel);
 
     let mut cmds_layout =LinearLayout::vertical();
     cmds_layout.add_child(LinearLayout::horizontal()
-        .child(TextView::new("Paste command        : "))
+        .child(TextView::new("Paste command       : "))
         .child(EditView::new()
             .with_name(EDIT_PASTE_COMMAND)
             .fixed_width(60))
@@ -291,7 +329,7 @@ pub fn config_main(app: &RustPwMan, config_file: std::path::PathBuf, sec_level: 
     cmds_layout.add_child(TextView::new("\n"));
 
     cmds_layout.add_child(LinearLayout::horizontal()
-        .child(TextView::new("Copy command         : "))
+        .child(TextView::new("Copy command        : "))
         .child(EditView::new()
             .with_name(EDIT_COPY_COMMAND)
             .fixed_width(60)));
@@ -300,7 +338,7 @@ pub fn config_main(app: &RustPwMan, config_file: std::path::PathBuf, sec_level: 
     {
         cmds_layout.add_child(TextView::new("\n"));
         cmds_layout.add_child(LinearLayout::horizontal()
-            .child(TextView::new("Image viewer command : "))
+            .child(TextView::new("Image viewer command: "))
             .child(EditView::new()
                 .with_name(EDIT_VIEWER_COMMAND)
                 .fixed_width(60)));
@@ -387,7 +425,7 @@ pub fn config_main(app: &RustPwMan, config_file: std::path::PathBuf, sec_level: 
     let bkp_f = app.get_backup_file_name_str();
     let bkp_f_helper = bkp_f.clone();
 
-    res.add_button("OK", move |s| save_new_config(s, &u, &p, &serv, &config_file, &strategy_group, &pbkdf_group, &vwr, &bkp_f));
+    res.add_button("OK", move |s| save_new_config(s, &u, &p, &serv, &config_file, &strategy_group, &pbkdf_group, &vwr, &bkp_f, &cipher_group));
     res.add_button("Cancel", |s| s.quit() );
 
     #[cfg(feature = "webdav")]
