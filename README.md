@@ -268,7 +268,7 @@ Where the entries have the following semantics:
 
 - `seclevel` has to be an integer between 0 and 31. The security level in bits is calculated as (`seclevel` + 1) * 8.
 - `pbkdf` is a string that can assume the values `scrypt`, `argon2`, `sha256`
-- `cipher` is a string which can assume the values `aes192`, `aes256` or `chacha20` and selects the encryptio algorithm used by `rustpwman`. This entry is optional. If it is missing you can select a cipher via a command line parameter or an evironment variable. If these are also not present `aes256` is chosen as a default.
+- `cipher` is a string which can assume the values `aes192`, `aes256` or `chacha20` and selects the encryption algorithm used by `rustpwman`. This entry is optional. If it is missing you can select a cipher via a command line parameter or an evironment variable. If these are also not present `aes256` is chosen as a default.
 - `pwgen` is one of the strings `base64`, `hex`, `numeric` or `special`
 - `clip_cmd` is a string which specifies a command that can be used to write the current contents of the clipboard to stdout.
 - `copy_cmd` is a string which specifies a command that can be used to transfer the data sent to it via stdin to the clipboard.
@@ -437,10 +437,12 @@ cargo build --release --no-default-features --features webdav,qrcode,chacha20,wr
 
 # Rustpwman under Windows
 
+![](/windows.png?raw=true "Screenshot on Windows")
+
 ## Native
 
-Even though its main development platform is Linux/macOS `rustpwman` works on Windows and it even works well. I have tested the `pancurses` and the `crossterm` backend of `cursive` under
-Windows. The [`pancurses`](https://github.com/ihalila/pancurses) backend uses a binding to a C library and requires an [installed C compiler](https://github.com/ihalila/pdcurses-sys)
+Even though its main development platform is Linux/macOS `rustpwman` works on Windows and it even works well. I have tested the `pancurses` and the `crossterm` (see screenshot above) backend 
+of `cursive` under Windows. The [`pancurses`](https://github.com/ihalila/pancurses) backend uses a binding to a C library and requires an [installed C compiler](https://github.com/ihalila/pdcurses-sys)
 in order to build. On the other hand Rust itself is dependent on a C compiler when used under Windows (I use the Visual Studio Community Edition for this project).
 Both backends work well.
 
