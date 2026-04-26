@@ -304,19 +304,17 @@ fn create_command_selection_ui() -> Panel<PaddedView<LinearLayout>> {
 }
 
 #[cfg(feature = "writebackup")]
-fn add_writebackup_ui(config_panels: &mut LinearLayout) {
-    config_panels.add_child(
-        Panel::new(
-            PaddedView::new(Margins::lrtb(1,1,1,1),
-                LinearLayout::horizontal()
-                    .child(TextView::new("Filename: "))
-                    .child(EditView::new()
-                        .with_name(EDIT_BACKUP_FILE)
-                        .fixed_width(65))
+fn create_writebackup_ui() -> Panel<PaddedView<LinearLayout>> {
+    return Panel::new(
+        PaddedView::new(Margins::lrtb(1,1,1,1),
+            LinearLayout::horizontal()
+                .child(TextView::new("Filename: "))
+                .child(EditView::new()
+                    .with_name(EDIT_BACKUP_FILE)
+                    .fixed_width(65))
         )
     )
     .title("Name of file to use for automatic backup")
-    );
 }
 
 #[cfg(feature = "writebackup")]
@@ -331,38 +329,35 @@ fn set_write_backup_state(siv: &mut Cursive, bkp_f: &Option<String>) {
 }
 
 #[cfg(feature = "webdav")]
-fn add_wbdav_ui(config_panels: &mut LinearLayout) {
-    config_panels.add_child(
-        Panel::new(
-            PaddedView::new(Margins::lrtb(1,1,1,1),
-            LinearLayout::vertical()
-            .child(
-                LinearLayout::horizontal()
-                    .child(TextView::new("User-ID : "))
-                    .child(EditView::new()
-                        .with_name("webdav_user")
-                        .fixed_width(65))
-            )
-            .child(TextView::new("\n"))
-            .child(
-                LinearLayout::horizontal()
-                    .child(TextView::new("Password: "))
-                    .child(EditView::new()
-                        .with_name("webdav_password")
-                        .fixed_width(65))
-            )
-            .child(TextView::new("\n"))
-            .child(
-                LinearLayout::horizontal()
-                    .child(TextView::new("Server  : "))
-                    .child(EditView::new()
-                        .with_name("webdav_server")
-                        .fixed_width(65))
-            )
+fn create_wbdav_ui() -> Panel<PaddedView<LinearLayout>> {
+    return Panel::new(
+        PaddedView::new(Margins::lrtb(1,1,1,1),
+        LinearLayout::vertical()
+        .child(
+            LinearLayout::horizontal()
+                .child(TextView::new("User-ID : "))
+                .child(EditView::new()
+                    .with_name("webdav_user")
+                    .fixed_width(65))
+        )
+        .child(TextView::new("\n"))
+        .child(
+            LinearLayout::horizontal()
+                .child(TextView::new("Password: "))
+                .child(EditView::new()
+                    .with_name("webdav_password")
+                    .fixed_width(65))
+        )
+        .child(TextView::new("\n"))
+        .child(
+            LinearLayout::horizontal()
+                .child(TextView::new("Server  : "))
+                .child(EditView::new()
+                    .with_name("webdav_server")
+                    .fixed_width(65)))
         )
     )
-    .title("WebDAV parameters")
-    );
+    .title("WebDAV parameters");
 }
 
 #[cfg(feature = "webdav")]
@@ -442,10 +437,10 @@ pub fn config_main(app: &RustPwMan, config_file: std::path::PathBuf, sec_level: 
     config_panels.add_child(create_command_selection_ui());    
 
     #[cfg(feature = "writebackup")]
-    add_writebackup_ui(&mut config_panels);
+    config_panels.add_child(create_writebackup_ui());
 
     #[cfg(feature = "webdav")]
-    add_wbdav_ui(&mut config_panels);
+    config_panels.add_child(create_wbdav_ui());
 
     let title_str = match config_file.as_os_str().to_str() {
         Some(s) => s,
