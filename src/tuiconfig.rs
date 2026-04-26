@@ -41,11 +41,19 @@ const BITS_SEC_VALUE: &str = "cfgseclevel";
 const SLIDER_SEC_NAME: &str = "cfgslider";
 const EDIT_PASTE_COMMAND: &str = "pastecmd";
 const EDIT_COPY_COMMAND: &str = "copycmd";
-#[cfg(feature = "qrcode")]
 const EDIT_VIEWER_COMMAND: &str = "viewercmd";
 #[cfg(feature = "writebackup")]
 const EDIT_BACKUP_FILE: &str = "backupfile";
 
+
+#[cfg(not(feature = "chacha20"))]
+const CHACHA20:bool = false;
+#[cfg(feature = "chacha20")]
+const CHACHA20:bool = true;
+#[cfg(not(feature = "qrcode"))]
+const QR_CODE: bool = false;
+#[cfg(feature = "qrcode")]
+const QR_CODE: bool = true;
 
 pub fn show_yes_no_decision(siv: &mut Cursive, msg: &str) {
     siv.add_layer(
@@ -186,13 +194,9 @@ pub fn save_new_config(s: &mut Cursive, u: &String, p: &String, srv: &String, co
     let pbkdf = &pbkdf.selection();
     let cipher_id: Option<String>;
 
-    #[cfg(not(feature = "chacha20"))]
-    {
+    if !CHACHA20 {
         cipher_id = None;
-    }
-
-    #[cfg(feature = "chacha20")]
-    {
+    } else {
         cipher_id = Some(String::from(cipher.selection().to_str()));
     }
 
@@ -268,7 +272,7 @@ fn create_pw_gen_strategy_selection_ui(pw_gen_strategy: pwgen::GenerationStrateg
     return (linear_layout_pw_gen, strategy_group);    
 }
 
-fn create_command_selection_ui(viewer_select: Option<LinearLayout>) -> Panel<PaddedView<LinearLayout>> {
+fn create_command_selection_ui() -> Panel<PaddedView<LinearLayout>> {
     let mut cmds_layout = LinearLayout::vertical();
     cmds_layout.add_child(LinearLayout::horizontal()
         .child(TextView::new("Paste command       : "))
@@ -285,9 +289,15 @@ fn create_command_selection_ui(viewer_select: Option<LinearLayout>) -> Panel<Pad
             .with_name(EDIT_COPY_COMMAND)
             .fixed_width(60)));
 
-    if let Some(viewer_select_val) = viewer_select {
+    if QR_CODE {
+        let viewer_select = LinearLayout::horizontal()
+                .child(TextView::new("Image viewer command: "))
+                .child(EditView::new()
+                    .with_name(EDIT_VIEWER_COMMAND)
+                    .fixed_width(60));
+
         cmds_layout.add_child(TextView::new("\n"));
-        cmds_layout.add_child(viewer_select_val);
+        cmds_layout.add_child(viewer_select);
     }
 
     return Panel::new(PaddedView::new(Margins::lrtb(1,1,1,1), cmds_layout)).title("Helper commands")
@@ -363,20 +373,6 @@ fn set_webdav_state(siv: &mut Cursive, webdav_user: &String, webdav_server: &Str
 
 }
 
-#[cfg(not(feature = "qrcode"))]
-fn create_qr_viewer_select_ui() -> Option<LinearLayout>{
-    return None;
-}
-
-#[cfg(feature = "qrcode")]
-fn create_qr_viewer_select_ui() -> Option<LinearLayout>{
-    return Some(LinearLayout::horizontal()
-            .child(TextView::new("Image viewer command: "))
-            .child(EditView::new()
-                .with_name(EDIT_VIEWER_COMMAND)
-                .fixed_width(60)));
-}
-
 #[cfg(feature = "qrcode")]
 fn set_qrcode_state(siv: &mut Cursive, viewer_cmd: &Option<String>) {
     if let Some(vc) = viewer_cmd {
@@ -412,26 +408,17 @@ fn create_pw_strategy_select_ui(sec_level: usize, linear_layout_pw_gen: LinearLa
         .title("Parameters for password generation");
 }
 
-fn create_algo_select_ui(linear_layout_pbkdf: LinearLayout, cipher_select_opt: Option<LinearLayout>) -> Panel<PaddedView<LinearLayout>> {
+fn create_algo_select_ui(linear_layout_pbkdf: LinearLayout, cipher_select: LinearLayout) -> Panel<PaddedView<LinearLayout>> {
     let mut lin = LinearLayout::vertical();
     
     lin.add_child(linear_layout_pbkdf);
-    if let Some(cipher_select) = cipher_select_opt {
+
+    if CHACHA20 {
         lin.add_child(TextView::new("\n"));
         lin.add_child(cipher_select);
     }
 
     return Panel::new(PaddedView::new(Margins::lrtb(1,1,1,1),lin)).title("Default crypto algorithms");
-}
-
-#[cfg(not(feature = "chacha20"))]
-fn create_chacha20_select_ui(_linear_layout_cipher: LinearLayout) -> Option<LinearLayout>{
-    return None
-}
-
-#[cfg(feature = "chacha20")]
-fn create_chacha20_select_ui(linear_layout_cipher: LinearLayout) -> Option<LinearLayout>{
-    return Some(linear_layout_cipher)
 }
 
 fn set_clip_commands_state(siv: &mut Cursive, clp_cmd: &String, cpy_cmd: &String) {
@@ -451,8 +438,8 @@ pub fn config_main(app: &RustPwMan, config_file: std::path::PathBuf, sec_level: 
     let mut config_panels = LinearLayout::vertical();
 
     config_panels.add_child(create_pw_strategy_select_ui(sec_level, linear_layout_pw_gen));
-    config_panels.add_child(create_algo_select_ui(linear_layout_pbkdf, create_chacha20_select_ui(linear_layout_cipher)));
-    config_panels.add_child(create_command_selection_ui(create_qr_viewer_select_ui()));    
+    config_panels.add_child(create_algo_select_ui(linear_layout_pbkdf, linear_layout_cipher));
+    config_panels.add_child(create_command_selection_ui());    
 
     #[cfg(feature = "writebackup")]
     add_writebackup_ui(&mut config_panels);
