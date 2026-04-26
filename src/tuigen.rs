@@ -20,7 +20,8 @@ use cursive::Cursive;
 
 use crate::pwgen;
 use crate::modtui;
-use crate::tuiconfig;
+use crate::modtui::show_message;
+use crate::modtui::pwgenerate::show_sec_bits;
 
 const GEN_BITS_SEC_VALUE: &str = "genseclevel";
 const GEN_SLIDER_SEC_NAME: &str = "genslider";
@@ -30,12 +31,6 @@ const GEN_DIALOG: &str = "pwgendialog";
 const MAX_NUM_PASSWORDS: usize = 30;
 const NUM_PW_DEFAULT: usize = 0;
 
-fn show_sec_bits(s: &mut Cursive, val: usize) {
-    s.call_on_name(GEN_BITS_SEC_VALUE, |view: &mut TextArea| {
-        let out = format!("{}", (val + 1) * 8);
-        view.set_content(out.clone());
-    });
-}
 
 fn show_num_pws(s: &mut Cursive, val: usize) {
     s.call_on_name(GEN_NUM_PW_VALUE, |view: &mut TextArea| {
@@ -92,7 +87,7 @@ pub fn generate_main(sec_level: usize, pw_gen_strategy: pwgen::GenerationStrateg
             .child(TextView::new("Bits: "))
             .child(SliderView::horizontal(modtui::PW_MAX_SEC_LEVEL)
                 .value(sec_level)
-                .on_change(|s, slider_val| { show_sec_bits(s, slider_val) })
+                .on_change(|s, slider_val| { show_sec_bits(s, slider_val, GEN_BITS_SEC_VALUE) })
                 .with_name(GEN_SLIDER_SEC_NAME))
         )
         .child(TextView::new("\n"))
@@ -117,7 +112,7 @@ pub fn generate_main(sec_level: usize, pw_gen_strategy: pwgen::GenerationStrateg
         let h = match s.call_on_name(GEN_SLIDER_SEC_NAME, |view: &mut SliderView| { view.get_value() }) {
             Some(v) => v,
             None => { 
-                tuiconfig::show_message(s, "Unable to determine security level"); 
+                show_message(s, "Unable to determine security level");
                 return; 
             }
         };
@@ -125,7 +120,7 @@ pub fn generate_main(sec_level: usize, pw_gen_strategy: pwgen::GenerationStrateg
         let h3 = match s.call_on_name(GEN_SLIDER_NUM_PW_NAME, |view: &mut SliderView| { view.get_value() }) {
             Some(v) => v,
             None => { 
-                tuiconfig::show_message(s, "Unable to determine number of passwords to generate"); 
+                show_message(s, "Unable to determine number of passwords to generate");
                 return; 
             }
         };        
@@ -145,16 +140,11 @@ pub fn generate_main(sec_level: usize, pw_gen_strategy: pwgen::GenerationStrateg
     .with_name(GEN_DIALOG);
     
     siv.add_layer(res);
-    show_sec_bits(&mut siv, sec_level);
+    show_sec_bits(&mut siv, sec_level, GEN_BITS_SEC_VALUE);
     show_num_pws(&mut siv, NUM_PW_DEFAULT);
     siv.call_on_name(GEN_DIALOG, |view: &mut Dialog| {view.set_focus(DialogFocus::Button(0))});
 
-    match crate::modtui::tuitheme::get_theme() {
-        Ok(theme) => siv.set_theme(theme),
-        Err(e) => { 
-            tuiconfig::show_message(&mut siv, format!("Error in theme.json:\n\n{}\n\nDefault theme will be used!", e).as_str()); 
-        }
-    }
+    crate::load_theme!(siv);
 
     siv.run();
 

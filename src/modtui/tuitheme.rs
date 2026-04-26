@@ -82,3 +82,15 @@ fn parse_borders(s: Option<String>) -> BorderStyle {
     }
     BorderStyle::None
 }
+
+#[macro_export]
+macro_rules! load_theme {
+    ($siv:expr) => {
+        match crate::modtui::tuitheme::get_theme() {
+            Ok(theme) => $siv.set_theme(theme),
+            Err(e) => {
+                crate::modtui::show_message(&mut $siv, format!("Error in theme.json:\n\n{}\n\nDefault theme will be used!", e).as_str());
+            }
+        }
+    };
+}

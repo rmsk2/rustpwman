@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+use std::str;
+
 use cursive::traits::*;
 use cursive::views::{Dialog, LinearLayout, TextView, TextArea, SliderView, RadioGroup, EditView, Panel, PaddedView};
 use cursive::Cursive;
@@ -22,8 +24,9 @@ use crate::tomlconfig::RustPwManSerialize;
 use crate::pwgen;
 use crate::fcrypt;
 use crate::modtui;
+use crate::modtui::show_message;
+use crate::modtui::pwgenerate::show_sec_bits;
 use crate::RustPwMan;
-use crate::tuiconfig;
 #[cfg(feature = "webdav")]
 use crate::OBFUSCATION_ENV_VAR;
 #[cfg(feature = "webdav")]
@@ -56,23 +59,6 @@ pub fn show_yes_no_decision(siv: &mut Cursive, msg: &str) {
                 s.pop_layer();
             })
     );
-}
-
-pub fn show_message(siv: &mut Cursive, msg: &str) {
-    siv.add_layer(
-        Dialog::text(msg)
-            .title("Rustpwman")
-            .button("Ok", |s| {
-                s.pop_layer();
-            }),
-    );
-}
-
-fn show_sec_bits(s: &mut Cursive, val: usize) {
-    s.call_on_name(BITS_SEC_VALUE, |view: &mut TextArea| {
-        let out = format!("{}", (val + 1) * 8);
-        view.set_content(out.clone());
-    });
 }
 
 #[cfg(feature = "webdav")]
@@ -222,42 +208,7 @@ pub fn save_new_config(s: &mut Cursive, u: &String, p: &String, srv: &String, co
     };
 }
 
-#[allow(unused_variables)]
-pub fn config_main(app: &RustPwMan, config_file: std::path::PathBuf, sec_level: usize, pw_gen_strategy: pwgen::GenerationStrategy, pbkdf_id: fcrypt::KdfId,
-                   clp_cmd: &String, cpy_cmd: &String, webdav_user: &String, webdav_pw: &String, webdav_server: &String, viewer_cmd: &Option<String>, cipher_id: fcrypt::CipherId) {
-    let mut siv = cursive::default();
-
-    let mut strategy_group: RadioGroup<pwgen::GenerationStrategy> = RadioGroup::new();
-    let mut pbkdf_group: RadioGroup<fcrypt::KdfId> = RadioGroup::new();
-
-    let mut linear_layout_pw_gen = LinearLayout::horizontal()
-        .child(TextView::new("Contained characters: "));
-
-    let mut linear_layout_pbkdf = LinearLayout::horizontal()
-        .child(TextView::new("Key derivation function: "));
-
-    for i in &pwgen::GenerationStrategy::get_known_ids() {
-        let mut b = strategy_group.button(*i, i.to_str());
-
-        if *i == pw_gen_strategy {
-            b.select();
-        }
-
-        linear_layout_pw_gen.add_child(b);
-        linear_layout_pw_gen.add_child(TextView::new(" "));
-    }
-
-    for i in &fcrypt::KdfId::get_known_ids() {
-        let mut b = pbkdf_group.button(*i, i.to_str());
-
-        if *i == pbkdf_id {
-            b.select();
-        }
-
-        linear_layout_pbkdf.add_child(b);
-        linear_layout_pbkdf.add_child(TextView::new(" "));
-    }
-
+fn create_cipher_selection_ui(cipher_id: fcrypt::CipherId) -> (LinearLayout, RadioGroup<fcrypt::CipherId>) {
     let mut cipher_group: RadioGroup<fcrypt::CipherId> = RadioGroup::new();
 
     let mut linear_layout_cipher = LinearLayout::horizontal()
@@ -274,51 +225,51 @@ pub fn config_main(app: &RustPwMan, config_file: std::path::PathBuf, sec_level: 
         linear_layout_cipher.add_child(TextView::new(" "));
     }
 
-    #[cfg(not(feature = "chacha20"))]
-    let algo_panel = Panel::new(
-            PaddedView::new(Margins::lrtb(1,1,1,1), linear_layout_pbkdf)
-        ).title("Default crypto algorithms");
+    return (linear_layout_cipher, cipher_group);
+}
 
-    #[cfg(feature = "chacha20")]
-    let algo_panel = Panel::new(
-        PaddedView::new(Margins::lrtb(1,1,1,1),
-            LinearLayout::vertical()
-            .child(linear_layout_pbkdf)
-            .child(TextView::new("\n"))
-            .child(linear_layout_cipher)
-        )
-    ).title("Default crypto algorithms");
+fn create_pbkdf_selection_ui(pbkdf_id: fcrypt::KdfId) -> (LinearLayout, RadioGroup<fcrypt::KdfId>) {
+    let mut pbkdf_group: RadioGroup<fcrypt::KdfId> = RadioGroup::new();
 
-    let mut config_panels = LinearLayout::vertical();
+    let mut linear_layout_pbkdf = LinearLayout::horizontal()
+        .child(TextView::new("Key derivation function: "));
 
-    config_panels.add_child(Panel::new(
-        PaddedView::new(Margins::lrtb(1,1,1,1),
-        LinearLayout::vertical()
-        .child(
-        LinearLayout::horizontal()
-        .child(TextView::new("Security level "))
-        .child(TextArea::new()
-            .content("")
-            .disabled()
-            .with_name(BITS_SEC_VALUE)
-            .fixed_height(1)
-            .fixed_width(4)
-        )
-        .child(TextView::new("Bits: "))
-        .child(SliderView::horizontal(modtui::PW_MAX_SEC_LEVEL)
-            .value(sec_level)
-            .on_change(|s, slider_val| { show_sec_bits(s, slider_val) })
-            .with_name(SLIDER_SEC_NAME))
-        )
-        .child(TextView::new("\n"))
-        .child(linear_layout_pw_gen)
-        ))
-        .title("Parameters for password generation")
-    );
+    for i in &fcrypt::KdfId::get_known_ids() {
+        let mut b = pbkdf_group.button(*i, i.to_str());
 
-    config_panels.add_child(algo_panel);
+        if *i == pbkdf_id {
+            b.select();
+        }
 
-    let mut cmds_layout =LinearLayout::vertical();
+        linear_layout_pbkdf.add_child(b);
+        linear_layout_pbkdf.add_child(TextView::new(" "));
+    }
+
+    return (linear_layout_pbkdf, pbkdf_group);
+}
+
+fn create_pw_gen_strategy_selection_ui(pw_gen_strategy: pwgen::GenerationStrategy) -> (LinearLayout, RadioGroup<pwgen::GenerationStrategy>) {
+    let mut strategy_group: RadioGroup<pwgen::GenerationStrategy> = RadioGroup::new();
+
+    let mut linear_layout_pw_gen = LinearLayout::horizontal()
+        .child(TextView::new("Contained characters: "));
+
+    for i in &pwgen::GenerationStrategy::get_known_ids() {
+        let mut b = strategy_group.button(*i, i.to_str());
+
+        if *i == pw_gen_strategy {
+            b.select();
+        }
+
+        linear_layout_pw_gen.add_child(b);
+        linear_layout_pw_gen.add_child(TextView::new(" "));
+    }
+
+    return (linear_layout_pw_gen, strategy_group);    
+}
+
+fn create_command_selection_ui(viewer_select: Option<LinearLayout>) -> Panel<PaddedView<LinearLayout>> {
+    let mut cmds_layout = LinearLayout::vertical();
     cmds_layout.add_child(LinearLayout::horizontal()
         .child(TextView::new("Paste command       : "))
         .child(EditView::new()
@@ -334,73 +285,180 @@ pub fn config_main(app: &RustPwMan, config_file: std::path::PathBuf, sec_level: 
             .with_name(EDIT_COPY_COMMAND)
             .fixed_width(60)));
 
-    #[cfg(feature = "qrcode")]
-    {
+    if let Some(viewer_select_val) = viewer_select {
         cmds_layout.add_child(TextView::new("\n"));
-        cmds_layout.add_child(LinearLayout::horizontal()
+        cmds_layout.add_child(viewer_select_val);
+    }
+
+    return Panel::new(PaddedView::new(Margins::lrtb(1,1,1,1), cmds_layout)).title("Helper commands")
+}
+
+#[cfg(feature = "writebackup")]
+fn add_writebackup_ui(config_panels: &mut LinearLayout) {
+    config_panels.add_child(
+        Panel::new(
+            PaddedView::new(Margins::lrtb(1,1,1,1),
+                LinearLayout::horizontal()
+                    .child(TextView::new("Filename: "))
+                    .child(EditView::new()
+                        .with_name(EDIT_BACKUP_FILE)
+                        .fixed_width(65))
+        )
+    )
+    .title("Name of file to use for automatic backup")
+    );
+}
+
+#[cfg(feature = "writebackup")]
+fn set_write_backup_state(siv: &mut Cursive, bkp_f: &Option<String>) {
+    let bkp_f_helper = bkp_f.clone();
+
+    if let Some(bkp) = bkp_f_helper {
+        siv.call_on_name(EDIT_BACKUP_FILE, |view: &mut EditView| { view.set_content(bkp.clone()) });
+    } else {
+        siv.call_on_name(EDIT_BACKUP_FILE, |view: &mut EditView| { view.set_content(String::from("")) });
+    }
+}
+
+#[cfg(feature = "webdav")]
+fn add_wbdav_ui(config_panels: &mut LinearLayout) {
+    config_panels.add_child(
+        Panel::new(
+            PaddedView::new(Margins::lrtb(1,1,1,1),
+            LinearLayout::vertical()
+            .child(
+                LinearLayout::horizontal()
+                    .child(TextView::new("User-ID : "))
+                    .child(EditView::new()
+                        .with_name("webdav_user")
+                        .fixed_width(65))
+            )
+            .child(TextView::new("\n"))
+            .child(
+                LinearLayout::horizontal()
+                    .child(TextView::new("Password: "))
+                    .child(EditView::new()
+                        .with_name("webdav_password")
+                        .fixed_width(65))
+            )
+            .child(TextView::new("\n"))
+            .child(
+                LinearLayout::horizontal()
+                    .child(TextView::new("Server  : "))
+                    .child(EditView::new()
+                        .with_name("webdav_server")
+                        .fixed_width(65))
+            )
+        )
+    )
+    .title("WebDAV parameters")
+    );
+}
+
+#[cfg(feature = "webdav")]
+fn set_webdav_state(siv: &mut Cursive, webdav_user: &String, webdav_server: &String, webdav_pw: &String) {
+    siv.call_on_name("webdav_user", |view: &mut EditView| { view.set_content(webdav_user) });
+    siv.call_on_name("webdav_password", |view: &mut EditView| { view.set_content(webdav_pw) });
+    siv.call_on_name("webdav_server", |view: &mut EditView| { view.set_content(webdav_server) });
+
+}
+
+#[cfg(not(feature = "qrcode"))]
+fn create_qr_viewer_select_ui() -> Option<LinearLayout>{
+    return None;
+}
+
+#[cfg(feature = "qrcode")]
+fn create_qr_viewer_select_ui() -> Option<LinearLayout>{
+    return Some(LinearLayout::horizontal()
             .child(TextView::new("Image viewer command: "))
             .child(EditView::new()
                 .with_name(EDIT_VIEWER_COMMAND)
                 .fixed_width(60)));
+}
 
+#[cfg(feature = "qrcode")]
+fn set_qrcode_state(siv: &mut Cursive, viewer_cmd: &Option<String>) {
+    if let Some(vc) = viewer_cmd {
+        siv.call_on_name(EDIT_VIEWER_COMMAND, |view: &mut EditView| { view.set_content(vc.clone()) });
+    } else {
+        siv.call_on_name(EDIT_VIEWER_COMMAND, |view: &mut EditView| { view.set_content(String::from("")) });
+    }
+}
+
+fn create_pw_strategy_select_ui(sec_level: usize, linear_layout_pw_gen: LinearLayout) -> Panel<PaddedView<LinearLayout>> {
+    return Panel::new(
+        PaddedView::new(Margins::lrtb(1,1,1,1),
+        LinearLayout::vertical()
+        .child(
+        LinearLayout::horizontal()
+        .child(TextView::new("Security level "))
+        .child(TextArea::new()
+            .content("")
+            .disabled()
+            .with_name(BITS_SEC_VALUE)
+            .fixed_height(1)
+            .fixed_width(4)
+        )
+        .child(TextView::new("Bits: "))
+        .child(SliderView::horizontal(modtui::PW_MAX_SEC_LEVEL)
+            .value(sec_level)
+            .on_change(|s, slider_val| { show_sec_bits(s, slider_val, BITS_SEC_VALUE) })
+            .with_name(SLIDER_SEC_NAME))
+        )
+        .child(TextView::new("\n"))
+        .child(linear_layout_pw_gen)
+        ))
+        .title("Parameters for password generation");
+}
+
+fn create_algo_select_ui(linear_layout_pbkdf: LinearLayout, cipher_select_opt: Option<LinearLayout>) -> Panel<PaddedView<LinearLayout>> {
+    let mut lin = LinearLayout::vertical();
+    
+    lin.add_child(linear_layout_pbkdf);
+    if let Some(cipher_select) = cipher_select_opt {
+        lin.add_child(TextView::new("\n"));
+        lin.add_child(cipher_select);
     }
 
-    config_panels.add_child(
-        Panel::new(
-            PaddedView::new(Margins::lrtb(1,1,1,1), cmds_layout))
-            .title("Helper commands")
-    );
+    return Panel::new(PaddedView::new(Margins::lrtb(1,1,1,1),lin)).title("Default crypto algorithms");
+}
+
+#[cfg(not(feature = "chacha20"))]
+fn create_chacha20_select_ui(_linear_layout_cipher: LinearLayout) -> Option<LinearLayout>{
+    return None
+}
+
+#[cfg(feature = "chacha20")]
+fn create_chacha20_select_ui(linear_layout_cipher: LinearLayout) -> Option<LinearLayout>{
+    return Some(linear_layout_cipher)
+}
+
+fn set_clip_commands_state(siv: &mut Cursive, clp_cmd: &String, cpy_cmd: &String) {
+    siv.call_on_name(EDIT_PASTE_COMMAND, |view: &mut EditView| { view.set_content(clp_cmd) });
+    siv.call_on_name(EDIT_COPY_COMMAND, |view: &mut EditView| { view.set_content(cpy_cmd) });
+}
+
+#[allow(unused_variables)]
+pub fn config_main(app: &RustPwMan, config_file: std::path::PathBuf, sec_level: usize, pw_gen_strategy: pwgen::GenerationStrategy, pbkdf_id: fcrypt::KdfId,
+                   clp_cmd: &String, cpy_cmd: &String, webdav_user: &String, webdav_pw: &String, webdav_server: &String, viewer_cmd: &Option<String>, cipher_id: fcrypt::CipherId) {
+    let mut siv = cursive::default();
+
+    let (linear_layout_pw_gen, strategy_group) = create_pw_gen_strategy_selection_ui(pw_gen_strategy);
+    let (linear_layout_pbkdf, pbkdf_group) = create_pbkdf_selection_ui(pbkdf_id);
+    let (linear_layout_cipher, cipher_group) = create_cipher_selection_ui(cipher_id);
+
+    let mut config_panels = LinearLayout::vertical();
+
+    config_panels.add_child(create_pw_strategy_select_ui(sec_level, linear_layout_pw_gen));
+    config_panels.add_child(create_algo_select_ui(linear_layout_pbkdf, create_chacha20_select_ui(linear_layout_cipher)));
+    config_panels.add_child(create_command_selection_ui(create_qr_viewer_select_ui()));    
 
     #[cfg(feature = "writebackup")]
-    {
-        config_panels.add_child(
-            Panel::new(
-                PaddedView::new(Margins::lrtb(1,1,1,1),
-                    LinearLayout::horizontal()
-                        .child(TextView::new("Filename: "))
-                        .child(EditView::new()
-                            .with_name(EDIT_BACKUP_FILE)
-                            .fixed_width(65))
-            )
-        )
-        .title("Name of file to use for automatic backup")
-        );
-    }
+    add_writebackup_ui(&mut config_panels);
 
     #[cfg(feature = "webdav")]
-    {
-        config_panels.add_child(
-            Panel::new(
-                PaddedView::new(Margins::lrtb(1,1,1,1),
-                LinearLayout::vertical()
-                .child(
-                    LinearLayout::horizontal()
-                        .child(TextView::new("User-ID : "))
-                        .child(EditView::new()
-                            .with_name("webdav_user")
-                            .fixed_width(65))
-                )
-                .child(TextView::new("\n"))
-                .child(
-                    LinearLayout::horizontal()
-                        .child(TextView::new("Password: "))
-                        .child(EditView::new()
-                            .with_name("webdav_password")
-                            .fixed_width(65))
-                )
-                .child(TextView::new("\n"))
-                .child(
-                    LinearLayout::horizontal()
-                        .child(TextView::new("Server  : "))
-                        .child(EditView::new()
-                            .with_name("webdav_server")
-                            .fixed_width(65))
-                )
-            )
-        )
-        .title("WebDAV parameters")
-        );
-    }
+    add_wbdav_ui(&mut config_panels);
 
     let title_str = match config_file.as_os_str().to_str() {
         Some(s) => s,
@@ -423,7 +481,7 @@ pub fn config_main(app: &RustPwMan, config_file: std::path::PathBuf, sec_level: 
     let serv = webdav_server.clone();
     let vwr = viewer_cmd.clone();
     let bkp_f = app.get_backup_file_name_str();
-    let bkp_f_helper = bkp_f.clone();
+    let tmp = bkp_f.clone();
 
     res.add_button("OK", move |s| save_new_config(s, &u, &p, &serv, &config_file, &strategy_group, &pbkdf_group, &vwr, &bkp_f, &cipher_group));
     res.add_button("Cancel", |s| s.quit() );
@@ -432,41 +490,20 @@ pub fn config_main(app: &RustPwMan, config_file: std::path::PathBuf, sec_level: 
     res.add_button("Obfuscate", move |s| obfuscate_password(s));
 
     siv.add_layer(res);
-    show_sec_bits(&mut siv, sec_level);
-    siv.call_on_name(EDIT_PASTE_COMMAND, |view: &mut EditView| { view.set_content(clp_cmd) });
-    siv.call_on_name(EDIT_COPY_COMMAND, |view: &mut EditView| { view.set_content(cpy_cmd) });
+    
+    show_sec_bits(&mut siv, sec_level, BITS_SEC_VALUE);
+    set_clip_commands_state(&mut siv, clp_cmd, cpy_cmd);
 
     #[cfg(feature = "writebackup")]
-    {
-        if let Some(bkp) = bkp_f_helper {
-            siv.call_on_name(EDIT_BACKUP_FILE, |view: &mut EditView| { view.set_content(bkp.clone()) });
-        } else {
-            siv.call_on_name(EDIT_BACKUP_FILE, |view: &mut EditView| { view.set_content(String::from("")) });
-        }
-    }
+    set_write_backup_state(&mut siv, &tmp);
 
     #[cfg(feature = "webdav")]
-    {
-        siv.call_on_name("webdav_user", |view: &mut EditView| { view.set_content(webdav_user) });
-        siv.call_on_name("webdav_password", |view: &mut EditView| { view.set_content(webdav_pw) });
-        siv.call_on_name("webdav_server", |view: &mut EditView| { view.set_content(webdav_server) });
-    }
+    set_webdav_state(&mut siv, webdav_user, webdav_server, webdav_pw);
 
     #[cfg(feature = "qrcode")]
-    {
-        if let Some(vc) = viewer_cmd {
-            siv.call_on_name(EDIT_VIEWER_COMMAND, |view: &mut EditView| { view.set_content(vc.clone()) });
-        } else {
-            siv.call_on_name(EDIT_VIEWER_COMMAND, |view: &mut EditView| { view.set_content(String::from("")) });
-        }
-    }
+    set_qrcode_state(&mut siv, viewer_cmd);
 
-    match crate::modtui::tuitheme::get_theme() {
-        Ok(theme) => siv.set_theme(theme),
-        Err(e) => { 
-            tuiconfig::show_message(&mut siv, format!("Error in theme.json:\n\n{}\n\nDefault theme will be used!", e).as_str()); 
-        }
-    }
+    crate::load_theme!(siv);
 
     siv.run();
 }

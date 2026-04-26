@@ -30,7 +30,6 @@ use super::AppState;
 use super::open;
 use crate::persist::SendSyncPersister;
 use crate::persist;
-use crate::modtui::tuitheme::get_theme;
 
 use super::main_window;
 use super::pwman_quit;
@@ -40,7 +39,6 @@ use super::cache;
 use super::init;
 use super::export;
 use crate::RustPwMan;
-use super::show_message;
 
 
 #[allow(unused_variables)]
@@ -109,12 +107,7 @@ pub fn main(app: &RustPwMan, data_file_name: String, default_sec_bits: usize, de
         setup_password_entry_without_pwman(&mut siv, sender, pw_callback, &p);
     }
 
-    match get_theme() {
-        Ok(theme) => siv.set_theme(theme),
-        Err(e) => { 
-            show_message(&mut siv, format!("Error in theme.json:\n\n{}\n\nDefault theme will be used!", e).as_str()); 
-        }
-    }
+    crate::load_theme!(siv);
 
     // run password entry dialog
     siv.run();

@@ -46,8 +46,8 @@ const DEC_DIGITS: &str = "0123456789";
 const SPECIAL_CHARS: &str = "$!#%&";
 
 
-fn show_sec_bits(s: &mut Cursive, val: usize) {
-    s.call_on_name(BITS_SEC_VALUE, |view: &mut TextArea| {
+pub fn show_sec_bits(s: &mut Cursive, val: usize, slider_name: &str) {
+    s.call_on_name(slider_name, |view: &mut TextArea| {
         let out = format!("{}", (val + 1) * 8);
         view.set_content(out.clone());
     });
@@ -348,7 +348,7 @@ pub fn generate_password(s: &mut Cursive, state_for_gen_pw: Arc<Mutex<AppState>>
             .child(TextView::new("Bits: "))
             .child(SliderView::horizontal(PW_MAX_SEC_LEVEL)
                 .value(sec_bits)
-                .on_change(show_sec_bits)
+                .on_change(move |s: &mut Cursive, val: usize| show_sec_bits(s, val, BITS_SEC_VALUE))
                 .with_name(SLIDER_SEC_NAME))
         )
         .child(TextView::new("\n"))
@@ -366,7 +366,7 @@ pub fn generate_password(s: &mut Cursive, state_for_gen_pw: Arc<Mutex<AppState>>
     .button("Cancel", |s| { s.pop_layer(); });
     
     s.add_layer(res);
-    show_sec_bits(s, sec_bits);
+    show_sec_bits(s, sec_bits, BITS_SEC_VALUE);
     on_strategy_changed(s, &default_strategy);
     on_char_change(s, for_measurement, 0);
 }

@@ -14,7 +14,7 @@ limitations under the License. */
 
 #[cfg(feature = "pwmanclient")]
 mod cache;
-mod pwgenerate;
+pub mod pwgenerate;
 mod load;
 mod rename;
 mod delete;
@@ -209,7 +209,7 @@ fn pwman_quit(s: &mut Cursive, sender: Arc<Sender<String>>, message: String)
     pwman_quit_with_state(s, sender, message, false, None);
 }
 
-fn show_message(siv: &mut Cursive, msg: &str) {
+pub fn show_message(siv: &mut Cursive, msg: &str) {
     siv.add_layer(
         Dialog::text(msg)
             .title("Rustpwman")
