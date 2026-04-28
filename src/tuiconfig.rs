@@ -94,19 +94,42 @@ pub fn obfuscate_password(s: &mut Cursive) {
     s.call_on_name("webdav_password", |view: &mut EditView| { view.set_content(pw) });
 }
 
-#[allow(unused_variables)]
-pub fn save_new_config(s: &mut Cursive, u: &String, p: &String, srv: &String, config_file: &std::path::PathBuf, strat: &RadioGroup<pwgen::GenerationStrategy>, pbkdf: &RadioGroup<fcrypt::KdfId>, vwr: &Option<String>, bkp_file: &Option<String>, cipher: &RadioGroup<fcrypt::CipherId>) {
-    #[allow(unused_mut, unused_assignments)]
-    let mut user = u.clone();
-    #[allow(unused_mut, unused_assignments)]
-    let mut pw = p.clone();
-    #[allow(unused_mut, unused_assignments)]
-    let mut server = srv.clone();
-    #[allow(unused_mut, unused_assignments)]
-    let mut viewer_command = vwr.clone();
-    #[allow(unused_mut, unused_assignments)]
-    let mut backup_file_name = bkp_file.clone();
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+pub struct OptionalConfigEntries {
+    webdav_user: String,
+    webdav_password: String,
+    webdav_server: String,
+    viewer_command: Option<String>,
+    bkp_file_name: Option<String>,
+}
 
+macro_rules! get_string_value_from_ui {
+    ($s:expr, $var:ident, $ui_name:expr, $msg:expr) => {
+    let $var = match $s.call_on_name($ui_name, |view: &mut EditView| { view.get_content() }) {
+        Some(v) => v,
+        None => {
+            show_message($s, $msg);
+            return;
+        }
+    };
+    }
+}
+
+#[allow(unused_variables)]
+pub fn save_new_config(s: &mut Cursive, old_values: Box<OptionalConfigEntries>, config_file: &std::path::PathBuf, strat: &RadioGroup<pwgen::GenerationStrategy>, pbkdf: &RadioGroup<fcrypt::KdfId>, cipher: &RadioGroup<fcrypt::CipherId>) {
+    // Use old values as a default. Overwrite them if new values were supplied
+    #[allow(unused_mut, unused_assignments)]
+    let mut user = old_values.webdav_user;
+    #[allow(unused_mut, unused_assignments)]
+    let mut pw = old_values.webdav_password;
+    #[allow(unused_mut, unused_assignments)]
+    let mut server = old_values.webdav_server;
+    #[allow(unused_mut, unused_assignments)]
+    let mut viewer_command = old_values.viewer_command;
+    #[allow(unused_mut, unused_assignments)]
+    let mut backup_file_name = old_values.bkp_file_name;
+
+    // Read value of slider which represents the selected security level
     let rand_bytes = match s.call_on_name(SLIDER_SEC_NAME, |view: &mut SliderView| { view.get_value() }) {
         Some(v) => v,
         None => {
@@ -115,31 +138,15 @@ pub fn save_new_config(s: &mut Cursive, u: &String, p: &String, srv: &String, co
         }
     };
 
-    let clip_command = match s.call_on_name(EDIT_PASTE_COMMAND, |view: &mut EditView| { view.get_content() }) {
-        Some(v) => v,
-        None => {
-            show_message(s, "Unable to determine paste command");
-            return;
-        }
-    };
-
-    let copy_command = match s.call_on_name(EDIT_COPY_COMMAND, |view: &mut EditView| { view.get_content() }) {
-        Some(v) => v,
-        None => {
-            show_message(s, "Unable to determine copy command");
-            return;
-        }
-    };
+    // Read helper command for pasting the clipboard contents
+    get_string_value_from_ui!(s, clip_command, EDIT_PASTE_COMMAND, "Unable to determine paste command");
+    // Read helper command for writing to clipboard
+    get_string_value_from_ui!(s, copy_command, EDIT_COPY_COMMAND, "Unable to determine copy command");
 
     #[cfg(feature = "qrcode")]
     {
-        let viewer_command_txt = match s.call_on_name(EDIT_VIEWER_COMMAND, |view: &mut EditView| { view.get_content() }) {
-            Some(v) => v,
-            None => {
-                show_message(s, "Unable to determine image viewer command");
-                return;
-            }
-        };
+        // Read helper command for viewing pictures
+        get_string_value_from_ui!(s, viewer_command_txt, EDIT_VIEWER_COMMAND, "Unable to determine image viewer command");
 
         if viewer_command_txt.len() != 0 {
             viewer_command = Some(String::from(viewer_command_txt.as_str()));
@@ -150,13 +157,8 @@ pub fn save_new_config(s: &mut Cursive, u: &String, p: &String, srv: &String, co
 
     #[cfg(feature = "writebackup")]
     {
-        let backup_file_name_txt = match s.call_on_name(EDIT_BACKUP_FILE, |view: &mut EditView| { view.get_content() }) {
-            Some(v) => v,
-            None => {
-                show_message(s, "Unable to determine backup file name");
-                return;
-            }
-        };
+        // Read name of file in which a backup of the current password data is stored
+        get_string_value_from_ui!(s, backup_file_name_txt, EDIT_BACKUP_FILE, "Unable to determine backup file name");
 
         if backup_file_name_txt.len() != 0 {
             backup_file_name = Some(String::from(backup_file_name_txt.as_str()));
@@ -166,6 +168,7 @@ pub fn save_new_config(s: &mut Cursive, u: &String, p: &String, srv: &String, co
     }
 
 
+    // Read WebDAV user name
     #[cfg(feature = "webdav")]
     if let Some(t) = s.call_on_name("webdav_user", |view: &mut EditView| { view.get_content() }) {
         user = t.to_string();
@@ -174,6 +177,7 @@ pub fn save_new_config(s: &mut Cursive, u: &String, p: &String, srv: &String, co
         return;
     }
 
+    // Read WebDAV password
     #[cfg(feature = "webdav")]
     if let Some(t) = s.call_on_name("webdav_password", |view: &mut EditView| { view.get_content() }) {
         pw = t.to_string();
@@ -182,6 +186,7 @@ pub fn save_new_config(s: &mut Cursive, u: &String, p: &String, srv: &String, co
         return;
     }
 
+    // Read WebDAV server name
     #[cfg(feature = "webdav")]
     if let Some(t) = s.call_on_name("webdav_server", |view: &mut EditView| { view.get_content() }) {
         server = t.to_string();
@@ -190,16 +195,20 @@ pub fn save_new_config(s: &mut Cursive, u: &String, p: &String, srv: &String, co
         return;
     }
 
+    // Read selected password generation strategy
     let strategy = strat.selection();
-    let pbkdf = &pbkdf.selection();
+    // Read selected PBKDF
+    let pbkdf = pbkdf.selection();
     let cipher_id: Option<String>;
 
     if !CHACHA20 {
         cipher_id = None;
     } else {
+        // Read selected cipher
         cipher_id = Some(String::from(cipher.selection().to_str()));
     }
 
+    // Write new config
     let new_config = RustPwManSerialize::new(rand_bytes, pbkdf.to_str(), strategy.to_str(), clip_command.as_str(), copy_command.as_str(), user.as_str(), pw.as_str(), server.as_str(), viewer_command, backup_file_name, cipher_id);
 
     match tomlconfig::save(config_file, new_config) {
@@ -424,21 +433,21 @@ fn set_clip_commands_state(siv: &mut Cursive, clp_cmd: &String, cpy_cmd: &String
 #[allow(unused_variables)]
 pub fn config_main(app: &RustPwMan, config_file: std::path::PathBuf, sec_level: usize, pw_gen_strategy: pwgen::GenerationStrategy, pbkdf_id: fcrypt::KdfId,
                    clp_cmd: &String, cpy_cmd: &String, webdav_user: &String, webdav_pw: &String, webdav_server: &String, viewer_cmd: &Option<String>, cipher_id: fcrypt::CipherId) {
+    // Construct UI
     let mut siv = cursive::default();
 
+    // Create radio groups for password generation strategy and crypto algorithms
     let (linear_layout_pw_gen, strategy_group) = create_pw_gen_strategy_selection_ui(pw_gen_strategy);
     let (linear_layout_pbkdf, pbkdf_group) = create_pbkdf_selection_ui(pbkdf_id);
     let (linear_layout_cipher, cipher_group) = create_cipher_selection_ui(cipher_id);
 
+    // Create panels for pw generation strategy, crypto algorithms, helper commands, backup file selection and WebDAV parameters
     let mut config_panels = LinearLayout::vertical();
-
     config_panels.add_child(create_pw_strategy_select_ui(sec_level, linear_layout_pw_gen));
     config_panels.add_child(create_algo_select_ui(linear_layout_pbkdf, linear_layout_cipher));
     config_panels.add_child(create_command_selection_ui());    
-
     #[cfg(feature = "writebackup")]
     config_panels.add_child(create_writebackup_ui());
-
     #[cfg(feature = "webdav")]
     config_panels.add_child(create_wbdav_ui());
 
@@ -449,6 +458,7 @@ pub fn config_main(app: &RustPwMan, config_file: std::path::PathBuf, sec_level: 
         }
     };
 
+    // Assemble components in one Dialog
     let title_string = format!("Change config {}", title_str);
 
     let mut res = Dialog::new()
@@ -458,30 +468,30 @@ pub fn config_main(app: &RustPwMan, config_file: std::path::PathBuf, sec_level: 
         config_panels
     );
 
-    let u = webdav_user.clone();
-    let p = webdav_pw.clone();
-    let serv = webdav_server.clone();
-    let vwr = viewer_cmd.clone();
-    let bkp_f = app.get_backup_file_name_str();
-    let tmp = bkp_f.clone();
+    let old_values = OptionalConfigEntries {
+        webdav_user: webdav_user.clone(),
+        webdav_password: webdav_pw.clone(),
+        webdav_server: webdav_server.clone(),
+        viewer_command: viewer_cmd.clone(),
+        bkp_file_name: app.get_backup_file_name_str(),
+    };
 
-    res.add_button("OK", move |s| save_new_config(s, &u, &p, &serv, &config_file, &strategy_group, &pbkdf_group, &vwr, &bkp_f, &cipher_group));
+    let bkp_file_name = old_values.bkp_file_name.clone();
+
+    res.add_button("OK", move |s| save_new_config(s, Box::new(old_values.clone()), &config_file, &strategy_group, &pbkdf_group, &cipher_group));
     res.add_button("Cancel", |s| s.quit() );
-
     #[cfg(feature = "webdav")]
     res.add_button("Obfuscate", move |s| obfuscate_password(s));
 
     siv.add_layer(res);
     
+    // Set state of UI elements to values which reflect the current config
     show_sec_bits(&mut siv, sec_level, BITS_SEC_VALUE);
     set_clip_commands_state(&mut siv, clp_cmd, cpy_cmd);
-
     #[cfg(feature = "writebackup")]
-    set_write_backup_state(&mut siv, &tmp);
-
+    set_write_backup_state(&mut siv, &bkp_file_name);
     #[cfg(feature = "webdav")]
     set_webdav_state(&mut siv, webdav_user, webdav_server, webdav_pw);
-
     #[cfg(feature = "qrcode")]
     set_qrcode_state(&mut siv, viewer_cmd);
 
