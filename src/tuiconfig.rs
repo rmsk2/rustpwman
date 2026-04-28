@@ -121,6 +121,7 @@ macro_rules! get_string_value_from_ui {
     }
 }
 
+#[cfg(feature = "webdav")]
 macro_rules! get_string_value_from_ui_no_shadow {
     ($s:expr, $var:ident, $ui_name:expr, $msg:expr) => {
     $var = match $s.call_on_name($ui_name, |view: &mut EditView| { view.get_content() }) {
