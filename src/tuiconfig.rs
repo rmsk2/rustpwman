@@ -44,6 +44,12 @@ const EDIT_COPY_COMMAND: &str = "copycmd";
 const EDIT_VIEWER_COMMAND: &str = "viewercmd";
 #[cfg(feature = "writebackup")]
 const EDIT_BACKUP_FILE: &str = "backupfile";
+#[cfg(feature = "webdav")]
+const EDIT_WEBDAV_USER: &str = "webdav_user";
+#[cfg(feature = "webdav")]
+const EDIT_WEBDAV_PASSWORD: &str = "webdav_password";
+#[cfg(feature = "webdav")]
+const EDIT_WEBDAV_SERVER: &str = "webdav_server";
 
 
 #[cfg(not(feature = "chacha20"))]
@@ -77,7 +83,7 @@ pub fn obfuscate_password(s: &mut Cursive) {
 
     let mut pw: String;
 
-    if let Some(t) = s.call_on_name("webdav_password", |view: &mut EditView| { view.get_content() }) {
+    if let Some(t) = s.call_on_name(EDIT_WEBDAV_PASSWORD, |view: &mut EditView| { view.get_content() }) {
         pw = t.to_string();
     } else {
         show_message(s, "Unable to determine WebDAV password");
@@ -91,7 +97,7 @@ pub fn obfuscate_password(s: &mut Cursive) {
 
     pw = obfuscate(&pw, OBFUSCATION_ENV_VAR);
 
-    s.call_on_name("webdav_password", |view: &mut EditView| { view.set_content(pw) });
+    s.call_on_name(EDIT_WEBDAV_PASSWORD, |view: &mut EditView| { view.set_content(pw) });
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
@@ -107,6 +113,18 @@ macro_rules! get_string_value_from_ui {
     ($s:expr, $var:ident, $ui_name:expr, $msg:expr) => {
     let $var = match $s.call_on_name($ui_name, |view: &mut EditView| { view.get_content() }) {
         Some(v) => v,
+        None => {
+            show_message($s, $msg);
+            return;
+        }
+    };
+    }
+}
+
+macro_rules! get_string_value_from_ui_no_shadow {
+    ($s:expr, $var:ident, $ui_name:expr, $msg:expr) => {
+    $var = match $s.call_on_name($ui_name, |view: &mut EditView| { view.get_content() }) {
+        Some(v) => v.to_string(),
         None => {
             show_message($s, $msg);
             return;
@@ -170,30 +188,13 @@ pub fn save_new_config(s: &mut Cursive, old_values: Box<OptionalConfigEntries>, 
 
     // Read WebDAV user name
     #[cfg(feature = "webdav")]
-    if let Some(t) = s.call_on_name("webdav_user", |view: &mut EditView| { view.get_content() }) {
-        user = t.to_string();
-    } else {
-        show_message(s, "Unable to determine WebDAV user");
-        return;
-    }
-
+    get_string_value_from_ui_no_shadow!(s, user, EDIT_WEBDAV_USER, "Unable to determine WebDAV user");
     // Read WebDAV password
     #[cfg(feature = "webdav")]
-    if let Some(t) = s.call_on_name("webdav_password", |view: &mut EditView| { view.get_content() }) {
-        pw = t.to_string();
-    } else {
-        show_message(s, "Unable to determine WebDAV password");
-        return;
-    }
-
+    get_string_value_from_ui_no_shadow!(s, pw, EDIT_WEBDAV_PASSWORD, "Unable to determine WebDAV password");
     // Read WebDAV server name
     #[cfg(feature = "webdav")]
-    if let Some(t) = s.call_on_name("webdav_server", |view: &mut EditView| { view.get_content() }) {
-        server = t.to_string();
-    } else {
-        show_message(s, "Unable to determine WebDAV server");
-        return;
-    }
+    get_string_value_from_ui_no_shadow!(s, server, EDIT_WEBDAV_SERVER, "Unable to determine WebDAV server");
 
     // Read selected password generation strategy
     let strategy = strat.selection();
@@ -346,7 +347,7 @@ fn create_wbdav_ui() -> Panel<PaddedView<LinearLayout>> {
             LinearLayout::horizontal()
                 .child(TextView::new("User-ID : "))
                 .child(EditView::new()
-                    .with_name("webdav_user")
+                    .with_name(EDIT_WEBDAV_USER)
                     .fixed_width(65))
         )
         .child(TextView::new("\n"))
@@ -354,7 +355,7 @@ fn create_wbdav_ui() -> Panel<PaddedView<LinearLayout>> {
             LinearLayout::horizontal()
                 .child(TextView::new("Password: "))
                 .child(EditView::new()
-                    .with_name("webdav_password")
+                    .with_name(EDIT_WEBDAV_PASSWORD)
                     .fixed_width(65))
         )
         .child(TextView::new("\n"))
@@ -362,7 +363,7 @@ fn create_wbdav_ui() -> Panel<PaddedView<LinearLayout>> {
             LinearLayout::horizontal()
                 .child(TextView::new("Server  : "))
                 .child(EditView::new()
-                    .with_name("webdav_server")
+                    .with_name(EDIT_WEBDAV_SERVER)
                     .fixed_width(65)))
         )
     )
@@ -371,9 +372,9 @@ fn create_wbdav_ui() -> Panel<PaddedView<LinearLayout>> {
 
 #[cfg(feature = "webdav")]
 fn set_webdav_state(siv: &mut Cursive, webdav_user: &String, webdav_server: &String, webdav_pw: &String) {
-    siv.call_on_name("webdav_user", |view: &mut EditView| { view.set_content(webdav_user) });
-    siv.call_on_name("webdav_password", |view: &mut EditView| { view.set_content(webdav_pw) });
-    siv.call_on_name("webdav_server", |view: &mut EditView| { view.set_content(webdav_server) });
+    siv.call_on_name(EDIT_WEBDAV_USER, |view: &mut EditView| { view.set_content(webdav_user) });
+    siv.call_on_name(EDIT_WEBDAV_PASSWORD, |view: &mut EditView| { view.set_content(webdav_pw) });
+    siv.call_on_name(EDIT_WEBDAV_SERVER, |view: &mut EditView| { view.set_content(webdav_server) });
 
 }
 
