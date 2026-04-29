@@ -109,19 +109,6 @@ pub struct OptionalConfigEntries {
     bkp_file_name: Option<String>,
 }
 
-macro_rules! get_string_value_from_ui {
-    ($s:expr, $var:ident, $ui_name:expr, $msg:expr) => {
-    let $var = match $s.call_on_name($ui_name, |view: &mut EditView| { view.get_content() }) {
-        Some(v) => v,
-        None => {
-            show_message($s, $msg);
-            return;
-        }
-    };
-    }
-}
-
-#[cfg(feature = "webdav")]
 macro_rules! get_string_value_from_ui_no_shadow {
     ($s:expr, $var:ident, $ui_name:expr, $msg:expr) => {
     $var = match $s.call_on_name($ui_name, |view: &mut EditView| { view.get_content() }) {
@@ -131,6 +118,15 @@ macro_rules! get_string_value_from_ui_no_shadow {
             return;
         }
     };
+    }
+}
+
+#[cfg(any(feature = "writebackup", feature = "qrcode"))]
+fn to_option(str: &String) -> Option<String> {
+    if str.len() != 0 {
+        return Some(String::from(str.as_str()));
+    } else {
+        return None;
     }
 }
 
@@ -158,44 +154,35 @@ pub fn save_new_config(s: &mut Cursive, old_values: Box<OptionalConfigEntries>, 
     };
 
     // Read helper command for pasting the clipboard contents
-    get_string_value_from_ui!(s, clip_command, EDIT_PASTE_COMMAND, "Unable to determine paste command");
+    let clip_command: String;
+    get_string_value_from_ui_no_shadow!(s, clip_command, EDIT_PASTE_COMMAND, "Unable to determine paste command");
     // Read helper command for writing to clipboard
-    get_string_value_from_ui!(s, copy_command, EDIT_COPY_COMMAND, "Unable to determine copy command");
+    let copy_command: String;
+    get_string_value_from_ui_no_shadow!(s, copy_command, EDIT_COPY_COMMAND, "Unable to determine copy command");
 
     #[cfg(feature = "qrcode")]
     {
         // Read helper command for viewing pictures
-        get_string_value_from_ui!(s, viewer_command_txt, EDIT_VIEWER_COMMAND, "Unable to determine image viewer command");
-
-        if viewer_command_txt.len() != 0 {
-            viewer_command = Some(String::from(viewer_command_txt.as_str()));
-        } else {
-            viewer_command = None;
-        }
+        let viewer_command_txt: String;
+        get_string_value_from_ui_no_shadow!(s, viewer_command_txt, EDIT_VIEWER_COMMAND, "Unable to determine image viewer command");
+        viewer_command = to_option(&viewer_command_txt);
     }
 
     #[cfg(feature = "writebackup")]
     {
         // Read name of file in which a backup of the current password data is stored
-        get_string_value_from_ui!(s, backup_file_name_txt, EDIT_BACKUP_FILE, "Unable to determine backup file name");
-
-        if backup_file_name_txt.len() != 0 {
-            backup_file_name = Some(String::from(backup_file_name_txt.as_str()));
-        } else {
-            backup_file_name = None;
-        }
+        let backup_file_name_txt: String;
+        get_string_value_from_ui_no_shadow!(s, backup_file_name_txt, EDIT_BACKUP_FILE, "Unable to determine backup file name");
+        backup_file_name = to_option(&backup_file_name_txt);
     }
-
 
     // Read WebDAV user name
     #[cfg(feature = "webdav")]
-    get_string_value_from_ui_no_shadow!(s, user, EDIT_WEBDAV_USER, "Unable to determine WebDAV user");
-    // Read WebDAV password
-    #[cfg(feature = "webdav")]
-    get_string_value_from_ui_no_shadow!(s, pw, EDIT_WEBDAV_PASSWORD, "Unable to determine WebDAV password");
-    // Read WebDAV server name
-    #[cfg(feature = "webdav")]
-    get_string_value_from_ui_no_shadow!(s, server, EDIT_WEBDAV_SERVER, "Unable to determine WebDAV server");
+    {
+        get_string_value_from_ui_no_shadow!(s, user, EDIT_WEBDAV_USER, "Unable to determine WebDAV user");
+        get_string_value_from_ui_no_shadow!(s, pw, EDIT_WEBDAV_PASSWORD, "Unable to determine WebDAV password");
+        get_string_value_from_ui_no_shadow!(s, server, EDIT_WEBDAV_SERVER, "Unable to determine WebDAV server");
+    }
 
     // Read selected password generation strategy
     let strategy = strat.selection();
