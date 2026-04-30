@@ -45,6 +45,7 @@ use std::path::PathBuf;
 use dirs;
 use clap::{Arg, Command, ArgAction};
 use fcrypt::CipherId;
+use pwgen::StrGetter;
 use modtui::DEFAULT_PASTE_CMD;
 use modtui::DEFAULT_COPY_CMD;
 use persist::PersistCreator;

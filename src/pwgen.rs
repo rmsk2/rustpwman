@@ -22,6 +22,13 @@ const GEN_SPECIAL: &str = "special";
 const GEN_NUMERIC: &str = "numeric";
 const GEN_CUSTOM: &str = "custom";
 
+pub trait StrGetter {
+    fn to_str(self) -> &'static str;
+    fn get_all_ids(self) -> Vec<Self>
+    where
+        Self:Sized;
+}
+
 pub trait PasswordGenerator {
     fn gen_password(&mut self, num_bytes: usize) -> Option<String>;
     fn set_custom(&mut self, _s: &String) {}
@@ -60,7 +67,17 @@ impl GenerationStrategy {
         }
     }
 
-    pub fn to_str(self) -> &'static str {
+    pub fn to_string(self) -> String {
+        return String::from(self.to_str());
+    }
+
+    pub fn get_known_ids() -> Vec<GenerationStrategy> {
+        return vec![GenerationStrategy::Base64, GenerationStrategy::Hex, GenerationStrategy::Special, GenerationStrategy::Numeric];
+    }
+}
+
+impl StrGetter for GenerationStrategy {
+    fn to_str(self) -> &'static str {
         match self {
             GenerationStrategy::Base64 => GEN_BASE64,
             GenerationStrategy::Hex => GEN_HEX,
@@ -70,12 +87,8 @@ impl GenerationStrategy {
         }
     }
 
-    pub fn to_string(self) -> String {
-        return String::from(self.to_str());
-    }
-
-    pub fn get_known_ids() -> Vec<GenerationStrategy> {
-        return vec![GenerationStrategy::Base64, GenerationStrategy::Hex, GenerationStrategy::Special, GenerationStrategy::Numeric];
+    fn get_all_ids(self) -> Vec<GenerationStrategy> {
+        return GenerationStrategy::get_known_ids();
     }
 }
 

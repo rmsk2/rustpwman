@@ -19,6 +19,7 @@ use cursive::Cursive;
 
 
 use crate::pwgen;
+use crate::pwgen::StrGetter;
 use crate::modtui;
 use crate::modtui::show_message;
 use crate::modtui::pwgenerate::show_sec_bits;

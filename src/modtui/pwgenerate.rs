@@ -23,6 +23,7 @@ use cursive::traits::*;
 use cursive::view::Margins;
 use itertools::Itertools;
 
+use crate::pwgen::StrGetter;
 use crate::pwgen::GenerationStrategy;
 
 use super::AppState;

@@ -30,6 +30,7 @@ use serde::{Serialize, Deserialize};
 use cipher::consts::{U12, U16};
 use base64::prelude::*;
 use crate::persist::SendSyncPersister;
+use crate::pwgen::StrGetter;
 use aead::{Aead, KeyInit, AeadInOut, AeadCore, KeySizeUser};
 
 
@@ -104,15 +105,6 @@ impl KdfId {
         return String::from(self.to_str())
     }
 
-    pub fn to_str(self) -> &'static str {
-        match self {
-            #[cfg(feature = "withscrypt")]
-            KdfId::Scrypt => KDF_SCRYPT,
-            KdfId::Argon2 => KDF_ARGON2,
-            KdfId::Sha256 => KDF_SHA256
-        }
-    }
-
     pub fn get_known_ids() -> Vec<KdfId> {
         let mut res: Vec<KdfId> = vec![];
 
@@ -148,6 +140,22 @@ impl KdfId {
     }
 }
 
+impl StrGetter for KdfId {
+    fn to_str(self) -> &'static str {
+        match self {
+            #[cfg(feature = "withscrypt")]
+            KdfId::Scrypt => KDF_SCRYPT,
+            KdfId::Argon2 => KDF_ARGON2,
+            KdfId::Sha256 => KDF_SHA256
+        }
+    }
+
+    fn get_all_ids(self) -> Vec<KdfId> {
+        return KdfId::get_known_ids();
+    }
+
+}
+
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
 pub enum CipherId {
     Aes256Gcm,
@@ -156,13 +164,6 @@ pub enum CipherId {
 }
 
 impl CipherId {
-    pub fn to_str(self) -> &'static str {
-        match self {
-            CipherId::Aes192Gcm => CIP_AES192,
-            CipherId::Aes256Gcm => CIP_AES256,
-            CipherId::ChaCha20Poly1305 => CIP_CHACHA20,
-        }
-    }
 
     pub fn from_str(name: &str) -> Option<Self> {
         return match name {
@@ -187,6 +188,21 @@ impl CipherId {
             CipherId::ChaCha20Poly1305 => return Box::new(chacha20::ChaCha20Poly1305Context::new_with_kdf(d, i))
         }
     }
+}
+
+impl StrGetter for CipherId {
+    fn to_str(self) -> &'static str {
+        match self {
+            CipherId::Aes192Gcm => CIP_AES192,
+            CipherId::Aes256Gcm => CIP_AES256,
+            CipherId::ChaCha20Poly1305 => CIP_CHACHA20,
+        }
+    }
+
+    fn get_all_ids(self) -> Vec<CipherId> {
+        return CipherId::get_known_ids();
+    }
+
 }
 
 #[derive(Serialize, Deserialize, Debug)]
