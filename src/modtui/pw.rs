@@ -80,7 +80,7 @@ pub fn change(s: &mut Cursive, state_for_pw_change: Arc<Mutex<AppState>>) {
 
             let new_pw: String = (&pw1_text).to_string();
 
-            state_for_pw_change.lock().unwrap().password = Some(new_pw);
+            state_for_pw_change.lock().unwrap().set_password(new_pw);
             save::storage(s, state_for_pw_change.clone());
             s.pop_layer();
 

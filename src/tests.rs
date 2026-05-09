@@ -221,13 +221,13 @@ pub fn test_jots_serialize_deserialize() {
     let (d, i) = fcrypt::KdfId::Sha256.to_named_func();
 
     {        
-        let mut j = jots::Jots::new_id(d, i, Box::new(make_aes_gcm_cryptor));
+        let mut j = jots::Jots::new(d, i, Box::new(make_aes_gcm_cryptor));
         j.add(&t1, &d1);
         j.add(&t2, &d2);
         j.add(&t3, &d3);
 
-        if j.contents.len() != 3 {
-            panic!("Unexpected number of elements {}", j.contents.len());        
+        if j.len() != 3 {
+            panic!("Unexpected number of elements {}", j.len());
         }        
 
         match j.to_writer(&mut serialized) {
@@ -236,20 +236,20 @@ pub fn test_jots_serialize_deserialize() {
         };
     }
 
-    let mut j2 = jots::Jots::new_id(d, i, Box::new(make_aes_gcm_cryptor));
+    let mut j2 = jots::Jots::new(d, i, Box::new(make_aes_gcm_cryptor));
     match j2.from_reader(serialized.as_slice()) {
         Ok(_) => (),
         Err(e) => { panic!("Deserialization failed {:?}", e); }          
     }
 
-    if j2.contents.len() != 3 {
-        panic!("Unexpected number of elements {}", j2.contents.len());        
+    if j2.len() != 3 {
+        panic!("Unexpected number of elements {}", j2.len());
     }
 
     j2.delete(&t3);
 
-    if j2.contents.len() != 2 {
-        panic!("Unexpected number of elements {}", j2.contents.len());        
+    if j2.len() != 2 {
+        panic!("Unexpected number of elements {}", j2.len());
     }
 
     if let Some(s) = j2.get(&t1)  {
@@ -279,7 +279,7 @@ pub fn test_jots_search() {
     let d3 = String::from("data3");
 
     let (d, i) = fcrypt::KdfId::Sha256.to_named_func();
-    let mut j = jots::Jots::new_id(d, i, Box::new(make_aes_gcm_cryptor));
+    let mut j = jots::Jots::new(d, i, Box::new(make_aes_gcm_cryptor));
     j.add(&t1, &d1);
     j.add(&t2, &d2);
     j.add(&t3, &d3);
@@ -312,7 +312,7 @@ pub fn test_jots_iter() {
     let d3 = String::from("data3"); 
     
     let (d, i) = fcrypt::KdfId::Sha256.to_named_func();
-    let mut j = jots::Jots::new_id(d, i, Box::new(make_aes_gcm_cryptor));
+    let mut j = jots::Jots::new(d, i, Box::new(make_aes_gcm_cryptor));
     j.add(&t1, &d1);
     j.add(&t2, &d2);
     j.add(&t3, &d3);
@@ -335,7 +335,7 @@ pub fn test_jots_iter() {
 #[test]
 pub fn test_jots_iter_empty() {    
     let (d, i) = fcrypt::KdfId::Sha256.to_named_func();
-    let j = jots::Jots::new_id(d, i, Box::new(make_aes_gcm_cryptor));
+    let j = jots::Jots::new(d, i, Box::new(make_aes_gcm_cryptor));
 
     let mut count = -1;
 

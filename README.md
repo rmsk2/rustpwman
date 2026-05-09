@@ -528,9 +528,11 @@ size.
 
 # Caveats
 
-This section provides information about stuff which is in my view suboptimal and the user should be aware of:
+This section provides information about stuff which is in my view suboptimal and/or the user should be aware of:
 
-- At the moment I do not attempt to overwrite memory that holds sensitive information when `rustpwman` is closed. This may be a problem when `rustpwman` is used in an environment where an attacker can gain access to unsanitized memory previously used by `rustpwman`. On the other hand it is probably impossible to defend against an attacker who has that level of access and in the end the information stored in `rustpwman` is used in other applications which most probably do not sanitize their memory.
+- An attacker who only sees the encrypted password file will either have to guess your master password or have to break AES/ChaCha20 to compromise the contents of your password file. Guessing the password is made more difficult by utilization of a good PBKDF like argon2 (default) or scrypt.
+- If a competent and determined attacker is active on your machine while you are using `rustpwman` he or she will probably be able to learn the contents of your password file in some way or another
+- At the moment I do not attempt to overwrite memory that holds sensitive information when `rustpwman` is closed. This may be a problem when `rustpwman` is used in an environment where an attacker can gain access to unsanitized memory previously used by `rustpwman` or can look at the contents of the swap file. On the other hand it is probably impossible to defend against an attacker who has that level of access and in the end the information stored in `rustpwman` is used in other applications which most probably do not sanitize their memory. Starting with version 2.10.0 `rustpwman` makes some effort to cryptographically obfuscate sensitive data in memory which should decrease the likelihood of such attacks succeeding.
 - On Windows when using the `pancurses` backend a spurious Escape sequence `ESC[?1002l` is printed to stdout when the TUI application stops. This does not happen on Linux or MacOS. By piping the output of `rustpwman` to `winfilter.exe` you can remove this unwanted data from the output.
 - In non `--release` builds scrypt with the chosen parameters is *extremely* slow
 - At the moment I use release candidates of the crypto routines as their last official releases can not be built without warnings with a reasonably up-to-date rust toolchain.

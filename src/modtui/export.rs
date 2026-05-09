@@ -81,7 +81,8 @@ fn success_message(siv: &mut Cursive, msg: &str, shared_state: Arc<Mutex<AppStat
                 {
                     // Ensure that state.pw_is_chached is correct
                     let mut state = shared_state.lock().unwrap();
-                    let pw_state = check_cached_password(&state.persister, &state.password);
+                    let pw = state.get_password();
+                    let pw_state = check_cached_password(&state.persister, &pw);
                     state.pw_is_chached = pw_state;
                 }
 

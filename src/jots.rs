@@ -22,13 +22,53 @@ use std::io::{Error, ErrorKind};
 use crate::fcrypt;
 use crate::persist::SendSyncPersister;
 use crate::undo::UndoRepo;
+use crate::obfuscate::Cfb8;
 use fcrypt::KeyDeriver;
 use fcrypt::KdfId;
 use fcrypt::Cryptor;
+use rand::Rng;
+use sha2::{Sha256, Digest};
 
 
 pub type CryptorGen = Box<dyn Fn(KeyDeriver, KdfId) -> Box<dyn Cryptor>  + Send + Sync>;
 pub type BackupCallback = Box<dyn Fn(&Vec<u8>) -> std::io::Result<()> + Send + Sync> ;
+
+struct MapObfuscator {
+    session_key: Vec<u8>
+}
+
+// Use this to perform obfuscation of sensitive values in memory. This is more of a hygiene feature
+// than a security feature because the sensitive values will be in plaintext in memory as soon as
+// they are displayed or copied or during en-/decryption of the whole password file. On top of that
+// anyone who can inspect the memory of a running process can create a key logger to steal the master
+// password and/or is root anyway .... . Additionally the obfuscation key is in plaintext in RAM.
+impl MapObfuscator {
+    fn new() -> MapObfuscator {
+        let mut key = vec![0u8; 16];
+        rand::rng().fill_bytes(&mut key);
+
+        return MapObfuscator { session_key: key.clone() };
+    }
+
+    fn derive_iv(map_key: &str) -> Vec<u8> {
+        let mut sha = Sha256::new();
+        sha.update(map_key.as_bytes());
+        return sha.finalize().into_iter().take(16).collect();
+    }
+
+    fn encrypt_for_memory(&self, value: &str, map_key: &str) -> Vec<u8> {
+        let mut data = value.as_bytes().to_vec();
+        Cfb8::new_aes_128_cfb((&self.session_key).to_vec(), MapObfuscator::derive_iv(map_key)).encrypt(&mut data);
+        return data;
+    }
+
+    fn decrypt_from_memory(&self, ciphertext: &[u8], map_key: &str) -> String {
+        let mut data = ciphertext.to_vec();
+        Cfb8::new_aes_128_cfb((&self.session_key).to_vec(), MapObfuscator::derive_iv(map_key)).decrypt(&mut data);
+        return String::from_utf8(data).expect("decrypted value is not valid UTF-8");
+    }
+}
+
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct KvEntry {
@@ -81,30 +121,29 @@ impl<'a> Iterator for JotsIter<'a> {
 }
 
 pub struct Jots {
-    pub contents: HashMap<String, String>,
-    pub kdf: KeyDeriver,
-    pub kdf_id: fcrypt::KdfId,
-    pub dirty: bool,
-    pub undoer: UndoRepo<String, String>,
+    contents: HashMap<String, Vec<u8>>,
+    obf: MapObfuscator,
+    kdf: KeyDeriver,
+    kdf_id: fcrypt::KdfId,
+    dirty: bool,
+    pub undoer: UndoRepo<String, Vec<u8>>,
     pub cr_gen: CryptorGen,
     pub backup_cb: Option<BackupCallback>
 }
+
 
 impl Jots {
     pub fn new(d: KeyDeriver, kdf_id: fcrypt::KdfId, g: CryptorGen) -> Jots {
         return Jots {
             contents: HashMap::new(),
+            obf: MapObfuscator::new(),
             kdf: d,
             kdf_id: kdf_id,
             dirty: false,
-            undoer: UndoRepo::<String, String>::new(),
+            undoer: UndoRepo::<String, Vec<u8>>::new(),
             cr_gen: g,
             backup_cb: None
         };
-    }
-
-    pub fn new_id(d: KeyDeriver, kdf_id: fcrypt::KdfId, g: CryptorGen) -> Jots {
-        return Jots::new(d, kdf_id, g);
     }
 
     pub fn is_dirty(&self) -> bool {
@@ -127,7 +166,8 @@ impl Jots {
         self.contents.clear();
     
         for i in raw_struct {
-            self.contents.insert(i.key, i.value);
+            let enc = self.obf.encrypt_for_memory(&i.value, &i.key);
+            self.contents.insert(i.key, enc);
         }
 
         return Ok(());
@@ -138,7 +178,8 @@ impl Jots {
         let writer = BufWriter::new(w);
 
         for i in &self.contents {
-            raw_data.push(KvEntry::new(i.0, i.1));
+            let plaintext = self.obf.decrypt_from_memory(i.1, i.0);
+            raw_data.push(KvEntry::new(i.0, &plaintext));
         }
 
         serde_json::to_writer_pretty(writer, &raw_data)?;
@@ -147,11 +188,14 @@ impl Jots {
     }
 
     pub fn print(&self) {
-        (&self.contents).iter().for_each(|i| {println!("{}: {}", i.0, i.1);} );
-    }    
+        (&self.contents).iter().for_each(|i| {
+            let plaintext = self.obf.decrypt_from_memory(i.1, i.0);
+            println!("{}: {}", i.0, plaintext);
+        });
+    }
 
     fn insert_int(&mut self, k: &String, v: &String) {
-        self.contents.insert(k.clone(), v.clone());
+        self.contents.insert(k.clone(), self.obf.encrypt_for_memory(v, k));
         self.dirty = true;
     }
 
@@ -161,26 +205,26 @@ impl Jots {
     }
 
     pub fn modify(&mut self, k: &String, v: &String) {
-        let old_value = match self.get(k) {
-            Some(o) => o,
-            None => return
-        };
+        if self.get(k).is_none() {
+            return;
+        }
 
+        let old_encrypted = self.contents.get(k).cloned().unwrap();
         self.insert_int(k, v);
 
         let msg = format!("Modify entry '{}'", k);
         let old_key = k.clone();
 
-        self.undoer.push(&msg, Box::new(move |s: &mut HashMap<String, String>| -> bool {
-            s.insert(old_key.clone(), old_value.clone());
-    
+        self.undoer.push(&msg, Box::new(move |s: &mut HashMap<String, Vec<u8>>| -> bool {
+            s.insert(old_key.clone(), old_encrypted.clone());
+
             return true;
         }));
     }
 
     pub fn delete(&mut self, k: &String) {
-        let old_value = match self.get(k) {
-            Some(o) => o,
+        let old_encrypted = match self.contents.get(k).cloned() {
+            Some(v) => v,
             None => return
         };
 
@@ -189,9 +233,9 @@ impl Jots {
         let msg = format!("Delete entry '{}'", k);
         let old_key = k.clone();
 
-        self.undoer.push(&msg, Box::new(move |s: &mut HashMap<String, String>| -> bool {
-            s.insert(old_key.clone(), old_value.clone());
-    
+        self.undoer.push(&msg, Box::new(move |s: &mut HashMap<String, Vec<u8>>| -> bool {
+            s.insert(old_key.clone(), old_encrypted.clone());
+
             return true;
         }));
     }
@@ -202,8 +246,8 @@ impl Jots {
             Some(val) => val
         };
 
-        return Some(v.clone());
-    }  
+        return Some(self.obf.decrypt_from_memory(v, k));
+    }
 
     // false means add has failed
     pub fn add(&mut self, k: &String, v: &String) -> bool {
@@ -219,9 +263,9 @@ impl Jots {
         let msg = format!("Add entry '{}'", k);
         let old_key = k.clone();
 
-        self.undoer.push(&msg, Box::new(move |s: &mut HashMap<String, String>| -> bool {
+        self.undoer.push(&msg, Box::new(move |s: &mut HashMap<String, Vec<u8>>| -> bool {
             s.remove(&old_key);
-    
+
             return true;
         }));
 
@@ -248,7 +292,7 @@ impl Jots {
     // false means rename has failed
     pub fn rename(&mut self, k_old: &String, k_new: &String) -> bool {
         // Check if entry k_old exists. It has to exist.
-        let contents = match self.get(k_old) {
+        let old_encrypted = match self.contents.get(k_old).cloned() {
             None => { return false; },
             Some(c) => c,
         };
@@ -256,8 +300,9 @@ impl Jots {
         // Check if entry k_new exists. It must not exist.
         let res = match self.get(k_new) {
             None => {
+                let decrypted = self.obf.decrypt_from_memory(&old_encrypted, k_old);
                 self.remove_int(k_old);
-                self.insert_int(k_new, &contents);
+                self.insert_int(k_new, &decrypted);
                 true
             },
             _ => return false
@@ -267,14 +312,14 @@ impl Jots {
         let old_key = k_old.clone();
         let new_key = k_new.clone();
 
-        self.undoer.push(&msg, Box::new(move |s: &mut HashMap<String, String>| -> bool {
+        self.undoer.push(&msg, Box::new(move |s: &mut HashMap<String, Vec<u8>>| -> bool {
             s.remove(&new_key);
-            s.insert(old_key.clone(), contents.clone());
-    
-            return true;
-        }));  
+            s.insert(old_key.clone(), old_encrypted.clone());
 
-        return res;      
+            return true;
+        }));
+
+        return res;
     }
 
     pub fn from_enc_file(&mut self, file_name: &str, password: &str) -> std::io::Result<()> {

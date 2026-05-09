@@ -72,11 +72,14 @@ use std::io::{Error, ErrorKind};
 
 use crate::pwgen::GenerationStrategy;
 use crate::{CfgSource, jots};
+use crate::pwstore;
+
+
 
 #[allow(dead_code)]
 pub struct AppState {
     store: jots::Jots,
-    password: Option<String>,
+    password: Option<Box<dyn pwstore::PwGetter + Send>>,
     store_id: String,
     default_security_level: usize,
     default_generator: GenerationStrategy,
@@ -95,6 +98,7 @@ pub struct AppState {
 impl AppState {
     pub fn new(s: jots::Jots, f_name: &String, default_sec: usize, default_gen: GenerationStrategy,
                paste_cmd: &String, copy_cmd: &String, p: SendSyncPersister, is_pw_cached: bool, qr_viewer: &Option<String>, cfg_type: CfgSource, cfg_name: &String, kdf_id: KdfId) -> Self {
+
         return AppState {
             store: s,
             password: None,
@@ -118,8 +122,20 @@ impl AppState {
         return self.default_security_level;
     }
 
+    pub fn get_password(&self) -> Option<String> {
+        match &self.password {
+            Some(p) => { return Some(p.get()); },
+            None => None
+        }
+    }
+
+    pub fn set_password(&mut self, new_pw: String) {
+        let t = pwstore::make_new_pwstore(&self.store_id, new_pw.as_str());
+        self.password = Some(t);
+    }
+
     pub fn persist_store(&mut self) -> std::io::Result<()> {
-        let pw = match &self.password {
+        let pw = match self.get_password() {
             Some(p) => p,
             None => {
                 return Err(Error::new(ErrorKind::Other, format!("No password available, unable to persist store '{}'", &self.store_id)));

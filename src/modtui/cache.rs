@@ -48,7 +48,7 @@ pub fn make_pwman_client(file_name: String) -> std::io::Result<SendSyncPwManClie
 }
 
 pub fn password(s: &mut Cursive, state_for_write_cache: Arc<Mutex<AppState>>) {
-    let pw_option = state_for_write_cache.lock().unwrap().password.clone();
+    let pw_option = state_for_write_cache.lock().unwrap().get_password();
     let file_name = match state_for_write_cache.lock().unwrap().persister.get_canonical_path() {
         Ok(s) => s,
         Err(_) => {

@@ -48,7 +48,7 @@ pub fn storage(s: &mut Cursive, password: &String, state: AppState) -> Option<Ap
         }
     }
 
-    state.password = Some(password.clone());
+    state.set_password(password.clone());
 
     return Some(state);
 }
