@@ -16,8 +16,10 @@ limitations under the License. */
 use std::sync::{Arc, Mutex};
 
 use cursive::Cursive;
-use cursive::views::{Dialog, LinearLayout, TextView, EditView};
+use cursive::views::{Dialog, LinearLayout, TextView, EditView, DialogFocus};
 use cursive::traits::*;
+use cursive::event::EventResult;
+use cursive::view::Selector::Name;
 
 use super::AppState;
 use super::show_message;
@@ -29,6 +31,7 @@ use super::cache;
 
 static PW_EDIT1_CH: &str = "pwchedit1";
 static PW_EDIT2_CH: &str = "pwchedit2";
+static PW_EDIT3_CH: &str = "pwchedit3";
 static DLG_PW_CH: &str = "pwchangedlg";
 
 
@@ -38,10 +41,19 @@ pub fn change(s: &mut Cursive, state_for_pw_change: Arc<Mutex<AppState>>) {
         .padding_lrtb(2, 2, 1, 1)
         .content(
             LinearLayout::vertical()
+            .child(
+                LinearLayout::horizontal()
+                    .child(TextView::new("Current password: "))
+                    .child(EditView::new()
+                        .secret()
+                        .with_name(PW_EDIT3_CH)
+                        .fixed_width(PW_WIDTH))
+            )
+            .child(TextView::new("\n"))
             .child(TextView::new("Enter a new password.\n\n"))
             .child(
                 LinearLayout::horizontal()
-                    .child(TextView::new("New Password   : "))
+                    .child(TextView::new("New Password    : "))
                     .child(EditView::new()
                         .secret()
                         .with_name(PW_EDIT1_CH)
@@ -50,7 +62,7 @@ pub fn change(s: &mut Cursive, state_for_pw_change: Arc<Mutex<AppState>>) {
             .child(TextView::new("\n"))
             .child(
                 LinearLayout::horizontal()
-                    .child(TextView::new("Verify Password: "))
+                    .child(TextView::new("Verify Password : "))
                     .child(EditView::new()
                         .secret()
                         .with_name(PW_EDIT2_CH)
@@ -68,6 +80,32 @@ pub fn change(s: &mut Cursive, state_for_pw_change: Arc<Mutex<AppState>>) {
                 None => { show_message(s, "Unable to read password"); return }
             };
             
+            let current_text = match s.call_on_name("pwchedit3", |view: &mut EditView| {view.get_content()}) {
+                Some(s) => s,
+                None => { show_message(s, "Unable to read current password"); return }
+            };
+
+            if !state_for_pw_change.lock().unwrap().verify_password(current_text.to_string()) {
+                show_message(s, "Current password incorrect");
+                s.call_on_name(PW_EDIT3_CH, |view: &mut EditView| {view.set_content(String::from(""))}).unwrap()(s);
+                s.call_on_name(DLG_PW_CH, |view: &mut Dialog| {view.set_focus(DialogFocus::Content)});
+                match s.call_on_name(DLG_PW_CH, |view: &mut Dialog| {view.focus_view(&Name(PW_EDIT3_CH))}).unwrap() {
+                    Ok(o) => {
+                        match o {
+                            EventResult::Ignored => (),
+                            EventResult::Consumed(ocb) => {
+                                match ocb {
+                                    None => (),
+                                    Some(cb) => cb(s)
+                                }
+                            }
+                        }
+                    },
+                    Err(_) => ()
+                }
+                return;
+            }
+
             if pw1_text != pw2_text {
                 show_pw_select_error(s, "Passwords not equal!", PW_EDIT1_CH, PW_EDIT2_CH, DLG_PW_CH);
                 return;

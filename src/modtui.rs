@@ -65,6 +65,7 @@ use cursive::event::Key;
 use cursive::theme;
 use cursive::theme::Effects;
 use cursive::theme::Effect;
+use zeroize::Zeroize;
 use std::sync::{Arc, Mutex};
 
 use std::sync::mpsc::Sender;
@@ -129,9 +130,28 @@ impl AppState {
         }
     }
 
-    pub fn set_password(&mut self, new_pw: String) {
+    pub fn verify_password(&self, mut pw_to_test: String) -> bool {
+        match &self.password {
+            Some(p) => {
+                let mut current_pw = p.get();
+                let res = pw_to_test == current_pw;
+
+                current_pw.zeroize();
+                pw_to_test.zeroize();
+
+                return res
+            },
+            None => {
+                pw_to_test.zeroize();
+                return false;
+            }
+        }
+    }
+
+    pub fn set_password(&mut self, mut new_pw: String) {
         let t = pwstore::make_new_pwstore(&self.store_id, new_pw.as_str());
         self.password = Some(t);
+        new_pw.zeroize();
     }
 
     pub fn persist_store(&mut self) -> std::io::Result<()> {
