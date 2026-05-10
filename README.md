@@ -183,7 +183,9 @@ This allows to load the contents of a (text-)file into an entry. The current con
 
 This entry is visible when the feature `qrcode` was used to build `rustpwman`. Via this entry you can create a QR code which encodes the contents of the entry. This can be useful if
 you want use data stored in `rustpwman` on a mobile phone. It is especially handy, if the data stored in `rustpwman` is a `otpauth://`-URL which holds the value and the usage parameters
-of a TOTP secret.
+of a TOTP secret. If you want to extract the `otpauth://` URL from a PNG showing the QR-code displayed during TOTP-onboarding you can use this Python
+[script](https://github.com/rmsk2/pwman/blob/main/totp.py). Make sure that the PNG is clipped to show the QR code only.
+
 
 As `rustpwman` is a text mode only application it can not show images directly. We therefore have to make use of an OS-specific helper application which allows us to display an image
 stored in the file system of the machine on which `rustpwman` runs. This also means that the image containing the QR code has to be created before it can be displayed. For this purpose
