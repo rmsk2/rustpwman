@@ -28,6 +28,7 @@ use fcrypt::KdfId;
 use fcrypt::Cryptor;
 use rand::Rng;
 use sha2::{Sha256, Digest};
+use zeroize::{Zeroize, ZeroizeOnDrop};
 
 
 pub type CryptorGen = Box<dyn Fn(KeyDeriver, KdfId) -> Box<dyn Cryptor>  + Send + Sync>;
@@ -70,13 +71,13 @@ impl MapObfuscator {
 }
 
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Zeroize, ZeroizeOnDrop)]
 pub struct KvEntry {
     #[serde(rename(deserialize = "Key"))]
     #[serde(rename(serialize = "Key"))]    
     pub key: String,
     #[serde(rename(deserialize = "Text"))]
-    #[serde(rename(serialize = "Text"))]    
+    #[serde(rename(serialize = "Text"))]
     pub value: String 
 }
 
@@ -167,7 +168,7 @@ impl Jots {
     
         for i in raw_struct {
             let enc = self.obf.encrypt_for_memory(&i.value, &i.key);
-            self.contents.insert(i.key, enc);
+            self.contents.insert(i.key.clone(), enc);
         }
 
         return Ok(());
@@ -178,8 +179,9 @@ impl Jots {
         let writer = BufWriter::new(w);
 
         for i in &self.contents {
-            let plaintext = self.obf.decrypt_from_memory(i.1, i.0);
+            let mut plaintext = self.obf.decrypt_from_memory(i.1, i.0);
             raw_data.push(KvEntry::new(i.0, &plaintext));
+            plaintext.zeroize();
         }
 
         serde_json::to_writer_pretty(writer, &raw_data)?;
@@ -189,8 +191,9 @@ impl Jots {
 
     pub fn print(&self) {
         (&self.contents).iter().for_each(|i| {
-            let plaintext = self.obf.decrypt_from_memory(i.1, i.0);
+            let mut plaintext = self.obf.decrypt_from_memory(i.1, i.0);
             println!("{}: {}", i.0, plaintext);
+            plaintext.zeroize();
         });
     }
 
@@ -300,9 +303,10 @@ impl Jots {
         // Check if entry k_new exists. It must not exist.
         let res = match self.get(k_new) {
             None => {
-                let decrypted = self.obf.decrypt_from_memory(&old_encrypted, k_old);
+                let mut decrypted = self.obf.decrypt_from_memory(&old_encrypted, k_old);
                 self.remove_int(k_old);
                 self.insert_int(k_new, &decrypted);
+                decrypted.zeroize();
                 true
             },
             _ => return false
@@ -326,13 +330,14 @@ impl Jots {
         let mut ctx = (self.cr_gen)(self.kdf, self.kdf_id);
 
         let data = ctx.from_file(file_name)?;
-        let plain_data = match ctx.decrypt(password, &data) {
+        let mut plain_data = match ctx.decrypt(password, &data) {
             Err(e) => { return Err(Error::new(ErrorKind::Other, format!("{:?}", e))); },
             Ok(d) => d
         };
 
         self.from_reader(plain_data.as_slice())?;
         self.mark_as_clean();
+        plain_data.zeroize();
 
         return Ok(());
     }
@@ -347,13 +352,14 @@ impl Jots {
             _ = cb(&raw_data);
         }
 
-        let plain_data = match ctx.decrypt(password, &data) {
+        let mut plain_data = match ctx.decrypt(password, &data) {
             Err(e) => { return Err(Error::new(ErrorKind::Other, format!("{:?}", e))); },
             Ok(d) => d
         };
 
         self.from_reader(plain_data.as_slice())?;
         self.mark_as_clean();
+        plain_data.zeroize();
 
         return Ok(());
     }
@@ -370,6 +376,7 @@ impl Jots {
 
         ctx.to_file(&enc_data, file_name)?;
         self.mark_as_clean();
+        serialized.zeroize();
 
         return Ok(());
     }
@@ -386,6 +393,7 @@ impl Jots {
 
         ctx.persist(&enc_data, p)?;
         self.mark_as_clean();
+        serialized.zeroize();
 
         return Ok(());
     }
