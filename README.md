@@ -296,8 +296,7 @@ You can influence the behaviour of `rustpwman` via the values of the following e
 
 |Name | Intended use |
 |-|-|
-|`PWMANCIPHER`| If the `chacha20` feature is active and this variable is set then the values `AES192` and `AES256` select AES-192 GCM or AES-256 GCM as a cipher. Any other value selects ChaCha20-Poly1305. If not set AES-256 GCM is used. If an algo is specified in the config file then it takes precendence over the contents of this environment variable. If a cipher is
-selected on the command line it overrides values set in the environment or in the config file. |
+|`PWMANCIPHER`| If the `chacha20` feature is active and this variable is set then the values `AES192` and `AES256` select AES-192 GCM or AES-256 GCM as a cipher. Any other value selects ChaCha20-Poly1305. If not set AES-256 GCM is used. If an algo is specified in the config file then it takes precendence over the contents of this environment variable. If a cipher is selected on the command line it overrides values set in the environment or in the config file. |
 |`PWMANBKP`| If the feature `writebackup` is active the contents of this variable specifies the file name to store the backup in. If neither this variable nor the config entry `bkp_file_name` is set then the default value `rustpwman_last.enc` will be used. If the config entry is present it takes precedence over the environment variable. |
 |`RUSTPWMAN_OBFUSCATION`| Key used to obfuscate WebDAV access data, if the `webdav`  feature is active. |
 |`RUSTPWMAN_VIEWER`| Prefix for the command to start an image viewer to which the file name of the image (containing a QR code) is appended if the `qrcode` feature is enabled. If the value `viewer_cmd` in the config file is set it takes precendence over the environment variable. |
