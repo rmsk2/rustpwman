@@ -32,7 +32,7 @@ chacha20poly1305 = "=0.11.0-rc.3"
 cipher = "0.5"
 aes = "=0.9"
 aead = "=0.6.0-rc.10"
-scrypt = {version = "=0.12.0-rc.10", optional = true}
+scrypt = {version = "0.12", optional = true}
 argon2 = "=0.6.0-rc.8"
 zeroize = { version = "1.8", features = ["derive"] }
 
