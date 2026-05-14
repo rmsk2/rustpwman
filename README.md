@@ -11,7 +11,7 @@ Under Linux and macOS use `cargo build --release` to build with all features ena
 Visual Studio Developer prompt for this purpose. On top of that there is a separate section in this README that deals with [building under Windows](#native). If you want
 a minimal set of features (and therefore a minimal set of dependencies) you can use `cargo build --release --no-default-features` under Linux, macOS and Windows.
 In this case the password cache, support for WebDAV, additional crypto algorithms, support for scrypt, the automatic local backup feature and the possibility to encode
-an entry in a QR code are not available. If you want to select features one by one you will find a list of feature names [below](#feature-overwiew). On Linux you will
+an entry in a QR code are not available. If you want to select features one by one you will find a list of feature names [below](#feature-overview). On Linux you will
 have to install `libssl-dev` if you want to use the WebDAV feature and `ncurses` if you prefer to use the `ncurses` backend.
 
 # How to run the software
@@ -60,8 +60,8 @@ Use `rustpwman <command> -h` to get additional help for each command.
 This is the command you will use the most. It asks for a password and then presents the text user interface which allows you to manage the password data.
 When using `rustpwman gui` with the `--backup` option it is possible to export the whole contents of the password file in plaintext to an HTML file. The purpose
 of this feature is to allow the user to create an offline backup of the password data in a widely supported file format which can either be stored digitally or in
-printed form. In order to mirror the behaviour of the `rustpwman dec` command the user is forced to enter the password of the data file independent of a possibly cached
-password. After a successfull data export `rustpwman` starts up in the usual fashion.
+printed form. In order to mirror the behaviour of the `rustpwman dec` command the user is forced to enter the password of the data file independently of a possibly cached
+password. After a successful data export `rustpwman` starts up in the usual fashion.
 
 ## The File menu
 The `File` menu contains the following entries.
@@ -98,13 +98,13 @@ is currently cached or not.
 ### Undo changes
 
 When an entry is modified, added or deleted `rustpwman` retains information which allows to undo this modification. Selecting this menu entry opens a dialog which
-allows to manually undo changes in the reverse order in which they were applied or to undo all unchages which have been recorded since the last time the data
+allows to manually undo changes in the reverse order in which they were applied or to undo all changes which have been recorded since the last time the data
 file was saved.
 
 ### Quit and print
 
 Selecting this entry ends the program and prints the value of the currently selected entry as well as the values of all queued entries to the CLI window after the TUI has
-been closed. About the reasoning behind this idea have a look at the section [A note about using the clipboard](#a-note-about-using-the-clipboard). Instead of selecting this
+been closed. For the reasoning behind this idea, have a look at the section [A note about using the clipboard](#a-note-about-using-the-clipboard). Instead of selecting this
 menu entry you can alternatively press F4.
 
 If your primary goal is to store the contents of an entry in the clipboard you can do that directly by selecting the `Copy to clipboard` or `Copy contents` entries from the
@@ -148,7 +148,7 @@ The controls to select a custom character set are hidden unless you select the `
 
 This menu entry can be used to copy the value of the currently selected password entry and the values of all queued entries to the clipboard. For the reasons described
 [below](#a-note-about-using-the-clipboard) this feature requires an additional tool which accepts its input via stdin and uses that data to set the clipboard contents. The path to
-this tool can be confgured by calling `rustpwman cfg`. When you use `clip.exe` under Windows for this purpose you have to be aware that non ASCII characters may not be displayed
+this tool can be configured by calling `rustpwman cfg`. When you use `clip.exe` under Windows for this purpose you have to be aware that non ASCII characters may not be displayed
 correctly after pasting the clipboard data. The reason for this is that `clip.exe` expects a character encoding different from UTF-8 which is the default for Rust. If you want to
 prevent this problem you can use `paste_utf8.exe -c` instead of `clip.exe`. Instead of selecting this menu entry you can alternatively press F2.
 
@@ -191,7 +191,7 @@ As `rustpwman` is a text mode only application it can not show images directly. 
 stored in the file system of the machine on which `rustpwman` runs. This also means that the image containing the QR code has to be created before it can be displayed. For this purpose
 you have to specify the file name in which to store the QR code.
 
-After you have scanned the QR code with your device you most probably want to delete the file again. `rustpwman` offers to do that for you immedeately after starting the image viewer.
+After you have scanned the QR code with your device you most probably want to delete the file again. `rustpwman` offers to do that for you immediately after starting the image viewer.
 
 ### Search Entry
 
@@ -271,7 +271,7 @@ Where the entries have the following semantics:
 
 - `seclevel` has to be an integer between 0 and 31. The security level in bits is calculated as (`seclevel` + 1) * 8.
 - `pbkdf` is a string that can assume the values `scrypt`, `argon2`, `sha256`
-- `cipher` is a string which can assume the values `aes192`, `aes256` or `chacha20` and selects the encryption algorithm used by `rustpwman`. This entry is optional. If it is missing you can select a cipher via a command line parameter or an evironment variable. If these are also not present `aes256` is chosen as a default.
+- `cipher` is a string which can assume the values `aes192`, `aes256` or `chacha20` and selects the encryption algorithm used by `rustpwman`. This entry is optional. If it is missing you can select a cipher via a command line parameter or an environment variable. If these are also not present `aes256` is chosen as a default.
 - `pwgen` is one of the strings `base64`, `hex`, `numeric` or `special`
 - `clip_cmd` is a string which specifies a command that can be used to write the current contents of the clipboard to stdout.
 - `copy_cmd` is a string which specifies a command that can be used to transfer the data sent to it via stdin to the clipboard.
@@ -288,7 +288,7 @@ The value `copy_cmd` uses `xsel -ib` as a default. This should work under Linux.
 
 As the value of `viewer_cmd` you can use `eog` (Gnome) or `xdg-open` on Linux, `open -a Preview` on MacOS and `explorer.exe` under Windows.
 
-As a default the config file is stored in the users' home directory in a file named `.rustpwman` and you can alternatively edit it by hand instead of calling `rustpwman cfg`.
+As a default the config file is stored in the user's home directory in a file named `.rustpwman` and you can alternatively edit it by hand instead of calling `rustpwman cfg`.
 If the environment variable `PWMAN_CONFIG` is set to a value, then `rustpwman` will interpret its value as the file name of a separate config file. This can
 be useful during testing or when using password files on several WebDAV servers. Additionally the option `--cfgfile` can also be used to specify a dedicated config file.
 If it is present the value of the option takes precedence over the contents of the environment variable.
@@ -299,10 +299,10 @@ You can influence the behaviour of `rustpwman` via the values of the following e
 
 |Name | Intended use |
 |-|-|
-|`PWMANCIPHER`| If the `chacha20` feature is active and this variable is set then the values `AES192` and `AES256` select AES-192 GCM or AES-256 GCM as a cipher. Any other value selects ChaCha20-Poly1305. If not set AES-256 GCM is used. If an algo is specified in the config file then it takes precendence over the contents of this environment variable. If a cipher is selected on the command line it overrides values set in the environment or in the config file. |
+|`PWMANCIPHER`| If the `chacha20` feature is active and this variable is set then the values `AES192` and `AES256` select AES-192 GCM or AES-256 GCM as a cipher. Any other value selects ChaCha20-Poly1305. If not set AES-256 GCM is used. If an algo is specified in the config file then it takes precedence over the contents of this environment variable. If a cipher is selected on the command line it overrides values set in the environment or in the config file. |
 |`PWMANBKP`| If the feature `writebackup` is active the contents of this variable specifies the file name to store the backup in. If neither this variable nor the config entry `bkp_file_name` is set then the default value `rustpwman_last.enc` will be used. If the config entry is present it takes precedence over the environment variable. |
 |`RUSTPWMAN_OBFUSCATION`| Key used to obfuscate WebDAV access data, if the `webdav`  feature is active. |
-|`RUSTPWMAN_VIEWER`| Prefix for the command to start an image viewer to which the file name of the image (containing a QR code) is appended if the `qrcode` feature is enabled. If the value `viewer_cmd` in the config file is set it takes precendence over the environment variable. |
+|`RUSTPWMAN_VIEWER`| Prefix for the command to start an image viewer to which the file name of the image (containing a QR code) is appended if the `qrcode` feature is enabled. If the value `viewer_cmd` in the config file is set it takes precedence over the environment variable. |
 |`PWMAN_CONFIG`| Full path to an alternative config file. The `-c/--cfgfile` option takes precedence over the environment variable if the option is specified. If neither the environment variable nor the option is used then the `.rustpwman` file in the user's home directory will be utilized as a default. |
 
 # Using `rustpwman` to generate passwords or the `gen` command
@@ -313,7 +313,7 @@ When you run the `rustpwman gen` command you can generate one or more passwords 
 
 Tip: You can pipe the output of `rustpwman gen` into a program that copies the data it receives via stdin into the clipboard.
 
-# Using `rustpwman` to en- decrypt files or the `enc` and `dec` commands
+# Using `rustpwman` to en- and decrypt files or the `enc` and `dec` commands
 
 `rustpwman enc` and `rustpwman dec` can be used to en- and decrypt arbitrary files even though their main purpose is to allow you to decrypt your password data under
 one PBKDF or cipher and reencrypt that data using another key derivation function or cipher in case you want to migrate from one PBKDF or cipher to another. On top of
@@ -376,7 +376,7 @@ Support for colouring varies between platforms and console backends.
 
 When you build `rustpwman` with the `chacha20` feature you can use ChaCha20 Poly-1305 or AES-192 GCM as an alternative cipher for password file encryption. These algorithms are
 activated by setting the environment variable `PWMANCIPHER` to a value. If the variable is set to the value `AES192` or `AES256` then AES-192 or AES-256 GCM will be used. Any other
-value makes `rustpwman` using ChaCha20 Poly-1305. If the variable is not set when `rustpwman` is started, then AES-256 GCM is used. Under Linux and MacOS you can for instance use
+value makes `rustpwman` use ChaCha20 Poly-1305. If the variable is not set when `rustpwman` is started, then AES-256 GCM is used. Under Linux and MacOS you can for instance use
 `PWMANCIPHER=CHACHA20 rustpwman gui -i input_file.enc` to set the environment varible and start `rustpwman` in one go.
 
 As an alternative to setting an environment variable you can also use the `--cipher` or `-c` command line option and one of the parameters
@@ -405,7 +405,7 @@ default can be overriden by setting the environment variable `PWMANBKP` or the c
 The feature `qrcode` allows you to encode data stored in `rustpwman` as a QR code which is especially useful for recreating TOTP secrets on your mobile phone or any other
 TOTP enabled device which is able to read the corresponding QR code. `rustpwman` stores the generated QR code as a PNG image at a location in the file system chosen by the user.
 `rustpwman` can also automatically start an image viewer which displays the newly created PNG. For that to work the prefix of the image viewer command has to be specified either in
-an environment variable called `RUSTPWMAN_VIEWER` or via the entry `viewer_cmd` of  the `.rustpwman` config file. `rustpwman` simply appends the file name of the PNG to the
+an environment variable called `RUSTPWMAN_VIEWER` or via the entry `viewer_cmd` of the `.rustpwman` config file. `rustpwman` simply appends the file name of the PNG to the
 specified prefix and executes the resulting string as a command.
 
 If a config file entry exists it takes precedence over the environment variable. This feature also works if you do not specify a viewer application. In that case you have to open the
@@ -413,7 +413,7 @@ generated image file manually.
 
 This feature alone adds about 80 dependencies to the project. If you do not plan to use QR codes then build `rustpwman` without it.
 
-## Feature overwiew
+## Feature overview
 
 | Feature name | Description |
 |-|-|
@@ -536,7 +536,7 @@ This section provides information about stuff which is in my view suboptimal and
 
 - An attacker who only sees the encrypted password file will either have to guess your master password or have to break AES/ChaCha20 to compromise the contents of your password file. Guessing the password is made more difficult by utilization of a good PBKDF like argon2 (default) or scrypt.
 - If a competent and determined attacker is active on your machine while you are using `rustpwman` he or she will probably be able to learn the contents of your password file in some way or another.
-- Starting with version 2.10.1 `rustpwman` attempts to zeroize memory holding sensitive data before it is dropped in some strategic areas. This can not work 100% reliably though as some sensitive data is handled for instance by `cursive` to be displayed or is serialized/deserialzed by `serde`. This may be a problem when `rustpwman` is used in an environment where an attacker can gain access to unsanitized memory previously used by `rustpwman` or can look at the contents of the swap file. On the other hand it is probably impossible to defend against an attacker who has that level of access and in the end the information stored in `rustpwman` is used in other applications which most probably do not sanitize their memory.
+- Starting with version 2.10.1 `rustpwman` attempts to zeroize memory holding sensitive data before it is dropped in some strategic areas. This can not work 100% reliably though as some sensitive data is handled for instance by `cursive` to be displayed or is serialized/deserialized by `serde`. This may be a problem when `rustpwman` is used in an environment where an attacker can gain access to unsanitized memory previously used by `rustpwman` or can look at the contents of the swap file. On the other hand it is probably impossible to defend against an attacker who has that level of access and in the end the information stored in `rustpwman` is used in other applications which most probably do not sanitize their memory.
 - Starting with version 2.10.0 `rustpwman` also makes some effort to cryptographically obfuscate sensitive data in memory which should decrease the likelihood of the attacks mentioned above succeeding at least as long as the attacker does not actively attempt to circumvent the obfuscation mechanism.
 - On Windows when using the `pancurses` backend a spurious Escape sequence `ESC[?1002l` is printed to stdout when the TUI application stops. This does not happen on Linux or MacOS. By piping the output of `rustpwman` to `winfilter.exe` you can remove this unwanted data from the output.
 - In non `--release` builds scrypt with the chosen parameters is *extremely* slow
