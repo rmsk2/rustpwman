@@ -330,7 +330,9 @@ the data file specified by the `-i` option from the cache provided by `pwserv`.
 
 If this does not succeed, the user is requested to enter a password as was the case in Version 1.1.0 and below. If on the other hand the password was successfully read, the
 user is asked to confirm that it should be used. Through the correspondig dialog the user is also able to clear the password from the cache. This can come in handy when
-the cached password does not match the current password of the file which is to be opened.
+the cached password does not match the current password of the file which is to be opened. Beginning with version 2.11.1 `rustpwman` can not see passwords cached by
+`pwman` and vice versa. This is due to the fact that I have changed how `rustpwman` calculates the address of a value in the cache to make it more difficult to guess
+this value.
 
 Depending on the platform for which `rustpwman` is being built the feature is named `pwmanclientux` (Linux and MacOS) or `pwmanclientwin` (Windows).
 

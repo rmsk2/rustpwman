@@ -15,9 +15,11 @@ limitations under the License. */
 #![allow(dead_code)]
 
 use std::io::{Error, ErrorKind};
-use md5::{Md5, Digest};
+use sha2::{Sha256};
 use serde::{Serialize, Deserialize};
+use hmac::{Hmac, KeyInit, Mac};
 
+const OBFUSCATOR: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/obfuscator.bin"));
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PWRequest {
@@ -118,11 +120,13 @@ fn hex_string(buf: &[u8]) -> String {
 }
 
 pub fn hash_password_file_name(password_file: &String) -> std::io::Result<String> {
-    let mut md5 = Md5::new();
+    let mut hmac = Hmac::<Sha256>::new_from_slice(OBFUSCATOR).expect("This should not happen: HMAC key length mismatch");
 
-    md5.update(password_file);
-    let hash_res = md5.finalize();
-    let name: String = format!("PWMAN:{}", hex_string(&hash_res));
+    // Make sure the the value used to retrieve the master password from pwman is not easily guessable
+    hmac.update(password_file.as_bytes());
+    let hash_res = hmac.finalize();
+    let val: Vec<u8> = hash_res.as_bytes().clone().into_iter().take(16).collect();
+    let name: String = format!("PWMAN:{}", hex_string(&val));
 
     return Ok(name);
 }
