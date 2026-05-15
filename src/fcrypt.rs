@@ -52,6 +52,48 @@ const CIP_CHACHA20: &str = "chacha20";
 
 pub const DEFAULT_KDF_ID: KdfId = KdfId::Argon2;
 
+#[macro_export]
+macro_rules! make_creator {
+    ($strct:ident) => {
+        impl $strct {
+            #![allow(dead_code)]
+            pub fn new() -> $strct {
+                return $strct($crate::fcrypt::AeadContext::new_with_kdf($crate::fcrypt::derivers::sha256_deriver, $crate::fcrypt::KdfId::Sha256));
+            }
+
+            pub fn new_with_kdf(derive: $crate::fcrypt::KeyDeriver, deriver_id: $crate::fcrypt::KdfId) -> $strct {
+                return $strct($crate::fcrypt::AeadContext::new_with_kdf(derive, deriver_id));
+            }
+        }        
+    }
+}
+
+#[macro_export]
+macro_rules! cryptor_impl {
+    ($strct:ty, $cip:ty, $name:expr) => {
+        impl $crate::fcrypt::Cryptor for $strct {
+            fn decrypt(&mut self, password: &str, data: &Vec<u8>) -> std::io::Result<Vec<u8>> {
+                return $crate::fcrypt::decrypt_aead::<$cip>(&mut self.0, password, data, $name);
+            }
+
+            fn encrypt(&mut self, password: &str, data: &Vec<u8>) -> std::io::Result<Vec<u8>> {
+                return $crate::fcrypt::encrypt_aead::<$cip>(&mut self.0, password, data, $name);
+            }
+
+            fn from_dyn_reader(&mut self, reader: &mut dyn ::std::io::Read) -> std::io::Result<Vec<u8>> {
+                return self.0.from_reader(reader);
+            }
+
+            fn to_dyn_writer(&self, writer: &mut dyn ::std::io::Write, data: &Vec<u8>) -> std::io::Result<()> {
+                return self.0.to_writer(writer, data);
+            }
+
+            fn algo_name(&self) -> &'static str {
+                return $name;
+            }
+        }        
+    };
+}
 
 // This trait describes a "thing" which knows how to en- and decrypt a byte vector and to serialize, deserialize,
 // load and save the encrypted data structure.
