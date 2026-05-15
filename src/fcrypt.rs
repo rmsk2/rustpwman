@@ -37,11 +37,7 @@ use aead::{Aead, KeyInit, AeadInOut, AeadCore, KeySizeUser};
 const DEFAULT_TAG_SIZE: usize = 16;
 const DEFAULT_NONCE_SIZE: usize = 12;
 const DEFAULT_SALT_SIZE: usize = 16;
-// bcrypt has an input length limitation.
-// It does not seem to be clear what this limitation is though.
-// One recommendation is that 50 is a safe choice for all sensible
-// bcrypt implementations.
-const MAX_PW_SIZE_IN_BYTES: usize = 50;  
+const MAX_PW_SIZE_IN_BYTES: usize = 70;  
 
 const KDF_SCRYPT: &str = "scrypt";
 const KDF_ARGON2: &str = "argon2";
