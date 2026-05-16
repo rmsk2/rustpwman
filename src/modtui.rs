@@ -34,6 +34,7 @@ mod queue;
 #[cfg(feature = "qrcode")]
 mod qrcode;
 mod search;
+mod totp;
 pub mod tuimain;
 pub mod tuitheme;
 
@@ -94,6 +95,7 @@ pub struct AppState {
     cfg_type: CfgSource,
     cfg_name: String,
     kdf_id: KdfId,
+    current_totp_producer: Option<Sender<bool>>,
 }
 
 impl AppState {
@@ -115,7 +117,8 @@ impl AppState {
             entry_queue: Vec::new(),
             cfg_type: cfg_type,
             cfg_name: cfg_name.clone(),
-            kdf_id: kdf_id
+            kdf_id: kdf_id,
+            current_totp_producer: None
         }
     }
 
@@ -515,6 +518,7 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
     #[cfg(feature = "qrcode")]
     entry_tree.add_leaf("To QR-Code ...", wrapper(ctx.clone(), qrcode::create));
 
+    entry_tree.add_leaf("Show TOTP ...", wrapper(ctx.clone(), totp::show));
     entry_tree.add_leaf("Search Entry ...      F6", wrapper(ctx.clone(), search::entry));
 
     s.menubar()
