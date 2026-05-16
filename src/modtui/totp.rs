@@ -65,6 +65,8 @@ pub fn show(s: &mut Cursive, state: Arc<Mutex<AppState>>) {
                     .with_name(TOTP_VIEW)
             )
             .button("Done", move |s| {
+                // This drops the current sender. This in turn causes try_recv() in totp_calc() to return Err(TryRecvError::Disconnected)
+                // which is then used to stop the current worker thread
                 state_for_stop.lock().unwrap().current_totp_producer = None;
                 s.pop_layer();
             })
@@ -79,12 +81,15 @@ fn start_totp_calc(st: Arc<Mutex<AppState>>, siv: &mut Cursive, totp_url: String
     {
         let mut s = st.lock().unwrap();
         let (tx, rx): (Sender<bool>, Receiver<bool>) = mpsc::channel();
+        // This also causes the current sender to be dropped, which again makes try_recv() in totp_calc() to return
+        // Err(TryRecvError::Disconnected) which is then used to stop the current worker thread thread.
         s.current_totp_producer = Some(tx);
         receiver = rx;
     }
 
     let cb_sink = siv.cb_sink().clone();
 
+    // The new worker thread has a new receiver
     thread::spawn(move || {
         totp_calc(&cb_sink, totp_url, receiver)
     });
@@ -92,8 +97,11 @@ fn start_totp_calc(st: Arc<Mutex<AppState>>, siv: &mut Cursive, totp_url: String
 
 fn totp_calc(cb_sink: &CbSink, _totp_url: String, rx: Receiver<bool>) {
     loop {
+        // If this results in TryRecvError::Disconnected the last sender for this receiver has been dropped. This
+        // is detected and used to stop this instance of the worker thread
         match rx.try_recv() {
             Ok(_) | Err(TryRecvError::Disconnected) => break,
+            // This is the normal case
             Err(TryRecvError::Empty) => {}
         }
 
@@ -107,6 +115,7 @@ fn totp_calc(cb_sink: &CbSink, _totp_url: String, rx: Receiver<bool>) {
         let remaining = 30 - (unix_time % 30);
         let display = format!("Code: {}  ({} s remaining)", code, remaining);
 
+        // Async update to TUI
         let _ = cb_sink.send(Box::new(move |siv: &mut cursive::Cursive| {
             siv.call_on_name(TOTP_VIEW, |view: &mut TextView| {
                 view.set_content(display.clone());
