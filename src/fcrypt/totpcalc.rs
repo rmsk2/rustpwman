@@ -1,6 +1,7 @@
 use sha2::{Sha256, Sha512};
 use sha1::Sha1;
 use hmac::{EagerHash, Hmac, KeyInit, Mac};
+use base32;
 
 pub enum TotpAlgoId {
     Sha1,
@@ -61,7 +62,59 @@ impl TotpParams {
         return format!("{:0>width$}", totp_int % mod_val, width = self.digits);
     }    
 
-    pub fn get_current_code_formatted(&self, unix_time: u64) -> String {
-        return format!("Code: {}", self.get_current_code(unix_time));
-    }    
+    pub fn from_totp_params(entry_content: String) -> Option<TotpParams> {
+        let url_start = entry_content.find("otpauth://")?;
+        let tail = &entry_content[url_start..];
+        let url_end = tail.find(|c: char| c.is_whitespace()).unwrap_or(tail.len());
+        let url = &tail[..url_end];
+
+        if !url.starts_with("otpauth://totp/") {
+            return None;
+        }
+
+        let query = url.split('?').nth(1)?;
+
+        let mut params = TotpParams::new();
+        let mut secret: Option<Vec<u8>> = None;
+
+        for param in query.split('&') {
+            let mut parts = param.splitn(2, '=');
+            let key = match parts.next() { Some(k) => k, None => continue };
+            let value = parts.next().unwrap_or("");
+
+            match key.to_lowercase().as_str() {
+                "secret" => {
+                    secret = base32::decode(base32::Alphabet::RFC4648 { padding: false }, value);
+                }
+                "algorithm" => {
+                    params.algo = match value.to_uppercase().as_str() {
+                        "SHA1"   => TotpAlgoId::Sha1,
+                        "SHA256" => TotpAlgoId::Sha256,
+                        "SHA512" => TotpAlgoId::Sha512,
+                        _ => return None,
+                    };
+                }
+                "digits" => {
+                    match value.parse::<usize>() {
+                        Ok(d) if d == 6 || d == 7 || d == 8 => { params.digits = d; }
+                        Ok(_) => return None,
+                        Err(_) => return None
+                    }
+                }
+                "period" => {
+                    match value.parse::<usize>() {
+                        Ok(p) if p >= 1 && p <= 60 => { params.period = p; }
+                        Ok(_) => return None,
+                        Err(_) => return None
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        // secret? propagates None if the "secret" parameter was absent or not valid Base32.
+        // Without a decodable secret there is no HMAC key, so TOTP calculation is impossible.
+        params.secret = secret?;
+        Some(params)
+    }
 }
