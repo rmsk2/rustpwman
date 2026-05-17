@@ -76,11 +76,11 @@ pub fn show(s: &mut Cursive, state: Arc<Mutex<AppState>>) {
 }
 
 fn start_totp_calc(st: Arc<Mutex<AppState>>, siv: &mut Cursive, totp_url: String) {
-    let receiver: Receiver<bool>;
+    let receiver: Receiver<()>;
 
     {
         let mut s = st.lock().unwrap();
-        let (tx, rx): (Sender<bool>, Receiver<bool>) = mpsc::channel();
+        let (tx, rx): (Sender<()>, Receiver<()>) = mpsc::channel();
         // This also causes the current sender to be dropped, which again makes try_recv() in totp_calc() to return
         // Err(TryRecvError::Disconnected) which is then used to stop the current worker thread thread.
         s.current_totp_producer = Some(tx);
@@ -95,7 +95,7 @@ fn start_totp_calc(st: Arc<Mutex<AppState>>, siv: &mut Cursive, totp_url: String
     });
 }
 
-fn totp_calc(cb_sink: &CbSink, _totp_url: String, rx: Receiver<bool>) {
+fn totp_calc(cb_sink: &CbSink, _totp_url: String, rx: Receiver<()>) {
     loop {
         // If this results in TryRecvError::Disconnected the last sender for this receiver has been dropped. This
         // is detected and used to stop this instance of the worker thread

@@ -95,7 +95,7 @@ pub struct AppState {
     cfg_type: CfgSource,
     cfg_name: String,
     kdf_id: KdfId,
-    current_totp_producer: Option<Sender<bool>>,
+    current_totp_producer: Option<Sender<()>>,
 }
 
 impl AppState {
