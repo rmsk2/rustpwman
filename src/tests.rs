@@ -31,6 +31,7 @@ use std::env;
 use std::fs::remove_file;
 use crate::obfuscate;
 use crate::jots::CryptorGen;
+use crate::fcrypt::totpcalc::{TotpParams, TotpAlgoId};
 
 
 pub fn test_fcrypt_enc_dec_generic(generator: CryptorGen) {
@@ -595,4 +596,49 @@ fn test_n_digit_gen() {
         println!("{}", &pw);
         assert_eq!(sec_level_in_digits, pw.len());
     }
+}
+
+#[test]
+fn test_totp_rfc6238_sha1() {
+    let mut p = TotpParams::new();
+    p.algo = TotpAlgoId::Sha1;
+    p.secret = b"12345678901234567890".to_vec();
+    p.digits = 8;
+
+    assert_eq!(p.get_current_code(59),          "94287082");
+    assert_eq!(p.get_current_code(1111111109),  "07081804");
+    assert_eq!(p.get_current_code(1111111111),  "14050471");
+    assert_eq!(p.get_current_code(1234567890),  "89005924");
+    assert_eq!(p.get_current_code(2000000000),  "69279037");
+    assert_eq!(p.get_current_code(20000000000), "65353130");
+}
+
+#[test]
+fn test_totp_rfc6238_sha256() {
+    let mut p = TotpParams::new();
+    p.algo = TotpAlgoId::Sha256;
+    p.secret = b"12345678901234567890123456789012".to_vec();
+    p.digits = 8;
+
+    assert_eq!(p.get_current_code(59),          "46119246");
+    assert_eq!(p.get_current_code(1111111109),  "68084774");
+    assert_eq!(p.get_current_code(1111111111),  "67062674");
+    assert_eq!(p.get_current_code(1234567890),  "91819424");
+    assert_eq!(p.get_current_code(2000000000),  "90698825");
+    assert_eq!(p.get_current_code(20000000000), "77737706");
+}
+
+#[test]
+fn test_totp_rfc6238_sha512() {
+    let mut p = TotpParams::new();
+    p.algo = TotpAlgoId::Sha512;
+    p.secret = b"1234567890123456789012345678901234567890123456789012345678901234".to_vec();
+    p.digits = 8;
+
+    assert_eq!(p.get_current_code(59),          "90693936");
+    assert_eq!(p.get_current_code(1111111109),  "25091201");
+    assert_eq!(p.get_current_code(1111111111),  "99943326");
+    assert_eq!(p.get_current_code(1234567890),  "93441116");
+    assert_eq!(p.get_current_code(2000000000),  "38618901");
+    assert_eq!(p.get_current_code(20000000000), "47863826");
 }

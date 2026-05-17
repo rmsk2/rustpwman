@@ -17,6 +17,7 @@ limitations under the License. */
 mod rijndael;
 mod chacha20;
 mod derivers;
+pub mod totpcalc;
 
 use std::fs::File;
 use std::io::BufReader;

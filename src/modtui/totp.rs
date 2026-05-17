@@ -22,14 +22,30 @@ use std::time::SystemTime;
 
 use cursive::CbSink;
 use cursive::traits::*;
-use cursive::views::{Dialog, TextView};
+use cursive::views::{Dialog, LinearLayout, ProgressBar, TextView};
 use cursive::Cursive;
 
 use super::AppState;
 use super::show_message;
 use super::get_selected_entry_name;
+use crate::fcrypt::totpcalc;
 
 const TOTP_VIEW: &str = "totp_code_view";
+const TOTP_PERIOD: &str = "totp_progr_bar";
+
+fn parse_totp_params(entry_content: String) -> Option<totpcalc::TotpParams> {
+    let res = totpcalc::TotpParams::new();
+
+    if !entry_content.starts_with("otpauth://") {
+        return None;
+    }    
+
+    return Some(res);
+}
+
+fn make_progress(value: usize, (_min, _max): (usize, usize)) -> String {
+    return format!("{:02} seconds remaining", value);
+}
 
 pub fn show(s: &mut Cursive, state: Arc<Mutex<AppState>>) {
     let entry_name = match get_selected_entry_name(s) {
@@ -48,21 +64,35 @@ pub fn show(s: &mut Cursive, state: Arc<Mutex<AppState>>) {
         }
     };
 
-    if !entry_content.starts_with("otpauth://") {
-        show_message(s, "Selected entry does not contain an otpauth:// URL");
+    let opt_params = parse_totp_params(entry_content.clone());
+    if opt_params.is_none() {
+        show_message(s, "Selected entry does not contain a parseable otpauth:// URL");
         return;
     }
 
     let state_for_stop = state.clone();
     let state_for_start = state.clone();
+    let params = opt_params.unwrap();
 
     s.add_layer(
         Dialog::new()
             .title("TOTP")
             .padding_lrtb(2, 2, 1, 1)
             .content(
-                TextView::new("...")
+                LinearLayout::vertical()
+                .child(
+                    TextView::new("...")
                     .with_name(TOTP_VIEW)
+                )
+                .child(TextView::new("\n"))
+                .child(
+                    ProgressBar::new()
+                    .min(1)
+                    .max(params.period)
+                    .with_label(make_progress)
+                    .with_name(TOTP_PERIOD)
+                    .fixed_width(30)
+                )
             )
             .button("Done", move |s| {
                 // This drops the current sender. This in turn causes try_recv() in totp_calc() to return Err(TryRecvError::Disconnected)
@@ -72,10 +102,10 @@ pub fn show(s: &mut Cursive, state: Arc<Mutex<AppState>>) {
             })
     );
 
-    start_totp_calc(state_for_start, s, entry_content);
+    start_totp_calc(state_for_start, s, params);
 }
 
-fn start_totp_calc(st: Arc<Mutex<AppState>>, siv: &mut Cursive, totp_url: String) {
+fn start_totp_calc(st: Arc<Mutex<AppState>>, siv: &mut Cursive, totp_parms: totpcalc::TotpParams) {
     let receiver: Receiver<()>;
 
     {
@@ -91,11 +121,13 @@ fn start_totp_calc(st: Arc<Mutex<AppState>>, siv: &mut Cursive, totp_url: String
 
     // The new worker thread has a new receiver
     thread::spawn(move || {
-        totp_calc(&cb_sink, totp_url, receiver)
+        totp_calc(&cb_sink, totp_parms, receiver)
     });
 }
 
-fn totp_calc(cb_sink: &CbSink, _totp_url: String, rx: Receiver<()>) {
+fn totp_calc(cb_sink: &CbSink, totp_params: totpcalc::TotpParams, rx: Receiver<()>) {
+    let p = totp_params.period as u64;
+
     loop {
         // If this results in TryRecvError::Disconnected the last sender for this receiver has been dropped. This
         // is detected and used to stop this instance of the worker thread
@@ -110,16 +142,18 @@ fn totp_calc(cb_sink: &CbSink, _totp_url: String, rx: Receiver<()>) {
             .unwrap()
             .as_secs();
 
-        // Stub: replace with actual TOTP code generation using _totp_url
-        let code = format!("{:06}", unix_time % 1_000_000);
-        let remaining = 30 - (unix_time % 30);
-        let display = format!("Code: {}  ({} s remaining)", code, remaining);
+        let remaining = p - (unix_time % p);            
+        let code_as_string = totp_params.get_current_code_formatted(unix_time);
 
         // Async update to TUI
         let _ = cb_sink.send(Box::new(move |siv: &mut cursive::Cursive| {
             siv.call_on_name(TOTP_VIEW, |view: &mut TextView| {
-                view.set_content(display.clone());
+                view.set_content(code_as_string.clone());
             });
+
+            siv.call_on_name(TOTP_PERIOD, |view: &mut ProgressBar| {
+                view.set_value(remaining as usize);
+            });            
         }));
 
         thread::sleep(time::Duration::from_secs(1));
