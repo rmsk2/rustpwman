@@ -506,10 +506,11 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
     file_tree.add_leaf("Quit                  F3", wrapper2(ctx.clone(), quit_without_print));
 
     let mut entry_tree = Tree::new();
-    entry_tree.add_leaf("Copy to clipboard ... F2", wrapper4(ctx.clone(), copy::entry, true, DEFAULT_FORMATTER));
-    entry_tree.add_leaf("Copy contents ...     F5", wrapper3(ctx.clone(), copy::contents, true));
+    entry_tree.add_leaf("Copy to clipboard ...  F2", wrapper4(ctx.clone(), copy::entry, true, DEFAULT_FORMATTER));
+    entry_tree.add_leaf("Copy contents ...      F5", wrapper3(ctx.clone(), copy::contents, true));
     entry_tree.add_leaf("Edit Entry ...", wrapper3(ctx.clone(), edit::entry, None));
     entry_tree.add_leaf("Add Entry ...", wrapper(ctx.clone(), add::entry));
+    entry_tree.add_leaf("New with template ...", wrapper(ctx.clone(), add::entry_with_template));
     entry_tree.add_leaf("Delete Entry ...", wrapper(ctx.clone(), delete::entry));
     entry_tree.add_leaf("Rename Entry ...", wrapper(ctx.clone(), rename::entry));
     entry_tree.add_leaf("Clear Entry ...", wrapper(ctx.clone(), clear::entry));
@@ -518,8 +519,8 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
     #[cfg(feature = "qrcode")]
     entry_tree.add_leaf("To QR-Code ...", wrapper(ctx.clone(), qrcode::create));
 
-    entry_tree.add_leaf("Show TOTP ...", wrapper(ctx.clone(), totp::show));
-    entry_tree.add_leaf("Search Entry ...      F6", wrapper(ctx.clone(), search::entry));
+    entry_tree.add_leaf("Calc TOTP token ...", wrapper(ctx.clone(), totp::show));
+    entry_tree.add_leaf("Search Entry ...       F6", wrapper(ctx.clone(), search::entry));
 
     s.menubar()
         .add_subtree("File", file_tree)

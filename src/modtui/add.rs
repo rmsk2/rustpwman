@@ -28,6 +28,16 @@ use super::visualize_if_modified;
 const EDIT_NAME: &str = "nameedit";
 
 pub fn entry(s: &mut Cursive, state_for_add_entry: Arc<Mutex<AppState>>) {
+    let new_text = "New entry\n";
+    entry_with_default(s, state_for_add_entry, String::from(new_text));
+}
+
+pub fn entry_with_template(s: &mut Cursive, state_for_add_entry: Arc<Mutex<AppState>>) {
+    let new_text = "URL: \nUser-ID: \nPassword: \nComment: \n";
+    entry_with_default(s, state_for_add_entry, String::from(new_text));
+}
+
+pub fn entry_with_default(s: &mut Cursive, state_for_add_entry: Arc<Mutex<AppState>>, new_text: String) {
     let res = Dialog::new()
     .title("Rustpwman enter new entry name")
     .padding_lrtb(2, 2, 1, 1)
@@ -59,7 +69,6 @@ pub fn entry(s: &mut Cursive, state_for_add_entry: Arc<Mutex<AppState>>) {
             return;
         }
 
-        let new_text = String::from("New entry\n");
         if !state_for_add_entry.lock().unwrap().store.add(&entry_name, &new_text) {
             show_message(s, "Adding new entry failed"); 
             return;

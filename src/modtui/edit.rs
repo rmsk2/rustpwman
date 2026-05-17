@@ -62,10 +62,9 @@ pub fn insert_into_entry(s: &mut Cursive, new_pw: String) {
 
 pub fn entry(s: &mut Cursive, state_for_edit_entry: Arc<Mutex<AppState>>, entry_name_external: Option<Arc<String>>) {
     let entry_to_edit: String;
-    let mut show_scroll_message = false;
     
     match entry_name_external {
-        Some(e) => {entry_to_edit = String::from(e.as_str()); show_scroll_message = true;},
+        Some(e) => {entry_to_edit = String::from(e.as_str()); },
         None => {
             match get_selected_entry_name(s) {
                 Some(name) => {entry_to_edit = name},
@@ -89,7 +88,6 @@ pub fn entry(s: &mut Cursive, state_for_edit_entry: Arc<Mutex<AppState>>, entry_
     eff.insert(Effect::Simple);
 
     let name_style = theme::Style {
-        //effects: enumset::enum_set!(Effect::Simple),
         effects: eff,
         color: ColorStyle::new(PaletteColor::View, PaletteColor::TitleSecondary),
     };
@@ -135,10 +133,6 @@ pub fn entry(s: &mut Cursive, state_for_edit_entry: Arc<Mutex<AppState>>, entry_
         display_entry(s, state_for_edit_entry.clone(), &entry_to_edit, true);
 
         s.pop_layer();
-
-        if show_scroll_message {
-            show_message(s, "Entry created successfully.");
-        }
     })
     .button("Insert Password ...", move |s: &mut Cursive| {
         pwgenerate::generate_password(s, state_for_gen_pw.clone());
@@ -163,10 +157,7 @@ pub fn entry(s: &mut Cursive, state_for_edit_entry: Arc<Mutex<AppState>>, entry_
         insert_into_entry(s, pasted_txt);
     })    
     .button("Cancel", move |s| { 
-        s.pop_layer(); 
-        if show_scroll_message {
-            show_message(s, "Entry created successfully.");
-        }  
+        s.pop_layer();
     });                
     
     s.add_layer(res);

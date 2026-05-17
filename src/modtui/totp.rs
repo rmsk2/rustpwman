@@ -22,13 +22,14 @@ use std::time::SystemTime;
 
 use cursive::CbSink;
 use cursive::traits::*;
-use cursive::views::{Dialog, LinearLayout, ProgressBar, TextView};
+use cursive::views::{Dialog, DummyView, LinearLayout, ProgressBar, TextView};
 use cursive::Cursive;
 
 use super::AppState;
 use super::show_message;
 use super::get_selected_entry_name;
 use crate::fcrypt::totpcalc;
+use crate::clip::set_clipboard;
 
 const TOTP_VIEW: &str = "totp_code_view";
 const TOTP_PERIOD: &str = "totp_progr_bar";
@@ -62,32 +63,62 @@ pub fn show(s: &mut Cursive, state: Arc<Mutex<AppState>>) {
 
     let state_for_stop = state.clone();
     let state_for_start = state.clone();
+    let state_for_copy = state.clone();
     let params = opt_params.unwrap();
 
     s.add_layer(
         Dialog::new()
-            .title("TOTP")
+            .title("Rustpwman calculate TOTP token")
             .padding_lrtb(2, 2, 1, 1)
             .content(
                 LinearLayout::vertical()
                 .child(
-                    TextView::new("...")
-                    .with_name(TOTP_VIEW)
+                    LinearLayout::horizontal()
+                        .child(DummyView.fixed_width(10))
+                        .child(TextView::new("Token: "))
+                        .child(TextView::new("...").with_name(TOTP_VIEW))
+                        .child(DummyView.fixed_width(10))
                 )
-                .child(TextView::new("\n"))
                 .child(
-                    ProgressBar::new()
-                    .min(1)
-                    .max(params.period)
-                    .with_label(make_progress)
-                    .with_name(TOTP_PERIOD)
-                    .fixed_width(30)
+                    LinearLayout::horizontal()
+                        .child(DummyView.fixed_width(2))
+                        .child(
+                            ProgressBar::new()
+                            .min(1)
+                            .max(params.period)
+                            .with_label(make_progress)
+                            .with_name(TOTP_PERIOD)
+                            .fixed_width(30)
+                        )
+                        .child(DummyView.fixed_width(2))
                 )
             )
             .button("Done", move |s| {
                 // This drops the current sender. This in turn causes try_recv() in totp_calc() to return Err(TryRecvError::Disconnected)
                 // which is then used to stop the current worker thread
                 state_for_stop.lock().unwrap().current_totp_producer = None;
+                s.pop_layer();
+            })
+            .button("Copy and exit", move |s| {
+                let token = s.call_on_name(TOTP_VIEW, |view: &mut TextView| {
+                    view.get_content()
+                });
+
+                if token.is_none() {
+                    show_message(s, "Unable to read token value");
+                    return;
+                }
+
+                let token_as_string = token.unwrap();
+
+                if set_clipboard(state_for_copy.lock().unwrap().copy_command.clone(), Box::new(String::from(token_as_string.source()))) {
+                    show_message(s, "Unable to set clipboard");
+                    return;
+                }
+
+                // This drops the current sender. This in turn causes try_recv() in totp_calc() to return Err(TryRecvError::Disconnected)
+                // which is then used to stop the current worker thread
+                state_for_copy.lock().unwrap().current_totp_producer = None;
                 s.pop_layer();
             })
     );
@@ -133,7 +164,7 @@ fn totp_calc(cb_sink: &CbSink, totp_params: totpcalc::TotpParams, rx: Receiver<(
             .as_secs();
 
         let remaining = p - (unix_time % p);            
-        let code_as_string = format!("Code: {}", totp_params.get_current_code(unix_time));
+        let code_as_string = totp_params.get_current_code(unix_time);
 
         // Async update to TUI
         let _ = cb_sink.send(Box::new(move |siv: &mut cursive::Cursive| {
