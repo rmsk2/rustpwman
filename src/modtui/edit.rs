@@ -22,15 +22,18 @@ use cursive::theme::{self, Effects};
 use cursive::theme::{Effect, PaletteColor};
 use cursive::theme::ColorStyle;
 
+
 use super::AppState;
 use super::show_message;
 use super::get_selected_entry_name;
 use super::display_entry;
 use super::visualize_if_modified;
+use super::refocus_dlg_element;
 use super::pwgenerate;
 use crate::clip;
 
 const TEXT_AREA_NAME: &str = "textareaedit";
+const DLG_EDIT: &str = "edit_dialog";
 
 pub fn insert_into_entry(s: &mut Cursive, new_pw: String) {
     let mut entry_text = match s.call_on_name(TEXT_AREA_NAME, |view: &mut TextArea| { String::from(view.get_content()) }) {
@@ -136,6 +139,7 @@ pub fn entry(s: &mut Cursive, state_for_edit_entry: Arc<Mutex<AppState>>, entry_
     })
     .button("Insert Password ...", move |s: &mut Cursive| {
         pwgenerate::generate_password(s, state_for_gen_pw.clone());
+        refocus_dlg_element(s, DLG_EDIT, TEXT_AREA_NAME);
     })
     .button("Paste clipboard", move |s: &mut Cursive| {
         let pasted_txt: String;
@@ -155,10 +159,16 @@ pub fn entry(s: &mut Cursive, state_for_edit_entry: Arc<Mutex<AppState>>, entry_
         }
 
         insert_into_entry(s, pasted_txt);
-    })    
+        refocus_dlg_element(s, DLG_EDIT, TEXT_AREA_NAME);
+    })
+    .button("Clear", move |s| {
+        s.call_on_name(TEXT_AREA_NAME, |view: &mut TextArea| { view.set_content(String::from("")) });
+        refocus_dlg_element(s, DLG_EDIT, TEXT_AREA_NAME);
+    })
     .button("Cancel", move |s| { 
         s.pop_layer();
-    });                
+    })
+    .with_name(DLG_EDIT);
     
     s.add_layer(res);
 }

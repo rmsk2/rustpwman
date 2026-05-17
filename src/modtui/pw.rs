@@ -16,14 +16,13 @@ limitations under the License. */
 use std::sync::{Arc, Mutex};
 
 use cursive::Cursive;
-use cursive::views::{Dialog, LinearLayout, TextView, EditView, DialogFocus};
+use cursive::views::{Dialog, LinearLayout, TextView, EditView};
 use cursive::traits::*;
-use cursive::event::EventResult;
-use cursive::view::Selector::Name;
 
 use super::AppState;
 use super::show_message;
 use super::init::show_pw_select_error;
+use super::refocus_dlg_element;
 use super::PW_WIDTH;
 use super::save;
 #[cfg(feature = "pwmanclient")]
@@ -88,21 +87,7 @@ pub fn change(s: &mut Cursive, state_for_pw_change: Arc<Mutex<AppState>>) {
             if !state_for_pw_change.lock().unwrap().verify_password(current_text.to_string()) {
                 show_message(s, "Current password incorrect");
                 s.call_on_name(PW_EDIT3_CH, |view: &mut EditView| {view.set_content(String::from(""))}).unwrap()(s);
-                s.call_on_name(DLG_PW_CH, |view: &mut Dialog| {view.set_focus(DialogFocus::Content)});
-                match s.call_on_name(DLG_PW_CH, |view: &mut Dialog| {view.focus_view(&Name(PW_EDIT3_CH))}).unwrap() {
-                    Ok(o) => {
-                        match o {
-                            EventResult::Ignored => (),
-                            EventResult::Consumed(ocb) => {
-                                match ocb {
-                                    None => (),
-                                    Some(cb) => cb(s)
-                                }
-                            }
-                        }
-                    },
-                    Err(_) => ()
-                }
+                refocus_dlg_element(s, DLG_PW_CH, PW_EDIT3_CH);
                 return;
             }
 

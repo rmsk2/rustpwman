@@ -58,7 +58,7 @@ use crate::fcrypt::KdfId;
 use crate::persist::SendSyncPersister;
 use cursive::theme::ColorStyle;
 use cursive::traits::*;
-use cursive::views::{Dialog, LinearLayout, SelectView, TextArea, Panel, NamedView, ScrollView, ResizedView, OnEventView};
+use cursive::views::{Dialog, LinearLayout, SelectView, TextArea, Panel, NamedView, ScrollView, ResizedView, OnEventView, DialogFocus};
 use cursive::Cursive;
 use cursive::menu::Tree;
 use cursive::align::HAlign;
@@ -66,6 +66,9 @@ use cursive::event::Key;
 use cursive::theme;
 use cursive::theme::Effects;
 use cursive::theme::Effect;
+use cursive::event::EventResult;
+use cursive::view::Selector::Name;
+
 use zeroize::Zeroize;
 use std::sync::{Arc, Mutex};
 
@@ -450,6 +453,24 @@ fn wrapper4<T : Clone, U: Clone>(ctx: AppCtx, f: fn(&mut Cursive, state: Arc<Mut
     return move |s| {
         f(s, ctx.state.clone(), val.clone(), val2.clone());
     };
+}
+
+fn refocus_dlg_element(s: &mut Cursive, dlg_name: &str, elem_name: &str) {
+    s.call_on_name(dlg_name, |view: &mut Dialog| {view.set_focus(DialogFocus::Content)});
+    match s.call_on_name(dlg_name, |view: &mut Dialog| {view.focus_view(&Name(elem_name))}).unwrap() {
+        Ok(o) => {
+            match o {
+                EventResult::Ignored => (),
+                EventResult::Consumed(ocb) => {
+                    match ocb {
+                        None => (),
+                        Some(cb) => cb(s)
+                    }
+                }
+            }
+        },
+        Err(_) => ()
+    }
 }
 
 fn build_entry_select_panel(ctx: &AppCtx) -> NamedView<Panel<NamedView<ScrollView<ResizedView<OnEventView<NamedView<SelectView>>>>>>> {
