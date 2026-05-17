@@ -29,18 +29,65 @@ use super::AppState;
 use super::show_message;
 use super::get_selected_entry_name;
 use crate::fcrypt::totpcalc;
+use crate::fcrypt::totpcalc::TotpAlgoId;
 
 const TOTP_VIEW: &str = "totp_code_view";
 const TOTP_PERIOD: &str = "totp_progr_bar";
 
 fn parse_totp_params(entry_content: String) -> Option<totpcalc::TotpParams> {
-    let res = totpcalc::TotpParams::new();
+    let url_start = entry_content.find("otpauth://")?;
+    let tail = &entry_content[url_start..];
+    let url_end = tail.find(|c: char| c.is_whitespace()).unwrap_or(tail.len());
+    let url = &tail[..url_end];
 
-    if !entry_content.starts_with("otpauth://") {
+    if !url.starts_with("otpauth://totp/") {
         return None;
-    }    
+    }
 
-    return Some(res);
+    let query = url.split('?').nth(1)?;
+
+    let mut params = totpcalc::TotpParams::new();
+    let mut secret: Option<Vec<u8>> = None;
+
+    for param in query.split('&') {
+        let mut parts = param.splitn(2, '=');
+        let key = match parts.next() { Some(k) => k, None => continue };
+        let value = parts.next().unwrap_or("");
+
+        match key.to_lowercase().as_str() {
+            "secret" => {
+                secret = base32::decode(base32::Alphabet::RFC4648 { padding: false }, value);
+            }
+            "algorithm" => {
+                params.algo = match value.to_uppercase().as_str() {
+                    "SHA1" => TotpAlgoId::Sha1,
+                    "SHA256" => TotpAlgoId::Sha256,
+                    "SHA512" => TotpAlgoId::Sha512,
+                    _ => return None,
+                };
+            }
+            "digits" => {
+                match value.parse::<usize>() {
+                    Ok(d) if d == 6 || d == 7 || d == 8 => { params.digits = d; }
+                    Ok(_) => return None,
+                    Err(_) => {}
+                }
+            }
+            "period" => {
+                match value.parse::<usize>() {
+                    Ok(p) if p >= 1 && p <= 60 => { params.period = p; }
+                    Ok(_) => return None,
+                    Err(_) => {}
+                }
+            }
+            _ => {}
+        }
+    }
+
+    // secret? propagates None if the "secret" parameter was absent or not valid Base32.
+    // Without a decodable secret there is no HMAC key, so TOTP calculation is impossible.
+    params.secret = secret?;
+    Some(params)
 }
 
 fn make_progress(value: usize, (_min, _max): (usize, usize)) -> String {
