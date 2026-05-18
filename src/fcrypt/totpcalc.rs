@@ -84,7 +84,11 @@ impl TotpParams {
 
             match key.to_lowercase().as_str() {
                 "secret" => {
-                    secret = base32::decode(base32::Alphabet::RFC4648 { padding: false }, value);
+                    if value.len() > 0 {
+                        secret = base32::decode(base32::Alphabet::RFC4648 { padding: false }, value);
+                    } else {
+                        return None;
+                    }
                 }
                 "algorithm" => {
                     params.algo = match value.to_uppercase().as_str() {

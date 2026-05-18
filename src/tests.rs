@@ -720,6 +720,12 @@ fn test_parse_totp_no_url() {
 }
 
 #[test]
+fn test_parse_empty_element() {
+    assert!(TotpParams::from_totp_params("otpauth://totp/Example?secret=&period=60".to_string()).is_none());
+}
+
+
+#[test]
 fn test_parse_totp_hotp_rejected() {
     let url = format!("otpauth://hotp/Example?secret={}", TOTP_TEST_SECRET);
     assert!(TotpParams::from_totp_params(url).is_none());

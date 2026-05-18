@@ -22,7 +22,7 @@ use std::time::SystemTime;
 
 use cursive::CbSink;
 use cursive::traits::*;
-use cursive::views::{Dialog, DummyView, LinearLayout, ProgressBar, TextView};
+use cursive::views::{Dialog, DummyView, LinearLayout, TextView};
 use cursive::Cursive;
 
 use super::AppState;
@@ -32,11 +32,7 @@ use crate::fcrypt::totpcalc;
 use crate::clip::set_clipboard;
 
 const TOTP_VIEW: &str = "totp_code_view";
-const TOTP_PERIOD: &str = "totp_progr_bar";
-
-fn make_progress(value: usize, (_min, _max): (usize, usize)) -> String {
-    return format!("{:02} seconds remaining", value);
-}
+const TOTP_PERIOD: &str = "totp_countdown";
 
 pub fn show(s: &mut Cursive, state: Arc<Mutex<AppState>>) {
     let entry_name = match get_selected_entry_name(s) {
@@ -68,28 +64,21 @@ pub fn show(s: &mut Cursive, state: Arc<Mutex<AppState>>) {
 
     s.add_layer(
         Dialog::new()
-            .title("Rustpwman calculate TOTP token")
+            .title("Rustpwman TOTP token")
             .padding_lrtb(2, 2, 1, 1)
             .content(
                 LinearLayout::vertical()
                 .child(
                     LinearLayout::horizontal()
-                        .child(DummyView.fixed_width(10))
+                        .child(DummyView.fixed_width(5))
                         .child(TextView::new("Token: "))
                         .child(TextView::new("...").with_name(TOTP_VIEW))
-                        .child(DummyView.fixed_width(10))
+                        .child(DummyView.fixed_width(5))
                 )
                 .child(
                     LinearLayout::horizontal()
                         .child(DummyView.fixed_width(2))
-                        .child(
-                            ProgressBar::new()
-                            .min(1)
-                            .max(params.period)
-                            .with_label(make_progress)
-                            .with_name(TOTP_PERIOD)
-                            .fixed_width(30)
-                        )
+                        .child(TextView::new("...").with_name(TOTP_PERIOD))
                         .child(DummyView.fixed_width(2))
                 )
             )
@@ -172,8 +161,10 @@ fn totp_calc(cb_sink: &CbSink, totp_params: totpcalc::TotpParams, rx: Receiver<(
                 view.set_content(code_as_string.clone());
             });
 
-            siv.call_on_name(TOTP_PERIOD, |view: &mut ProgressBar| {
-                view.set_value(remaining as usize);
+            let remaining_text = format!("{:02} seconds remaining", remaining);
+
+            siv.call_on_name(TOTP_PERIOD, |view: &mut TextView| {
+                view.set_content(remaining_text);
             });            
         }));
 
