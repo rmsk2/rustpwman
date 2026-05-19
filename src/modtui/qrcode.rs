@@ -132,6 +132,11 @@ pub fn create(s: &mut Cursive, state_for_create_qr_entry: Arc<Mutex<AppState>>) 
     };
 
     let image = code.render::<Luma<u8>>().min_dimensions(200, 200).build();
+
+    let default_path = std::env::temp_dir()
+        .join("rustpwman_qrcode.png")
+        .to_string_lossy()
+        .to_string();
     
     let res = Dialog::new()
     .title("Rustpwman save QR code")
@@ -143,6 +148,7 @@ pub fn create(s: &mut Cursive, state_for_create_qr_entry: Arc<Mutex<AppState>>) 
             LinearLayout::horizontal()
                 .child(TextView::new("Filename: "))
                 .child(EditView::new()
+                    .content(default_path)
                     .with_name(QR_CODE_FILE_NAME)
                     .fixed_width(60))
         )

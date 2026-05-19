@@ -22,9 +22,11 @@ use cursive::event::Key;
 use super::AppState;
 use super::show_message;
 use super::display_entry;
+use super::refocus_dlg_element;
 
 const SELECT_VIEW: &str = "select_entry_view";
 const EDIT_SEARCH_TERM: &str = "search_term_edit";
+const DLG_SEARCH: &str = "dlg_search";
 const NUM_SCROLL_ELEMENTS: usize = 20;
 
 
@@ -144,8 +146,10 @@ pub fn entry(s: &mut Cursive, state_for_search_entry: Arc<Mutex<AppState>>) {
     .button("Clear all", move |s| {
         s.call_on_name(SELECT_VIEW, |view: &mut SelectView| { view.clear(); } );
         s.call_on_name(EDIT_SEARCH_TERM, |view: &mut EditView| { view.set_content(String::from("")) }).unwrap()(s);
+        refocus_dlg_element(s, DLG_SEARCH, EDIT_SEARCH_TERM);
      })
-    .button("Cancel", move |s| { s.pop_layer(); });
+    .button("Cancel", move |s| { s.pop_layer(); })
+    .with_name(DLG_SEARCH);
 
     s.add_layer(res);      
 }

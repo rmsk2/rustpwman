@@ -26,7 +26,7 @@ use super::visualize_if_modified;
 
 
 pub fn entry(s: &mut Cursive, state_temp_clear: Arc<Mutex<AppState>>) { 
-    let (danger_style, reverse_style) = get_special_styles(); 
+    let (danger_style, reverse_style) = get_special_styles();
 
     match get_selected_entry_name(s) {
         Some(name) => {

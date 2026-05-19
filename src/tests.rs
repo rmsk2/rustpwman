@@ -31,6 +31,7 @@ use std::env;
 use std::fs::remove_file;
 use crate::obfuscate;
 use crate::jots::CryptorGen;
+use crate::fcrypt::totpcalc::{TotpParams, TotpAlgoId};
 
 
 pub fn test_fcrypt_enc_dec_generic(generator: CryptorGen) {
@@ -595,4 +596,194 @@ fn test_n_digit_gen() {
         println!("{}", &pw);
         assert_eq!(sec_level_in_digits, pw.len());
     }
+}
+
+#[test]
+fn test_totp_rfc6238_sha1() {
+    let mut p = TotpParams::new();
+    p.algo = TotpAlgoId::Sha1;
+    p.secret = b"12345678901234567890".to_vec();
+    p.digits = 8;
+
+    assert_eq!(p.get_current_code(59),          "94287082");
+    assert_eq!(p.get_current_code(1111111109),  "07081804");
+    assert_eq!(p.get_current_code(1111111111),  "14050471");
+    assert_eq!(p.get_current_code(1234567890),  "89005924");
+    assert_eq!(p.get_current_code(2000000000),  "69279037");
+    assert_eq!(p.get_current_code(20000000000), "65353130");
+}
+
+#[test]
+fn test_totp_rfc6238_sha256() {
+    let mut p = TotpParams::new();
+    p.algo = TotpAlgoId::Sha256;
+    p.secret = b"12345678901234567890123456789012".to_vec();
+    p.digits = 8;
+
+    assert_eq!(p.get_current_code(59),          "46119246");
+    assert_eq!(p.get_current_code(1111111109),  "68084774");
+    assert_eq!(p.get_current_code(1111111111),  "67062674");
+    assert_eq!(p.get_current_code(1234567890),  "91819424");
+    assert_eq!(p.get_current_code(2000000000),  "90698825");
+    assert_eq!(p.get_current_code(20000000000), "77737706");
+}
+
+#[test]
+fn test_totp_rfc6238_sha512() {
+    let mut p = TotpParams::new();
+    p.algo = TotpAlgoId::Sha512;
+    p.secret = b"1234567890123456789012345678901234567890123456789012345678901234".to_vec();
+    p.digits = 8;
+
+    assert_eq!(p.get_current_code(59),          "90693936");
+    assert_eq!(p.get_current_code(1111111109),  "25091201");
+    assert_eq!(p.get_current_code(1111111111),  "99943326");
+    assert_eq!(p.get_current_code(1234567890),  "93441116");
+    assert_eq!(p.get_current_code(2000000000),  "38618901");
+    assert_eq!(p.get_current_code(20000000000), "47863826");
+}
+
+// 16-char Base32 string = 80 bits = 10 bytes, no padding needed
+const TOTP_TEST_SECRET: &str = "JBSWY3DPEHPK3PXP";
+
+#[test]
+fn test_parse_totp_valid_full() {
+    let url = format!("otpauth://totp/Example?secret={}&algorithm=SHA1&digits=6&period=30", TOTP_TEST_SECRET);
+    let p = TotpParams::from_totp_params(url).unwrap();
+    assert!(matches!(p.algo, TotpAlgoId::Sha1));
+    assert_eq!(p.digits, 6);
+    assert_eq!(p.period, 30);
+    assert!(!p.secret.is_empty());
+}
+
+#[test]
+fn test_parse_totp_empty() {
+    let url = String::from("");
+    let p = TotpParams::from_totp_params(url);
+    assert!(p.is_none());
+}
+
+
+#[test]
+fn test_parse_totp_secret_only() {
+    let url = format!("otpauth://totp/Example?secret={}", TOTP_TEST_SECRET);
+    let p = TotpParams::from_totp_params(url).unwrap();
+    assert!(matches!(p.algo, TotpAlgoId::Sha1));
+    assert_eq!(p.digits, 6);
+    assert_eq!(p.period, 30);
+}
+
+#[test]
+fn test_parse_totp_url_embedded_in_text() {
+    let entry = format!("Some notes\notpauth://totp/Example?secret={}\nMore text", TOTP_TEST_SECRET);
+    assert!(TotpParams::from_totp_params(entry).is_some());
+}
+
+#[test]
+fn test_parse_totp_sha256() {
+    let url = format!("otpauth://totp/Example?secret={}&algorithm=SHA256", TOTP_TEST_SECRET);
+    let p = TotpParams::from_totp_params(url).unwrap();
+    assert!(matches!(p.algo, TotpAlgoId::Sha256));
+}
+
+#[test]
+fn test_parse_totp_sha512() {
+    let url = format!("otpauth://totp/Example?secret={}&algorithm=SHA512", TOTP_TEST_SECRET);
+    let p = TotpParams::from_totp_params(url).unwrap();
+    assert!(matches!(p.algo, TotpAlgoId::Sha512));
+}
+
+#[test]
+fn test_parse_totp_digits_7() {
+    let url = format!("otpauth://totp/Example?secret={}&digits=7", TOTP_TEST_SECRET);
+    let p = TotpParams::from_totp_params(url).unwrap();
+    assert_eq!(p.digits, 7);
+}
+
+#[test]
+fn test_parse_totp_digits_8() {
+    let url = format!("otpauth://totp/Example?secret={}&digits=8", TOTP_TEST_SECRET);
+    let p = TotpParams::from_totp_params(url).unwrap();
+    assert_eq!(p.digits, 8);
+}
+
+#[test]
+fn test_parse_totp_period_60() {
+    let url = format!("otpauth://totp/Example?secret={}&period=60", TOTP_TEST_SECRET);
+    let p = TotpParams::from_totp_params(url).unwrap();
+    assert_eq!(p.period, 60);
+}
+
+#[test]
+fn test_parse_totp_no_url() {
+    assert!(TotpParams::from_totp_params("just some text".to_string()).is_none());
+}
+
+#[test]
+fn test_parse_empty_element() {
+    assert!(TotpParams::from_totp_params("otpauth://totp/Example?secret=&period=60".to_string()).is_none());
+}
+
+
+#[test]
+fn test_parse_totp_hotp_rejected() {
+    let url = format!("otpauth://hotp/Example?secret={}", TOTP_TEST_SECRET);
+    assert!(TotpParams::from_totp_params(url).is_none());
+}
+
+#[test]
+fn test_parse_totp_no_query_string() {
+    assert!(TotpParams::from_totp_params("otpauth://totp/Example".to_string()).is_none());
+}
+
+#[test]
+fn test_parse_totp_missing_secret() {
+    assert!(TotpParams::from_totp_params("otpauth://totp/Example?digits=6&period=30".to_string()).is_none());
+}
+
+#[test]
+fn test_parse_totp_invalid_base32() {
+    assert!(TotpParams::from_totp_params("otpauth://totp/Example?secret=NOT!VALID!!!".to_string()).is_none());
+}
+
+#[test]
+fn test_parse_totp_invalid_algorithm() {
+    let url = format!("otpauth://totp/Example?secret={}&algorithm=MD5", TOTP_TEST_SECRET);
+    assert!(TotpParams::from_totp_params(url).is_none());
+}
+
+#[test]
+fn test_parse_totp_digits_too_small() {
+    let url = format!("otpauth://totp/Example?secret={}&digits=5", TOTP_TEST_SECRET);
+    assert!(TotpParams::from_totp_params(url).is_none());
+}
+
+#[test]
+fn test_parse_totp_digits_too_large() {
+    let url = format!("otpauth://totp/Example?secret={}&digits=9", TOTP_TEST_SECRET);
+    assert!(TotpParams::from_totp_params(url).is_none());
+}
+
+#[test]
+fn test_parse_totp_period_zero() {
+    let url = format!("otpauth://totp/Example?secret={}&period=0", TOTP_TEST_SECRET);
+    assert!(TotpParams::from_totp_params(url).is_none());
+}
+
+#[test]
+fn test_parse_totp_period_too_large() {
+    let url = format!("otpauth://totp/Example?secret={}&period=61", TOTP_TEST_SECRET);
+    assert!(TotpParams::from_totp_params(url).is_none());
+}
+
+#[test]
+fn test_parse_totp_period_not_numeric() {
+    let url = format!("otpauth://totp/Example?secret={}&period=XYZ", TOTP_TEST_SECRET);
+    assert!(TotpParams::from_totp_params(url).is_none());
+}
+
+#[test]
+fn test_parse_totp_digits_not_numeric() {
+    let url = format!("otpauth://totp/Example?secret={}&digits=XYZ", TOTP_TEST_SECRET);
+    assert!(TotpParams::from_totp_params(url).is_none());
 }

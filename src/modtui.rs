@@ -34,6 +34,7 @@ mod queue;
 #[cfg(feature = "qrcode")]
 mod qrcode;
 mod search;
+mod totp;
 pub mod tuimain;
 pub mod tuitheme;
 
@@ -57,7 +58,7 @@ use crate::fcrypt::KdfId;
 use crate::persist::SendSyncPersister;
 use cursive::theme::ColorStyle;
 use cursive::traits::*;
-use cursive::views::{Dialog, LinearLayout, SelectView, TextArea, Panel, NamedView, ScrollView, ResizedView, OnEventView};
+use cursive::views::{Dialog, LinearLayout, SelectView, TextArea, Panel, NamedView, ScrollView, ResizedView, OnEventView, DialogFocus};
 use cursive::Cursive;
 use cursive::menu::Tree;
 use cursive::align::HAlign;
@@ -65,6 +66,9 @@ use cursive::event::Key;
 use cursive::theme;
 use cursive::theme::Effects;
 use cursive::theme::Effect;
+use cursive::event::EventResult;
+use cursive::view::Selector::Name;
+
 use zeroize::Zeroize;
 use std::sync::{Arc, Mutex};
 
@@ -94,6 +98,7 @@ pub struct AppState {
     cfg_type: CfgSource,
     cfg_name: String,
     kdf_id: KdfId,
+    current_totp_producer: Option<Sender<()>>,
 }
 
 impl AppState {
@@ -115,7 +120,8 @@ impl AppState {
             entry_queue: Vec::new(),
             cfg_type: cfg_type,
             cfg_name: cfg_name.clone(),
-            kdf_id: kdf_id
+            kdf_id: kdf_id,
+            current_totp_producer: None
         }
     }
 
@@ -449,6 +455,24 @@ fn wrapper4<T : Clone, U: Clone>(ctx: AppCtx, f: fn(&mut Cursive, state: Arc<Mut
     };
 }
 
+fn refocus_dlg_element(s: &mut Cursive, dlg_name: &str, elem_name: &str) {
+    s.call_on_name(dlg_name, |view: &mut Dialog| {view.set_focus(DialogFocus::Content)});
+    match s.call_on_name(dlg_name, |view: &mut Dialog| {view.focus_view(&Name(elem_name))}).unwrap() {
+        Ok(o) => {
+            match o {
+                EventResult::Ignored => (),
+                EventResult::Consumed(ocb) => {
+                    match ocb {
+                        None => (),
+                        Some(cb) => cb(s)
+                    }
+                }
+            }
+        },
+        Err(_) => ()
+    }
+}
+
 fn build_entry_select_panel(ctx: &AppCtx) -> NamedView<Panel<NamedView<ScrollView<ResizedView<OnEventView<NamedView<SelectView>>>>>>> {
     let select_view = SelectView::new();
     let shared_state = ctx.state.clone();
@@ -503,10 +527,11 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
     file_tree.add_leaf("Quit                  F3", wrapper2(ctx.clone(), quit_without_print));
 
     let mut entry_tree = Tree::new();
-    entry_tree.add_leaf("Copy to clipboard ... F2", wrapper4(ctx.clone(), copy::entry, true, DEFAULT_FORMATTER));
-    entry_tree.add_leaf("Copy contents ...     F5", wrapper3(ctx.clone(), copy::contents, true));
+    entry_tree.add_leaf("Copy to clipboard ...  F2", wrapper4(ctx.clone(), copy::entry, true, DEFAULT_FORMATTER));
+    entry_tree.add_leaf("Copy contents ...      F5", wrapper3(ctx.clone(), copy::contents, true));
     entry_tree.add_leaf("Edit Entry ...", wrapper3(ctx.clone(), edit::entry, None));
     entry_tree.add_leaf("Add Entry ...", wrapper(ctx.clone(), add::entry));
+    entry_tree.add_leaf("New with template ...", wrapper(ctx.clone(), add::entry_with_template));
     entry_tree.add_leaf("Delete Entry ...", wrapper(ctx.clone(), delete::entry));
     entry_tree.add_leaf("Rename Entry ...", wrapper(ctx.clone(), rename::entry));
     entry_tree.add_leaf("Clear Entry ...", wrapper(ctx.clone(), clear::entry));
@@ -515,7 +540,8 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
     #[cfg(feature = "qrcode")]
     entry_tree.add_leaf("To QR-Code ...", wrapper(ctx.clone(), qrcode::create));
 
-    entry_tree.add_leaf("Search Entry ...      F6", wrapper(ctx.clone(), search::entry));
+    entry_tree.add_leaf("Calc TOTP token ...", wrapper(ctx.clone(), totp::show));
+    entry_tree.add_leaf("Search Entry ...       F6", wrapper(ctx.clone(), search::entry));
 
     s.menubar()
         .add_subtree("File", file_tree)
