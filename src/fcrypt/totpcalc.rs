@@ -85,7 +85,7 @@ impl TotpParams {
             match key.to_lowercase().as_str() {
                 "secret" => {
                     if value.len() > 0 {
-                        secret = base32::decode(base32::Alphabet::RFC4648 { padding: false }, value);
+                        secret = base32::decode(base32::Alphabet::Rfc4648 { padding: false }, value);
                     } else {
                         return None;
                     }
