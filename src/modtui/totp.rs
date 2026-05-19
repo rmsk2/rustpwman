@@ -30,6 +30,7 @@ use super::show_message;
 use super::get_selected_entry_name;
 use crate::fcrypt::totpcalc;
 use crate::clip::set_clipboard;
+use super::get_special_styles;
 
 const TOTP_VIEW: &str = "totp_code_view";
 const TOTP_PERIOD: &str = "totp_countdown";
@@ -62,6 +63,8 @@ pub fn show(s: &mut Cursive, state: Arc<Mutex<AppState>>) {
     let state_for_copy = state.clone();
     let params = opt_params.unwrap();
 
+    let (_, reverse_style) = get_special_styles();
+
     s.add_layer(
         Dialog::new()
             .title("Rustpwman TOTP token")
@@ -72,13 +75,20 @@ pub fn show(s: &mut Cursive, state: Arc<Mutex<AppState>>) {
                     LinearLayout::horizontal()
                         .child(DummyView.fixed_width(5))
                         .child(TextView::new("Token: "))
-                        .child(TextView::new("...").with_name(TOTP_VIEW))
+                        .child(TextView::new("...")
+                            .style(reverse_style)
+                            .with_name(TOTP_VIEW)
+                        )
                         .child(DummyView.fixed_width(5))
                 )
                 .child(
                     LinearLayout::horizontal()
                         .child(DummyView.fixed_width(2))
-                        .child(TextView::new("...").with_name(TOTP_PERIOD))
+                        .child(TextView::new("...")
+                            .with_name(TOTP_PERIOD)
+                            .fixed_width(2)
+                        )
+                        .child(TextView::new(" seconds remaining"))
                         .child(DummyView.fixed_width(2))
                 )
             )
@@ -161,7 +171,7 @@ fn totp_calc(cb_sink: &CbSink, totp_params: totpcalc::TotpParams, rx: Receiver<(
                 view.set_content(code_as_string.clone());
             });
 
-            let remaining_text = format!("{:02} seconds remaining", remaining);
+            let remaining_text = format!("{:02}", remaining);
 
             siv.call_on_name(TOTP_PERIOD, |view: &mut TextView| {
                 view.set_content(remaining_text);

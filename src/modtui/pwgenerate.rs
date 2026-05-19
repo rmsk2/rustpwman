@@ -29,6 +29,7 @@ use crate::pwgen::GenerationStrategy;
 use super::AppState;
 use super::show_message;
 use super::edit::insert_into_entry;
+use super::refocus_dlg_element;
 use super::PW_MAX_SEC_LEVEL;
 
 const SLIDER_SEC_NAME: &str = "securityslider";
@@ -40,6 +41,7 @@ const CHECK_UPPER: &str = "check_upper";
 const CHECK_LOWER: &str = "check_lower";
 const CHECK_DIGITS: &str = "check_digits";
 const CHECK_SPECIAL: &str = "check_special";
+const DLG_PW_GEN: &str = "dlg_pw_gen";
 
 const UPPER_CASE: &str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const LOWER_CASE: &str = "abcdefghijklmnopqrstuvwxyz";
@@ -178,6 +180,8 @@ fn on_change_charset(s: &mut Cursive, new_value: bool, st: SelectionType) {
     if let Some(cb) = opt_cb {
         cb(s);
     }
+
+    refocus_dlg_element(s, DLG_PW_GEN, CUSTOM_CHARS);
 }
 
 
@@ -289,6 +293,7 @@ pub fn clear_custom_selection(s: &mut Cursive) {
     if let Some(cb) = opt_cb {
         cb(s);
     }
+    refocus_dlg_element(s, DLG_PW_GEN, CUSTOM_CHARS);
 }
 
 pub fn generate_password(s: &mut Cursive, state_for_gen_pw: Arc<Mutex<AppState>>) {
@@ -364,7 +369,8 @@ pub fn generate_password(s: &mut Cursive, state_for_gen_pw: Arc<Mutex<AppState>>
         )
     )
     .button("OK", move |s| on_ok_clicked(s, state_for_gen_pw.clone(), &strategy_group))
-    .button("Cancel", |s| { s.pop_layer(); });
+    .button("Cancel", |s| { s.pop_layer(); })
+    .with_name(DLG_PW_GEN);
     
     s.add_layer(res);
     show_sec_bits(s, sec_bits, BITS_SEC_VALUE);
