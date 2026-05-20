@@ -63,14 +63,16 @@ impl TotpParams {
     }    
 
     pub fn from_totp_params(entry_content: String) -> Option<TotpParams> {
-        let url_start = entry_content.find("otpauth://")?;
+        let v: Vec<_> = entry_content.match_indices("otpauth://totp/").collect();
+
+        if v.len() != 1 {
+            return None;
+        }
+        
+        let url_start = v[0].0;
         let tail = &entry_content[url_start..];
         let url_end = tail.find(|c: char| c.is_whitespace()).unwrap_or(tail.len());
         let url = &tail[..url_end];
-
-        if !url.starts_with("otpauth://totp/") {
-            return None;
-        }
 
         let query = url.split('?').nth(1)?;
 

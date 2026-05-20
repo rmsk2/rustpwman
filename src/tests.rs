@@ -724,6 +724,15 @@ fn test_parse_empty_element() {
     assert!(TotpParams::from_totp_params("otpauth://totp/Example?secret=&period=60".to_string()).is_none());
 }
 
+#[test]
+fn test_parse_no_params() {
+    assert!(TotpParams::from_totp_params("otpauth://totp/".to_string()).is_none());
+}
+
+#[test]
+fn test_parse_double() {
+    assert!(TotpParams::from_totp_params("otpauth://totp/wurscht?secret=AAAAAAAAAAAAAAAA\notpauth://totp/wurscht?secret=AAAAAAAAAAAAAAAA".to_string()).is_none());
+}
 
 #[test]
 fn test_parse_totp_hotp_rejected() {
