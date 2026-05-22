@@ -28,8 +28,25 @@ use crate::fcrypt;
 const NAME_PWEDIT : &str = "pwedit";
 const NAME_PWDIALOG: &str = "pwdialog";
 
+fn pw_check(s: &mut Cursive, pw_text: &str, ok_cb_with_state: Arc<Box<dyn Fn(&mut Cursive, &String, bool) + Send + Sync>>) {
+    if let Some(err) = fcrypt::check_password(pw_text) {
+        show_message(s, &format!("Password incorrect: {:?}", err));
+        return;
+    }
+
+    let pw = String::from(pw_text);
+    ok_cb_with_state(s, &pw, false);
+}
+
 pub fn dialog(sndr: Arc<Sender<String>>, ok_cb_with_state: Box<dyn Fn(&mut Cursive, &String, bool) + Send + Sync>) -> impl View {
     let sender = sndr.clone();
+
+    let cb_wrapped = Arc::new(ok_cb_with_state);
+    let cb_for_submit = cb_wrapped.clone();
+
+    let ok_on_submit = move |s: &mut Cursive, pw_text: &str| {
+        pw_check(s, pw_text, cb_for_submit.clone());
+    };
 
     let ok_cb = move |s: &mut Cursive| {
         let pw_text = match s.call_on_name(NAME_PWEDIT, |view: &mut EditView| {view.get_content()}) {
@@ -37,12 +54,7 @@ pub fn dialog(sndr: Arc<Sender<String>>, ok_cb_with_state: Box<dyn Fn(&mut Cursi
             None => { show_message(s, "Unable to read password"); return }
         };
 
-        if let Some(err) = fcrypt::check_password(&pw_text) {
-            show_message(s, &format!("Password incorrect: {:?}", err));
-            return;
-        }
-
-        ok_cb_with_state(s, &pw_text, false);
+        pw_check(s, pw_text.as_str(), cb_wrapped.clone());
     };
 
     let res = Dialog::new()
@@ -56,6 +68,7 @@ pub fn dialog(sndr: Arc<Sender<String>>, ok_cb_with_state: Box<dyn Fn(&mut Cursi
                     .child(TextView::new("Password: "))
                     .child(EditView::new()
                         .secret()
+                        .on_submit(ok_on_submit)
                         .with_name(NAME_PWEDIT)
                         .fixed_width(PW_WIDTH))
                     .with_name("pwlinear")
