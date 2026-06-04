@@ -60,6 +60,19 @@ pub fn main(app: &RustPwMan, data_file_name: String, default_sec_bits: usize, de
 
     let infos = app.get_info().unwrap();
 
+    let default_templates = vec![String::from("URL"), String::from("User-ID"), String::from("Password"), String::from("Comment")];
+    let mut template_strings: Vec<String>;
+
+    if let Some(templ) = app.get_template_strings() {
+        template_strings = templ;
+    } else {
+        template_strings = default_templates.clone()
+    }
+
+    if template_strings.len() == 0 {
+        template_strings = default_templates.clone();
+    }
+
     // stuff to run after successfull password entry
     let pw_callback = Box::new(move |s: &mut Cursive, password: &String, pw_cached: bool| {
         #[cfg(feature = "writebackup")]
@@ -80,7 +93,7 @@ pub fn main(app: &RustPwMan, data_file_name: String, default_sec_bits: usize, de
 
         let f_name = capture_file_name.clone();
 
-        let state = AppState::new(jots_store, &f_name, default_sec_bits, default_pw_gen, &paste_cmd, &copy_cmd, p_cb, pw_cached, &qr_viewer, infos.cfg_source, &infos.cfg_name, infos.kdf_id);
+        let state = AppState::new(jots_store, &f_name, default_sec_bits, default_pw_gen, &paste_cmd, &copy_cmd, p_cb, pw_cached, &qr_viewer, infos.cfg_source, &infos.cfg_name, infos.kdf_id, &template_strings);
 
         // No else branch is neccessary as open_file performs error handling
         if let Some(state_after_open) = open::storage(s, password, state) {

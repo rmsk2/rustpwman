@@ -99,11 +99,12 @@ pub struct AppState {
     cfg_name: String,
     kdf_id: KdfId,
     current_totp_producer: Option<Sender<()>>,
+    template_strings: Vec<String>,
 }
 
 impl AppState {
     pub fn new(s: jots::Jots, f_name: &String, default_sec: usize, default_gen: GenerationStrategy,
-               paste_cmd: &String, copy_cmd: &String, p: SendSyncPersister, is_pw_cached: bool, qr_viewer: &Option<String>, cfg_type: CfgSource, cfg_name: &String, kdf_id: KdfId) -> Self {
+               paste_cmd: &String, copy_cmd: &String, p: SendSyncPersister, is_pw_cached: bool, qr_viewer: &Option<String>, cfg_type: CfgSource, cfg_name: &String, kdf_id: KdfId, templ: &Vec<String>) -> Self {
 
         return AppState {
             store: s,
@@ -121,7 +122,8 @@ impl AppState {
             cfg_type: cfg_type,
             cfg_name: cfg_name.clone(),
             kdf_id: kdf_id,
-            current_totp_producer: None
+            current_totp_producer: None,
+            template_strings: templ.iter().cloned().collect()
         }
     }
 

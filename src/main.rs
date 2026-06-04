@@ -107,7 +107,8 @@ struct RustPwMan {
     webdav_user: String,
     webdav_pw: String,
     webdav_server: String,
-    info: Option<InfoParams>
+    info: Option<InfoParams>,
+    template_strings: Option<Vec<String>>
 }
 
 enum CfgFailReaction {
@@ -177,7 +178,8 @@ impl RustPwMan {
             webdav_pw: String::new(),
             webdav_server: String::new(),
             info: None,
-            cipher: None
+            cipher: None,
+            template_strings: None
         };
 
         res.reset_config();
@@ -200,6 +202,7 @@ impl RustPwMan {
         self.webdav_server = String::from("");
         self.info = None;
         self.cipher = None;
+        self.template_strings = None;
     }
 
     fn is_option_present(matches: &clap::ArgMatches, id: &str) -> bool {
@@ -238,6 +241,10 @@ impl RustPwMan {
             Ok(s) => Some(String::from(s.as_str())),
             Err(_) => Some(String::from(BACKUP_FILE_NAME))            
         };
+    }
+
+    pub fn get_template_strings(&self) -> Option<Vec<String>> {
+        return self.template_strings.clone();
     }
 
     pub fn get_backup_file_name_str(&self) -> Option<String> {
@@ -301,6 +308,7 @@ impl RustPwMan {
             self.webdav_user = loaded_config.webdav_user;
             self.webdav_pw = loaded_config.webdav_pw;
             self.webdav_server = loaded_config.webdav_server;
+            self.template_strings = loaded_config.template_strings;
 
             return None;
         } else {

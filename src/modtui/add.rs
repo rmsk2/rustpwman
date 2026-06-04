@@ -33,8 +33,16 @@ pub fn entry(s: &mut Cursive, state_for_add_entry: Arc<Mutex<AppState>>) {
 }
 
 pub fn entry_with_template(s: &mut Cursive, state_for_add_entry: Arc<Mutex<AppState>>) {
-    let new_text = "URL: \nUser-ID: \nPassword: \nComment: \n";
-    entry_with_default(s, state_for_add_entry, String::from(new_text));
+    let mut new_text = String::new();
+
+    {
+        let state = state_for_add_entry.lock().unwrap();
+        for i in &state.template_strings {
+            new_text.push_str(&format!("{}: \n", i));
+        }
+    }
+
+    entry_with_default(s, state_for_add_entry, new_text);
 }
 
 pub fn entry_with_default(s: &mut Cursive, state_for_add_entry: Arc<Mutex<AppState>>, new_text: String) {

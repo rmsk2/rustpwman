@@ -33,10 +33,11 @@ pub struct RustPwManSerialize {
     pub webdav_user: String,
     pub webdav_pw: String,
     pub webdav_server: String,
+    pub template_strings: Option<Vec<String>>
 }
 
 impl RustPwManSerialize {
-    pub fn new(seclevel: usize, pbkdf: &str, pwgen: &str, clip_command: &str, copy_command: &str, user: &str, pw: &str, server: &str, view: Option<String>, bkp_file: Option<String>, c: Option<String>) -> Self {
+    pub fn new(seclevel: usize, pbkdf: &str, pwgen: &str, clip_command: &str, copy_command: &str, user: &str, pw: &str, server: &str, view: Option<String>, bkp_file: Option<String>, c: Option<String>, templ: Option<Vec<String>>) -> Self {
         return RustPwManSerialize {
             seclevel: seclevel,
             pbkdf: String::from(pbkdf),
@@ -49,6 +50,7 @@ impl RustPwManSerialize {
             webdav_user: String::from(user),
             webdav_pw: String::from(pw),
             webdav_server: String::from(server),
+            template_strings: templ,
         }
     }
 }

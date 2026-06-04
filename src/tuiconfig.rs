@@ -108,6 +108,7 @@ pub struct OptionalConfigEntries {
     webdav_server: String,
     viewer_command: Option<String>,
     bkp_file_name: Option<String>,
+    template_strings: Option<Vec<String>>,
 }
 
 macro_rules! get_string_value_from_ui_no_shadow {
@@ -199,7 +200,7 @@ pub fn save_new_config(s: &mut Cursive, old_values: Box<OptionalConfigEntries>, 
     }
 
     // Write new config
-    let new_config = RustPwManSerialize::new(rand_bytes, pbkdf.to_str(), strategy.to_str(), clip_command.as_str(), copy_command.as_str(), user.as_str(), pw.as_str(), server.as_str(), viewer_command, backup_file_name, cipher_id);
+    let new_config = RustPwManSerialize::new(rand_bytes, pbkdf.to_str(), strategy.to_str(), clip_command.as_str(), copy_command.as_str(), user.as_str(), pw.as_str(), server.as_str(), viewer_command, backup_file_name, cipher_id, old_values.template_strings);
 
     match tomlconfig::save(config_file, new_config) {
         Some(e) => {
@@ -380,6 +381,7 @@ pub fn config_main(app: &RustPwMan, config_file: std::path::PathBuf, sec_level: 
         webdav_server: webdav_server.clone(),
         viewer_command: viewer_cmd.clone(),
         bkp_file_name: app.get_backup_file_name_str(),
+        template_strings: app.get_template_strings(),
     };
 
     let bkp_file_name = old_values.bkp_file_name.clone();
