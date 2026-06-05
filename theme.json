@@ -1,0 +1,21 @@
+{
+    "shadow": true,
+    "borders": "simple",
+
+    "colors": {
+        "background": "dark blue",
+        "shadow": "black",
+        "view": "grey",
+
+        "primary": "white",
+        "secondary": "white",
+        "tertiary": "#ffffff",
+
+        "title_primary": "dark red",
+        "title_secondary": "dark yellow",
+
+        "highlight": "#F00",
+        "highlight_inactive": "dark blue",
+        "highlight_text": "grey"
+    }
+}
