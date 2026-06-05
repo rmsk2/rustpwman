@@ -159,13 +159,25 @@ secret or a password you can use this entry to copy the password to the clipboar
 usecases, quite a bit of additional information (for instance URLs, comments or explanatory text) in most entries this is not a general solution for speeding up login to a simple
 copy and paste operation. When selecting this entry the queue contents (see below) is ignored. Instead of selecting this menu entry you can alternatively press F5.
 
+### Copy with template
+
+Sometimes it is useful to only retrieve part of an entry like for instance that part where the password, the user-id or the URL of a website is stored. `rustpwman` allows you
+to do that via so called template strings. If a template string followed by a colon appears at the start of a line then the rest of the line defines the value which can be retrieved
+seperately through this menu item. Lets asumme there is a line `Password: super-password` in an entrie's content and `Password` is defined as a template string. Then you could retrieve 
+the password (where leading or trailing white space is trimmed) through this menu entry. What strings are considered template strings can be configured  via the `cfg` command or by
+editing `rustpwman`'s config file.
+
+![](/template.png?raw=true "Selecting a template string")
+
 ### Add entry
 
 Select this menu item to create a new password entry and edit its contents.
 
-### New with template
+### Add with template
 
-In addition to what `Add entry` does the `New with template` menu item also populates the new entry with a small text which describes what data could be useful to store.
+In addition to what `Add entry` does the `Add with template` menu item also populates the new entry with a small text consisting of all defined template strings, where each
+template string appears at the beginning of its own line. Each template string can be used later in the `Copy with template` entry to retrieve only certain relevant parts of en
+entry's text.
 
 ### Delete entry
 
@@ -256,8 +268,8 @@ as a QR code.
 ## The `cfg` command
 
 Rustpwman uses a TOML config file for setting the default security level for newly generated passwords, the default password generator,
-the default PBKDF, CLI commands which can be used to set and retrieve the contents of the clipboard and to view images containing QR codes and 
-optionally the parameters needed for a WebDAV connection. The most convenient way to edit the config file is to use the `rustpwman cfg` command 
+the default PBKDF, the set of template strings, CLI commands which can be used to set and retrieve the contents of the clipboard and to view images containing
+QR codes and optionally the parameters needed for a WebDAV connection. The most convenient way to edit the config file is to use the `rustpwman cfg` command 
 which will open a window similar to this one
 
 ![](/scrshot_cfg.png?raw=true "Screenshot of rustpwman cfg")
@@ -273,6 +285,7 @@ pwgen = "special"
 clip_cmd = "xsel -ob"
 copy_cmd = "xsel -ib"
 viewer_cmd = "xdg-open"
+template_strings = ["URL", "User", "Pass"]
 bkp_file_name = "/home/user/backup_file.enc"
 webdav_user = ""
 webdav_pw = ""
@@ -288,6 +301,7 @@ Where the entries have the following semantics:
 - `clip_cmd` is a string which specifies a command that can be used to write the current contents of the clipboard to stdout.
 - `copy_cmd` is a string which specifies a command that can be used to transfer the data sent to it via stdin to the clipboard.
 - `viewer_cmd` is a string which specifies a command that can be used to show an image, when the `qrcode` feature is active. This entry is optional.
+- `temlpate_strings` is array of strings which are recognized by `rustpwman` as template strings. This entry is optional. If it is missing default values are used for the set of template strings.
 - `bkp_file_name` is a string which specifies the name of a file in which to store automatic backup when the `writebackup` feature is active. This entry is optional.
 - See [below](#webdav-support) for an explanation of  the `webdav_xx` entries.
 
@@ -299,6 +313,10 @@ tool `paste_utf8.exe` which can be built in a Visual Studio developer prompt usi
 The value `copy_cmd` uses `xsel -ib` as a default. This should work under Linux. Use `pbcopy` under MacOS and `clip.exe` or `paste_utf8.exe -c` under Windows.
 
 As the value of `viewer_cmd` you can use `eog` (Gnome) or `xdg-open` on Linux, `open -a Preview` on MacOS and `explorer.exe` under Windows.
+
+When setting the template strings through the TUI you have to enter the values without double quotes and seprate the individual values by commas. If you put white space in
+front of or at the end of a value it will be trimmed. If you enter an empty string in the TUI's edit box then no template strings will be set and the value will be omitted
+from the saved config file.
 
 As a default the config file is stored in the user's home directory in a file named `.rustpwman` and you can alternatively edit it by hand instead of calling `rustpwman cfg`.
 If the environment variable `PWMAN_CONFIG` is set to a value, then `rustpwman` will interpret its value as the file name of a separate config file. This can
