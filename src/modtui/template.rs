@@ -27,7 +27,6 @@ use crate::clip::set_clipboard;
 use super::copy_pw_entry_contents;
 
 const SELECT_VIEW: &str = "templ_key_select";
-const NUM_SCROLL_ELEMENTS: usize = 6;
 const DLG_TEMPL: &str = "templ_dialog";
 
 
@@ -43,8 +42,11 @@ pub fn parse_entry(entry: &String, keys: &Vec<String>) -> (HashMap<String, Strin
             let prefix = format!("{}{}", key, TEMPLATE_SEP);
             if trimmed.starts_with(prefix.as_str()) {
                 let value = trimmed[prefix.len()..].trim().to_string();
-                *counts.entry(key.clone()).or_insert(0) += 1;
-                values.insert(key.clone(), value);
+
+                if value.len() > 0 {
+                    *counts.entry(key.clone()).or_insert(0) += 1;
+                    values.insert(key.clone(), value);
+                }
             }
         }
     }
@@ -79,15 +81,13 @@ pub fn to_clipboard(s: &mut Cursive, state_for_copy_entry: Arc<Mutex<AppState>>,
     }
 
     let (kv, kv_count) = parse_entry(&content, &known_keys);
-    if kv_count.get(template_key).is_none() {
-        show_message(s, "Template string not found");
-        return;
-    }
-
-    if let Some(c) = kv_count.get(template_key) {
-        if c >= &2 {
-            show_message(s, "Template string is ambiguous");
-            return;
+    match kv_count.get(template_key) {
+        None => { show_message(s, "Template string not found"); return; }
+        Some(c) => {
+            if *c >= 2 {
+                show_message(s, &format!("Template string is ambiguous. It appears {} times", c));
+                return;
+            }
         }
     }
 
@@ -138,6 +138,7 @@ pub fn retrieve(s: &mut Cursive, state_for_templ_get: Arc<Mutex<AppState>>) {
     let state_for_enter_callback = state_for_templ_get.clone();
 
     let known_template_keys = state_for_templ_get.lock().unwrap().template_strings.clone();
+    let num_templ_strings = known_template_keys.len();
 
     let mut select_view = SelectView::<String>::new();
 
@@ -154,7 +155,7 @@ pub fn retrieve(s: &mut Cursive, state_for_templ_get: Arc<Mutex<AppState>>) {
 
     let scroll_view = event_wrapped_select_view
     .scrollable()
-    .fixed_height(NUM_SCROLL_ELEMENTS);
+    .fixed_height(num_templ_strings);
 
     let res = Dialog::new()
     .title("Rustpwman get templated value")
@@ -163,7 +164,7 @@ pub fn retrieve(s: &mut Cursive, state_for_templ_get: Arc<Mutex<AppState>>) {
         LinearLayout::vertical()
         .child(
             Panel::new(scroll_view)
-            .title("Tempale strings available")
+            .title("Template strings available")
         )
     )
     .button("Select", move |s| { 

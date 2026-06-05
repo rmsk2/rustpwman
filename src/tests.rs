@@ -33,7 +33,7 @@ use crate::obfuscate;
 use crate::jots::CryptorGen;
 use crate::fcrypt::totpcalc::{TotpParams, TotpAlgoId};
 use crate::modtui::template::parse_entry;
-
+use crate::modtui::TEMPLATE_SEP;
 
 pub fn test_fcrypt_enc_dec_generic(generator: CryptorGen) {
     let (d, i) = fcrypt::KdfId::Sha256.to_named_func();
@@ -806,7 +806,7 @@ fn tmpl_keys() -> Vec<String> {
 
 #[test]
 fn test_template_parse_basic() {
-    let entry = String::from("URL: https://example.com\nUser-ID: john\nPassword: secret\nComment: none\n");
+    let entry = String::from(format!("URL{}https://example.com\nUser-ID{}john\nPassword{}secret\nComment{}none\n", TEMPLATE_SEP, TEMPLATE_SEP, TEMPLATE_SEP, TEMPLATE_SEP));
     let (values, counts) = parse_entry(&entry, &tmpl_keys());
     assert_eq!(values.get("URL").unwrap(), "https://example.com");
     assert_eq!(values.get("User-ID").unwrap(), "john");
@@ -817,7 +817,7 @@ fn test_template_parse_basic() {
 
 #[test]
 fn test_template_parse_missing_key() {
-    let entry = String::from("URL: https://example.com\nPassword: secret\n");
+    let entry = String::from(format!("URL{}https://example.com\nPassword{}secret\n", TEMPLATE_SEP, TEMPLATE_SEP));
     let (values, counts) = parse_entry(&entry, &tmpl_keys());
     assert_eq!(values.len(), 2);
     assert!(values.contains_key("URL"));
@@ -828,7 +828,7 @@ fn test_template_parse_missing_key() {
 
 #[test]
 fn test_template_parse_duplicate_keeps_last() {
-    let entry = String::from("URL: https://first.com\nURL: https://last.com\n");
+    let entry = String::from(format!("URL{}https://first.com\nURL{}https://last.com\n", TEMPLATE_SEP, TEMPLATE_SEP));
     let keys = vec![String::from("URL")];
     let (values, counts) = parse_entry(&entry, &keys);
     assert_eq!(values.get("URL").unwrap(), "https://last.com");
@@ -844,6 +844,14 @@ fn test_template_parse_empty_entry() {
 }
 
 #[test]
+fn test_template_parse_separator_only() {
+    let entry = String::from(format!("Password{}\n", TEMPLATE_SEP));
+    let (values, counts) = parse_entry(&entry, &tmpl_keys());
+    assert!(values.is_empty());
+    assert!(counts.is_empty());
+}
+
+#[test]
 fn test_template_parse_no_matching_keys() {
     let entry = String::from("Some random text\nNo key value pairs here\n");
     let (values, counts) = parse_entry(&entry, &tmpl_keys());
@@ -853,7 +861,7 @@ fn test_template_parse_no_matching_keys() {
 
 #[test]
 fn test_template_parse_prefix_no_false_match() {
-    let entry = String::from("Password-hint: something\n");
+    let entry = String::from(format!("Password-hint{}something\n", TEMPLATE_SEP));
     let keys = vec![String::from("Password")];
     let (values, counts) = parse_entry(&entry, &keys);
     assert!(values.is_empty());
@@ -862,7 +870,7 @@ fn test_template_parse_prefix_no_false_match() {
 
 #[test]
 fn test_template_parse_value_whitespace_trimmed() {
-    let entry = String::from("  URL:   https://example.com   \n");
+    let entry = String::from(format!("  URL{} https://example.com   \n", TEMPLATE_SEP));
     let keys = vec![String::from("URL")];
     let (values, counts) = parse_entry(&entry, &keys);
     assert_eq!(values.get("URL").unwrap(), "https://example.com");

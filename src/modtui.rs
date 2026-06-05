@@ -534,15 +534,18 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
     let mut entry_tree = Tree::new();
     entry_tree.add_leaf("Copy to clipboard ...  F2", wrapper4(ctx.clone(), copy::entry, true, DEFAULT_FORMATTER));
     entry_tree.add_leaf("Copy contents ...      F5", wrapper3(ctx.clone(), copy::contents, true));
-    entry_tree.add_leaf("Get with template ...  F7", wrapper(ctx.clone(), template::retrieve));
-    entry_tree.add_leaf("Edit Entry ...", wrapper3(ctx.clone(), edit::entry, None));
+    entry_tree.add_leaf("Copy with template ... F7", wrapper(ctx.clone(), template::retrieve));
+    entry_tree.add_delimiter();
     entry_tree.add_leaf("Add Entry ...", wrapper(ctx.clone(), add::entry));
-    entry_tree.add_leaf("New with template ...", wrapper(ctx.clone(), add::entry_with_template));
+    entry_tree.add_leaf("Add with template ...", wrapper(ctx.clone(), add::entry_with_template));
+    entry_tree.add_delimiter();
+    entry_tree.add_leaf("Edit Entry ...", wrapper3(ctx.clone(), edit::entry, None));
     entry_tree.add_leaf("Delete Entry ...", wrapper(ctx.clone(), delete::entry));
     entry_tree.add_leaf("Rename Entry ...", wrapper(ctx.clone(), rename::entry));
     entry_tree.add_leaf("Clear Entry ...", wrapper(ctx.clone(), clear::entry));
     entry_tree.add_leaf("Load Entry ...", wrapper(ctx.clone(), load::entry));
 
+    entry_tree.add_delimiter();
     #[cfg(feature = "qrcode")]
     entry_tree.add_leaf("To QR-Code ...", wrapper(ctx.clone(), qrcode::create));
 

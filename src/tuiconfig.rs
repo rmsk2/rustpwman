@@ -43,8 +43,9 @@ const SLIDER_SEC_NAME: &str = "cfgslider";
 const EDIT_PASTE_COMMAND: &str = "pastecmd";
 const EDIT_COPY_COMMAND: &str = "copycmd";
 const EDIT_VIEWER_COMMAND: &str = "viewercmd";
-#[cfg(feature = "writebackup")]
+const EDIT_TEMPL_STRINGS: &str = "cfg_template_strings";
 const EDIT_BACKUP_FILE: &str = "backupfile";
+
 #[cfg(feature = "webdav")]
 const EDIT_WEBDAV_USER: &str = "webdav_user";
 #[cfg(feature = "webdav")]
@@ -57,10 +58,16 @@ const EDIT_WEBDAV_SERVER: &str = "webdav_server";
 const CHACHA20:bool = false;
 #[cfg(feature = "chacha20")]
 const CHACHA20:bool = true;
+
 #[cfg(not(feature = "qrcode"))]
 const QR_CODE: bool = false;
 #[cfg(feature = "qrcode")]
 const QR_CODE: bool = true;
+
+#[cfg(not(feature = "writebackup"))]
+const WRITE_BACKUP:bool = false;
+#[cfg(feature = "writebackup")]
+const WRITE_BACKUP:bool = true;
 
 pub fn show_yes_no_decision(siv: &mut Cursive, msg: &str) {
     siv.add_layer(
@@ -145,6 +152,30 @@ pub fn save_new_config(s: &mut Cursive, old_values: Box<OptionalConfigEntries>, 
     let mut viewer_command = old_values.viewer_command;
     #[allow(unused_mut, unused_assignments)]
     let mut backup_file_name = old_values.bkp_file_name;
+    #[allow(unused_mut, unused_assignments)]
+    let mut template_string_data = old_values.template_strings;
+
+    let mut temp_template: String;
+    get_string_value_from_ui_no_shadow!(s, temp_template, EDIT_TEMPL_STRINGS, "Unable to determine template strings");
+
+    template_string_data = None;
+
+    temp_template = String::from(temp_template.trim());
+    if temp_template != "" {
+        let split_templates: Vec<&str> = temp_template.split(",").collect();
+        let mut new_templates: Vec<String> = Vec::new();
+
+        for i in split_templates {
+            let h = String::from(i.trim());
+            if h.len() > 0 {
+                new_templates.push(h);
+            }
+        }
+
+        if new_templates.len() > 0 {
+            template_string_data = Some(new_templates);
+        }
+    }
 
     // Read value of slider which represents the selected security level
     let rand_bytes = match s.call_on_name(SLIDER_SEC_NAME, |view: &mut SliderView| { view.get_value() }) {
@@ -200,7 +231,7 @@ pub fn save_new_config(s: &mut Cursive, old_values: Box<OptionalConfigEntries>, 
     }
 
     // Write new config
-    let new_config = RustPwManSerialize::new(rand_bytes, pbkdf.to_str(), strategy.to_str(), clip_command.as_str(), copy_command.as_str(), user.as_str(), pw.as_str(), server.as_str(), viewer_command, backup_file_name, cipher_id, old_values.template_strings);
+    let new_config = RustPwManSerialize::new(rand_bytes, pbkdf.to_str(), strategy.to_str(), clip_command.as_str(), copy_command.as_str(), user.as_str(), pw.as_str(), server.as_str(), viewer_command, backup_file_name, cipher_id, template_string_data);
 
     match tomlconfig::save(config_file, new_config) {
         Some(e) => {
@@ -254,14 +285,17 @@ fn create_command_selection_ui() -> Panel<PaddedView<LinearLayout>> {
     return Panel::new(PaddedView::new(Margins::lrtb(1,1,1,1), cmds_layout)).title("Helper commands")
 }
 
-#[cfg(feature = "writebackup")]
-fn create_writebackup_ui() -> Panel<PaddedView<LinearLayout>> {
-    return Panel::new(
-        PaddedView::new(Margins::lrtb(1,1,1,1),
-            create_edit_field_with_label("Filename: ", EDIT_BACKUP_FILE, 65)
-        )
-    )
-    .title("Name of file to use for automatic backup")
+fn create_miscelleneous_ui() -> Panel<PaddedView<LinearLayout>> {
+    let mut misc_layout = LinearLayout::vertical();
+
+    if WRITE_BACKUP {
+        misc_layout.add_child(create_edit_field_with_label("Backup Filename : ", EDIT_BACKUP_FILE, 65));
+        misc_layout.add_child(TextView::new("\n"));
+    }
+
+    misc_layout.add_child(create_edit_field_with_label("Template strings: ", EDIT_TEMPL_STRINGS, 65));
+
+    return Panel::new(PaddedView::new(Margins::lrtb(1,1,1,1),misc_layout)).title("Miscellaneous settings")
 }
 
 
@@ -340,6 +374,13 @@ fn set_clip_commands_state(siv: &mut Cursive, clp_cmd: &String, cpy_cmd: &String
     siv.call_on_name(EDIT_COPY_COMMAND, |view: &mut EditView| { view.set_content(cpy_cmd) });
 }
 
+fn set_template_strings_state(siv: &mut Cursive, templ: &Option<Vec<String>>) {
+    if !templ.is_none() {
+        let h = templ.clone().unwrap().join(",");
+        siv.call_on_name(EDIT_TEMPL_STRINGS, |view: &mut EditView| { view.set_content(&h) });
+    }
+}
+
 #[allow(unused_variables)]
 pub fn config_main(app: &RustPwMan, config_file: std::path::PathBuf, sec_level: usize, pw_gen_strategy: pwgen::GenerationStrategy, pbkdf_id: fcrypt::KdfId,
                    clp_cmd: &String, cpy_cmd: &String, webdav_user: &String, webdav_pw: &String, webdav_server: &String, viewer_cmd: &Option<String>, cipher_id: fcrypt::CipherId) {
@@ -356,9 +397,8 @@ pub fn config_main(app: &RustPwMan, config_file: std::path::PathBuf, sec_level: 
 
     config_panels.add_child(create_pw_strategy_select_ui(sec_level, linear_layout_pw_gen));
     config_panels.add_child(create_algo_select_ui(linear_layout_pbkdf, linear_layout_cipher));
-    config_panels.add_child(create_command_selection_ui());    
-    #[cfg(feature = "writebackup")]
-    config_panels.add_child(create_writebackup_ui());
+    config_panels.add_child(create_command_selection_ui());
+    config_panels.add_child(create_miscelleneous_ui());
     #[cfg(feature = "webdav")]
     config_panels.add_child(create_webdav_ui());
 
@@ -396,6 +436,8 @@ pub fn config_main(app: &RustPwMan, config_file: std::path::PathBuf, sec_level: 
     // Set state of UI elements to values which reflect the current config
     show_sec_bits(&mut siv, sec_level, BITS_SEC_VALUE);
     set_clip_commands_state(&mut siv, clp_cmd, cpy_cmd);
+    set_template_strings_state(&mut siv, &app.get_template_strings());
+
     #[cfg(feature = "writebackup")]
     set_edit_state_by_option(&mut siv, EDIT_BACKUP_FILE, &bkp_file_name);
     #[cfg(feature = "webdav")]
