@@ -38,7 +38,7 @@ pub fn entry_with_template(s: &mut Cursive, state_for_add_entry: Arc<Mutex<AppSt
     {
         let state = state_for_add_entry.lock().unwrap();
         for i in &state.template_strings {
-            new_text.push_str(&format!("{}: \n", i));
+            new_text.push_str(&format!("{}{}\n", i, super::TEMPLATE_SEP));
         }
     }
 

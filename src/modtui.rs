@@ -35,6 +35,7 @@ mod queue;
 mod qrcode;
 mod search;
 mod totp;
+pub mod template;
 pub mod tuimain;
 pub mod tuitheme;
 
@@ -50,6 +51,7 @@ const PW_WIDTH: usize = 35;
 
 pub const DEFAULT_PASTE_CMD: &str = "xsel -ob";
 pub const DEFAULT_COPY_CMD: &str = "xsel -ib";
+pub const TEMPLATE_SEP: &str = ": ";
 
 pub type FormatterFunc = fn(&String, &String) -> String;
 static DEFAULT_FORMATTER: FormatterFunc = format_pw_entry;
@@ -493,6 +495,7 @@ fn build_entry_select_panel(ctx: &AppCtx) -> NamedView<Panel<NamedView<ScrollVie
     event_wrapped_select_view.set_on_event(Key::F2, wrapper4(ctx.clone(), copy::entry, false, DEFAULT_FORMATTER));
     event_wrapped_select_view.set_on_event(Key::F5, wrapper3(ctx.clone(), copy::contents, false));
     event_wrapped_select_view.set_on_event(Key::F6, wrapper(ctx.clone(), search::entry));
+    event_wrapped_select_view.set_on_event(Key::F7, wrapper(ctx.clone(), template::retrieve));
 
     let select_view_scrollable = event_wrapped_select_view
         .fixed_width(40)
@@ -531,6 +534,7 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
     let mut entry_tree = Tree::new();
     entry_tree.add_leaf("Copy to clipboard ...  F2", wrapper4(ctx.clone(), copy::entry, true, DEFAULT_FORMATTER));
     entry_tree.add_leaf("Copy contents ...      F5", wrapper3(ctx.clone(), copy::contents, true));
+    entry_tree.add_leaf("Get with template ...  F7", wrapper(ctx.clone(), template::retrieve));
     entry_tree.add_leaf("Edit Entry ...", wrapper3(ctx.clone(), edit::entry, None));
     entry_tree.add_leaf("Add Entry ...", wrapper(ctx.clone(), add::entry));
     entry_tree.add_leaf("New with template ...", wrapper(ctx.clone(), add::entry_with_template));

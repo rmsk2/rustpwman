@@ -32,6 +32,7 @@ use std::fs::remove_file;
 use crate::obfuscate;
 use crate::jots::CryptorGen;
 use crate::fcrypt::totpcalc::{TotpParams, TotpAlgoId};
+use crate::modtui::template::parse_entry;
 
 
 pub fn test_fcrypt_enc_dec_generic(generator: CryptorGen) {
@@ -795,4 +796,75 @@ fn test_parse_totp_period_not_numeric() {
 fn test_parse_totp_digits_not_numeric() {
     let url = format!("otpauth://totp/Example?secret={}&digits=XYZ", TOTP_TEST_SECRET);
     assert!(TotpParams::from_totp_params(url).is_none());
+}
+
+const TMPL_KEYS: &[&str] = &["URL", "User-ID", "Password", "Comment"];
+
+fn tmpl_keys() -> Vec<String> {
+    TMPL_KEYS.iter().map(|s| s.to_string()).collect()
+}
+
+#[test]
+fn test_template_parse_basic() {
+    let entry = String::from("URL: https://example.com\nUser-ID: john\nPassword: secret\nComment: none\n");
+    let (values, counts) = parse_entry(&entry, &tmpl_keys());
+    assert_eq!(values.get("URL").unwrap(), "https://example.com");
+    assert_eq!(values.get("User-ID").unwrap(), "john");
+    assert_eq!(values.get("Password").unwrap(), "secret");
+    assert_eq!(values.get("Comment").unwrap(), "none");
+    assert!(counts.values().all(|&c| c == 1));
+}
+
+#[test]
+fn test_template_parse_missing_key() {
+    let entry = String::from("URL: https://example.com\nPassword: secret\n");
+    let (values, counts) = parse_entry(&entry, &tmpl_keys());
+    assert_eq!(values.len(), 2);
+    assert!(values.contains_key("URL"));
+    assert!(values.contains_key("Password"));
+    assert!(!values.contains_key("User-ID"));
+    assert!(!counts.contains_key("User-ID"));
+}
+
+#[test]
+fn test_template_parse_duplicate_keeps_last() {
+    let entry = String::from("URL: https://first.com\nURL: https://last.com\n");
+    let keys = vec![String::from("URL")];
+    let (values, counts) = parse_entry(&entry, &keys);
+    assert_eq!(values.get("URL").unwrap(), "https://last.com");
+    assert_eq!(counts.get("URL").unwrap(), &2);
+}
+
+#[test]
+fn test_template_parse_empty_entry() {
+    let entry = String::from("");
+    let (values, counts) = parse_entry(&entry, &tmpl_keys());
+    assert!(values.is_empty());
+    assert!(counts.is_empty());
+}
+
+#[test]
+fn test_template_parse_no_matching_keys() {
+    let entry = String::from("Some random text\nNo key value pairs here\n");
+    let (values, counts) = parse_entry(&entry, &tmpl_keys());
+    assert!(values.is_empty());
+    assert!(counts.is_empty());
+}
+
+#[test]
+fn test_template_parse_prefix_no_false_match() {
+    let entry = String::from("Password-hint: something\n");
+    let keys = vec![String::from("Password")];
+    let (values, counts) = parse_entry(&entry, &keys);
+    assert!(values.is_empty());
+    assert!(counts.is_empty());
+}
+
+#[test]
+fn test_template_parse_value_whitespace_trimmed() {
+    let entry = String::from("  URL:   https://example.com   \n");
+    let keys = vec![String::from("URL")];
+    let (values, counts) = parse_entry(&entry, &keys);
+    assert_eq!(values.get("URL").unwrap(), "https://example.com");
+    assert_eq!(counts.get("URL").unwrap(), &1);
 }
