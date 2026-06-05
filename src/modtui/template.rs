@@ -155,7 +155,7 @@ pub fn retrieve(s: &mut Cursive, state_for_templ_get: Arc<Mutex<AppState>>) {
 
     let scroll_view = event_wrapped_select_view
     .scrollable()
-    .fixed_height(num_templ_strings);
+    .fixed_height(num_templ_strings.min(10));
 
     let res = Dialog::new()
     .title("Rustpwman get templated value")

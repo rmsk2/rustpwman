@@ -375,8 +375,8 @@ fn set_clip_commands_state(siv: &mut Cursive, clp_cmd: &String, cpy_cmd: &String
 }
 
 fn set_template_strings_state(siv: &mut Cursive, templ: &Option<Vec<String>>) {
-    if !templ.is_none() {
-        let h = templ.clone().unwrap().join(",");
+    if let Some(t) = templ {
+        let h = t.join(",");
         siv.call_on_name(EDIT_TEMPL_STRINGS, |view: &mut EditView| { view.set_content(&h) });
     }
 }
