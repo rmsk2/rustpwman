@@ -169,6 +169,9 @@ editing `rustpwman`'s config file.
 
 ![](/template.png?raw=true "Selecting a template string")
 
+When you activate this menu entry the dialog shown above opens and lets you select a template string. In order to copy the value identified by that template string to the clipboard you
+can either press the `<Select>` button or press the return key while the chosen template string is selected.
+
 ### Add entry
 
 Select this menu item to create a new password entry and edit its contents.
