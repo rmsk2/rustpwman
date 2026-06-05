@@ -16,8 +16,8 @@ have to install `libssl-dev` if you want to use the WebDAV feature and `ncurses`
 
 # How to run the software
 
-The basic concept of `rustpwman` is to manage a set of entries which have a value or content. The entries are presented in a flat list and no further structuring is offered at
-the moment. In order to start the program use
+The basic concept of `rustpwman` is to manage a set of entries which have a value or content. The entries are presented in a flat list. Via so called template string parts
+of an entry's content can be referenced and retrieved separately. No further structuring is offered at the moment. In order to start the program use
 
 ```
 rustpwman gui -i <file_name>
@@ -170,7 +170,7 @@ editing `rustpwman`'s config file.
 ![](/template.png?raw=true "Selecting a template string")
 
 When you activate this menu entry the dialog shown above opens and lets you select a template string. In order to copy the value identified by that template string to the clipboard you
-can either press the `<Select>` button or press the return key while the chosen template string is selected.
+can either press the `<Select>` button or press the return key while the chosen template string is selected. Instead of using the menu entry you can alternatively press F7.
 
 ### Add entry
 
