@@ -317,7 +317,7 @@ The value `copy_cmd` uses `xsel -ib` as a default. This should work under Linux.
 
 As the value of `viewer_cmd` you can use `eog` (Gnome) or `xdg-open` on Linux, `open -a Preview` on MacOS and `explorer.exe` under Windows.
 
-When setting the template strings through the TUI you have to enter the values without double quotes and seprate the individual values by commas. If you put white space in
+When setting the template strings through the TUI you have to enter the values without double quotes and seperate the individual values by commas. If you put white space in
 front of or at the end of a value it will be trimmed. If you enter an empty string in the TUI's edit box then no template strings will be set and the value will be omitted
 from the saved config file.
 
@@ -349,10 +349,22 @@ Tip: You can pipe the output of `rustpwman gen` into a program that copies the d
 
 # Using `rustpwman` to en- and decrypt files or the `enc` and `dec` commands
 
+## Overview
+
 `rustpwman enc` and `rustpwman dec` can be used to en- and decrypt arbitrary files even though their main purpose is to allow you to decrypt your password data under
-one PBKDF or cipher and reencrypt that data using another key derivation function or cipher in case you want to migrate from one PBKDF or cipher to another. On top of
-that the decrypted password data can be used to export all data from `rustpwman` in a form which can be processed by other software. Additionally if you are able to
-create a JSON file of the form described [below](#format-of-payload-data) you can import data from another password manager.
+one PBKDF or cipher and reencrypt that data using another key derivation function and/or cipher in case you want to migrate from one PBKDF or cipher to another.
+
+## Migrating from `rustpwman` to another password manager
+
+When you want to migrate your `rustpwman` data to another password manager you can use the `dec` command to create a JSON file as described [below](#format-of-payload-data). You
+then will need an additional script to transform this JSON file into the import format accepted by the password manager you want to migrate to. I guess using the AI coding agent
+of your choice to write this script is a viable solution.
+
+## Migrating from another password manager to `rustpwman`
+
+If you want to migrate your existing password manager data to `rustpwman` you will first have to export that data into a plaintext format using your current password
+manager. After that you will have to write a script which transforms this data into the [payload format](#format-of-payload-data) of `rustpwman`. As mentioned
+above this may be a task which can be easily accomplished by using an AI coding agent.
 
 # Optional features
 
@@ -573,6 +585,7 @@ This section provides information about stuff which is in my view suboptimal and
 - Starting with version 2.10.1 `rustpwman` attempts to zeroize memory holding sensitive data before it is dropped in some strategic areas. This can not work 100% reliably though as some sensitive data is handled for instance by `cursive` to be displayed or is serialized/deserialized by `serde`. This may be a problem when `rustpwman` is used in an environment where an attacker can gain access to unsanitized memory previously used by `rustpwman` or can look at the contents of the swap file. On the other hand it is probably impossible to defend against an attacker who has that level of access and in the end the information stored in `rustpwman` is used in other applications which most probably do not sanitize their memory.
 - Starting with version 2.10.0 `rustpwman` also makes some effort to cryptographically obfuscate sensitive data in memory which should decrease the likelihood of the attacks mentioned above succeeding at least as long as the attacker does not actively attempt to circumvent the obfuscation mechanism.
 - On Windows when using the `pancurses` backend a spurious Escape sequence `ESC[?1002l` is printed to stdout when the TUI application stops. This does not happen on Linux or macOS. By piping the output of `rustpwman` to `winfilter.exe` you can remove this unwanted data from the output.
+- On Linux another spurious terminal command sequence is *sometimes* printed to the console right after `rustpwman` has been closed. This command sequence also makes the terminal application beep. I think this is a problem of `cursive` and I do not know how to resolve this issue.
 - In non `--release` builds scrypt with the chosen parameters is *extremely* slow
 - At the moment I use release candidates of the crypto routines as their last official releases can not be built without warnings with a reasonably up-to-date rust toolchain.
 
