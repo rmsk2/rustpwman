@@ -364,7 +364,7 @@ of your choice to write this script is a viable solution.
 
 If you want to migrate your existing password manager data to `rustpwman` you will first have to export that data into a plaintext format using your current password
 manager. After that you will have to write a script which transforms this data into the [payload format](#format-of-payload-data) of `rustpwman`. As mentioned
-above this may be a task which can be easily accomplished by using an AI coding agent. As soon as you have a suitable JSON file you can use the `enc` command to
+above this may be a task which can be easily accomplished through the use of an AI coding agent. As soon as you have a suitable JSON file you can use the `enc` command to
 encrypt it for use with `rustpwman`.
 
 # Optional features
