@@ -337,6 +337,7 @@ You can influence the behaviour of `rustpwman` via the values of the following e
 |`RUSTPWMAN_OBFUSCATION`| Key used to obfuscate WebDAV access data, if the `webdav`  feature is active. |
 |`RUSTPWMAN_VIEWER`| Prefix for the command to start an image viewer to which the file name of the image (containing a QR code) is appended if the `qrcode` feature is enabled. If the value `viewer_cmd` in the config file is set it takes precedence over the environment variable. |
 |`PWMAN_CONFIG`| Full path to an alternative config file. The `-c/--cfgfile` option takes precedence over the environment variable if the option is specified. If neither the environment variable nor the option is used then the `.rustpwman` file in the user's home directory will be utilized as a default. |
+|`RUSTPWMAN_NO_THEME`| If set to any value `rustpwman` will ignore `theme.json`. This is intended to allow me to take screenshots of the default theme without modifying the repo's state. |
 
 # Using `rustpwman` to generate passwords or the `gen` command
 
