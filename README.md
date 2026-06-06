@@ -162,10 +162,10 @@ copy and paste operation. When selecting this entry the queue contents (see belo
 ### Copy with template
 
 Sometimes it is useful to only retrieve part of an entry like for instance that part where the password, the user-id or the URL of a website is stored. `rustpwman` allows you
-to do that via so called template strings. If a template string followed by a colon appears at the start of a line then the rest of the line defines the value which can be retrieved
-seperately through this menu item. Lets asumme there is a line `Password: super-password` in an entrie's content and `Password` is defined as a template string. Then you could retrieve 
-the password (where leading or trailing white space is trimmed) through this menu entry. What strings are considered template strings can be configured  via the `cfg` command or by
-editing `rustpwman`'s config file.
+to do that via so called template strings. If a template string *followed by a colon and a space character* appears at the start of a line then the rest of the line defines the value
+which can be retrieved seperately through this menu item. Lets asumme there is a line `Password: super-password` in an entrie's content and `Password` is defined as a template string.
+Then you could retrieve the password (where leading or trailing white space is trimmed) through this menu entry. What strings are considered template strings can be configured  via
+the `cfg` command or by editing `rustpwman`'s config file.
 
 ![](/template.png?raw=true "Selecting a template string")
 
