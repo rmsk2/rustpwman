@@ -20,13 +20,13 @@ use std::sync::{Arc, Mutex};
 use super::AppState;
 use super::show_message;
 use super::get_selected_entry_name;
-use std::process::Command;
+use crate::clip::execute_viewer;
+
 use qrcode::QrCode;
 use image::Luma;
 use std::fs;
 
 const QR_CODE_FILE_NAME: &str = "qrfile";
-
 
 fn ask_for_deletion(s: &mut Cursive, file_name: String) {
     let dlg = Dialog::new()
@@ -55,55 +55,7 @@ fn ask_for_deletion(s: &mut Cursive, file_name: String) {
     s.add_layer(dlg);
 }
 
-fn run_command(cmd: &str) -> Option<std::io::Error> {
-    if cmd.len() == 0 {
-        return Some(std::io::Error::new(std::io::ErrorKind::Other, "Command string not valid"));
-    }
 
-    let cmd_args = cmd.split_ascii_whitespace();
-    let collection: Vec<&str> = cmd_args.collect(); 
-
-    if collection.len() < 1 {
-        return Some(std::io::Error::new(std::io::ErrorKind::Other, "Command string not valid"));
-    }   
-
-    match Command::new(collection[0]).args(collection[1..].into_iter()).spawn() {
-        Ok(_) =>  {
-            return None
-        },
-        Err(e) => {
-            return Some(e)
-        }
-    };
-}
-
-fn execute_viewer(file_name: &String, cmd_prefix: Option<&str>) -> Option<String> {
-    let res: Option<String>;
-    let mut h: String;
-
-    match cmd_prefix {
-        None => {
-            return None;
-        },
-        Some(prefix) => {
-            h = String::from(prefix)
-        }        
-    };
-    
-    h.push_str(" ");
-    h.push_str(file_name);
-    
-    res = match run_command(h.as_str()) {
-        None => {
-            None
-        },
-        Some(e) => {
-            Some(format!("Unable to start QR code viewer: {:?}", e))
-        }
-    };
-    
-    return res;
-}
 
 pub fn create(s: &mut Cursive, state_for_create_qr_entry: Arc<Mutex<AppState>>) {
     let state_for_open_viewer = state_for_create_qr_entry.clone();

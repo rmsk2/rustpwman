@@ -82,3 +82,53 @@ pub fn set_clipboard(cmd: String, data: Box<String>) -> bool {
         Err(_) => { return true; }
     };
 }
+
+fn run_command(cmd: &str) -> Option<std::io::Error> {
+    if cmd.len() == 0 {
+        return Some(std::io::Error::new(std::io::ErrorKind::Other, "Command string not valid"));
+    }
+
+    let cmd_args = cmd.split_ascii_whitespace();
+    let collection: Vec<&str> = cmd_args.collect();
+
+    if collection.len() < 1 {
+        return Some(std::io::Error::new(std::io::ErrorKind::Other, "Command string not valid"));
+    }
+
+    match Command::new(collection[0]).args(collection[1..].into_iter()).stdout(Stdio::null()).stderr(Stdio::null()).spawn() {
+        Ok(_) =>  {
+            return None
+        },
+        Err(e) => {
+            return Some(e)
+        }
+    };
+}
+
+pub fn execute_viewer(file_name: &String, cmd_prefix: Option<&str>) -> Option<String> {
+    let res: Option<String>;
+    let mut h: String;
+
+    match cmd_prefix {
+        None => {
+            return None;
+        },
+        Some(prefix) => {
+            h = String::from(prefix)
+        }
+    };
+
+    h.push_str(" ");
+    h.push_str(file_name);
+
+    res = match run_command(h.as_str()) {
+        None => {
+            None
+        },
+        Some(e) => {
+            Some(format!("Unable to start viewer: {:?}", e))
+        }
+    };
+
+    return res;
+}

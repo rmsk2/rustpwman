@@ -24,7 +24,7 @@ use super::AppState;
 use super::show_message;
 use super::get_selected_entry_name;
 use crate::clip::set_clipboard;
-use super::copy_pw_entry_contents;
+use crate::clip::execute_viewer;
 
 const SELECT_VIEW: &str = "templ_key_select";
 const DLG_TEMPL: &str = "templ_dialog";
@@ -54,39 +54,20 @@ pub fn parse_entry(entry: &String, keys: &Vec<String>) -> (HashMap<String, Strin
     return (values, counts);
 }
 
-pub fn to_clipboard(s: &mut Cursive, state_for_copy_entry: Arc<Mutex<AppState>>, template_key: &String, show_confirmation: bool) {
-    let entry_name = match get_selected_entry_name(s) {
-        Some(name) => name,
-        None => {
-            show_message(s, "Unable to determine selected entry");
-            return;
-        }
-    };
-
-    let h: String;
+fn retrieve_template_value(state_for_copy_entry: Arc<Mutex<AppState>>, template_key: &String, content: &String) -> Result<String, String> {
     let known_keys: Vec<String>;
-    let content: String;
-    let copy_command: String;
 
     {
-        let state =  state_for_copy_entry.lock().unwrap();
-        h = match state.store.get(&entry_name) {
-            Some(c) => c,
-            None => { show_message(s, "Unable to read value of entry"); return }
-        };
-
-        content = String::from(copy_pw_entry_contents(&entry_name, &h).trim());
+        let state = state_for_copy_entry.lock().unwrap();
         known_keys = state.template_strings.clone();
-        copy_command = state.copy_command.clone();
     }
 
-    let (kv, kv_count) = parse_entry(&content, &known_keys);
+    let (kv, kv_count) = parse_entry(content, &known_keys);
     match kv_count.get(template_key) {
-        None => { show_message(s, "Template string not found"); return; }
+        None => { return Err(String::from("Template string not found")); }
         Some(c) => {
             if *c >= 2 {
-                show_message(s, &format!("Template string is ambiguous. It appears {} times", c));
-                return;
+                return Err(String::from(format!("Template string is ambiguous. It appears {} times", c)));
             }
         }
     }
@@ -94,11 +75,52 @@ pub fn to_clipboard(s: &mut Cursive, state_for_copy_entry: Arc<Mutex<AppState>>,
     // If parse works correctly there is exactly one suitable value in the kv hashmap
     let templ_val = kv.get(template_key).unwrap().clone();
 
+    return Ok(templ_val);
+}
+
+fn get_selected_content(s: &mut Cursive, state_for_copy_entry: Arc<Mutex<AppState>>) -> Result<String, String> {
+    let entry_name = match get_selected_entry_name(s) {
+        Some(name) => name,
+        None => {
+            return Err(String::from("Unable to determine selected entry"));
+        }
+    };
+
+    let content: String;
+
+    {
+        let state =  state_for_copy_entry.lock().unwrap();
+        let h = match state.store.get(&entry_name) {
+            Some(c) => c,
+            None => { return Err(String::from("Unable to read value of entry")); }
+        };
+
+        content = String::from(h.trim());
+    }
+
+    return Ok(content);
+}
+
+pub fn to_clipboard(s: &mut Cursive, state_for_copy_entry: Arc<Mutex<AppState>>, template_key: &String, show_confirmation: bool) {
+    let content = match get_selected_content(s, state_for_copy_entry.clone()) {
+        Ok(c) => c,
+        Err(m) => { show_message(s, &m); return; }
+    };
+
+    let copy_command: String;
+
+    {
+        let state =  state_for_copy_entry.lock().unwrap();
+        copy_command = state.copy_command.clone();
+    }
+
+    let templ_val = match retrieve_template_value(state_for_copy_entry.clone(), template_key, &content) {
+        Err(m) => { show_message(s, &m); return; }
+        Ok(v) => v
+    };
+
     match set_clipboard(copy_command, Box::new(templ_val)) {
-        true => {
-            show_message(s, "Unable to set clipboad");
-            return
-        },
+        true => { show_message(s, "Unable to set clipboad"); return },
         false => {
             s.pop_layer();
             if show_confirmation {                
@@ -108,7 +130,46 @@ pub fn to_clipboard(s: &mut Cursive, state_for_copy_entry: Arc<Mutex<AppState>>,
     }
 }
 
-pub fn do_select(s: &mut Cursive, state_for_select: Arc<Mutex<AppState>>) {
+pub fn open_as_file(s: &mut Cursive, state_for_copy_entry: Arc<Mutex<AppState>>, template_key: &String, _: bool) {
+    let content = match get_selected_content(s, state_for_copy_entry.clone()) {
+        Ok(c) => c,
+        Err(m) => { show_message(s, &m); return; }
+    };
+
+    let h: Option<String>;
+
+    {
+        let state =  state_for_copy_entry.lock().unwrap();
+        h = state.viewer_prefix.clone();
+    }
+
+    let viewer_command = match h {
+        None => { show_message(s, "No viewer defined"); return; },
+        Some(val) => val
+    };
+
+
+    let templ_val = match retrieve_template_value(state_for_copy_entry.clone(), template_key, &content) {
+        Err(m) => { show_message(s, &m); return; }
+        Ok(v) => v
+    };
+
+    if !((templ_val.starts_with("https://")) || (templ_val.starts_with("http://"))) {
+        show_message(s, "Value does not appear to be a URL");
+        return;
+    }
+
+    match execute_viewer(&templ_val, Some(viewer_command.as_str())) {
+        None => { s.pop_layer(); return; },
+        Some(msg) => {
+            show_message(s, &msg);
+            return;
+        }
+    }
+
+}
+
+pub fn do_select(s: &mut Cursive, state_for_select: Arc<Mutex<AppState>>, processor: fn(&mut Cursive, Arc<Mutex<AppState>>, &String, bool)) {
     let id_opt = match s.call_on_name(SELECT_VIEW, |view: &mut SelectView| { view.selected_id() }) {
         Some(i) => i,
         None => {show_message(s, "No element selected"); return; }
@@ -127,7 +188,7 @@ pub fn do_select(s: &mut Cursive, state_for_select: Arc<Mutex<AppState>>) {
             _ => {show_message(s, "No element selected"); return; }
         };
 
-        to_clipboard(s, state_for_select, &entry_name, true);
+        processor(s, state_for_select, &entry_name, true);
     } else {
         show_message(s, "No element selected");
     }    
@@ -135,6 +196,7 @@ pub fn do_select(s: &mut Cursive, state_for_select: Arc<Mutex<AppState>>) {
 
 pub fn retrieve(s: &mut Cursive, state_for_templ_get: Arc<Mutex<AppState>>) {
     let state_for_select = state_for_templ_get.clone();
+    let state_for_open = state_for_templ_get.clone();
     let state_for_enter_callback = state_for_templ_get.clone();
 
     let known_template_keys = state_for_templ_get.lock().unwrap().template_strings.clone();
@@ -151,24 +213,27 @@ pub fn retrieve(s: &mut Cursive, state_for_templ_get: Arc<Mutex<AppState>>) {
     .with_name(SELECT_VIEW);
 
     let mut event_wrapped_select_view = OnEventView::new(named_select_view);
-    event_wrapped_select_view.set_on_event(Key::Enter, move |s| { do_select(s, state_for_enter_callback.clone()); });
+    event_wrapped_select_view.set_on_event(Key::Enter, move |s| { do_select(s, state_for_enter_callback.clone(), to_clipboard); });
 
     let scroll_view = event_wrapped_select_view
     .scrollable()
     .fixed_height(num_templ_strings.min(10));
 
     let res = Dialog::new()
-    .title("Rustpwman get templated value")
+    .title("Rustpwman templated value")
     .padding_lrtb(1, 1, 1, 1)
     .content(
         LinearLayout::vertical()
         .child(
             Panel::new(scroll_view)
-            .title("Template strings available")
+            .title("Template strings")
         )
     )
-    .button("Select", move |s| { 
-        do_select(s, state_for_select.clone()); 
+    .button("Retrieve value", move |s| {
+        do_select(s, state_for_select.clone(), to_clipboard);
+    })
+    .button("Open as URL", move |s| {
+        do_select(s, state_for_open.clone(), open_as_file);
     })
     .button("Cancel", move |s| { s.pop_layer(); })
     .with_name(DLG_TEMPL);

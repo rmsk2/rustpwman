@@ -273,13 +273,13 @@ fn create_edit_field_with_label(label: &str, name: &str, size: usize) -> LinearL
 
 fn create_command_selection_ui() -> Panel<PaddedView<LinearLayout>> {
     let mut cmds_layout = LinearLayout::vertical();
-    cmds_layout.add_child(create_edit_field_with_label("Paste command       : ", EDIT_PASTE_COMMAND, 60));
+    cmds_layout.add_child(create_edit_field_with_label("Paste command    : ", EDIT_PASTE_COMMAND, 60));
     cmds_layout.add_child(TextView::new("\n"));
-    cmds_layout.add_child(create_edit_field_with_label("Copy command        : ", EDIT_COPY_COMMAND, 60));
+    cmds_layout.add_child(create_edit_field_with_label("Copy command     : ", EDIT_COPY_COMMAND, 60));
 
     if QR_CODE {
         cmds_layout.add_child(TextView::new("\n"));
-        cmds_layout.add_child(create_edit_field_with_label("Image viewer command: ", EDIT_VIEWER_COMMAND, 60));
+        cmds_layout.add_child(create_edit_field_with_label("File open command: ", EDIT_VIEWER_COMMAND, 60));
     }
 
     return Panel::new(PaddedView::new(Margins::lrtb(1,1,1,1), cmds_layout)).title("Helper commands")

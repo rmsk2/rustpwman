@@ -170,7 +170,8 @@ editing `rustpwman`'s config file.
 ![](/template.png?raw=true "Selecting a template string")
 
 When you activate this menu entry the dialog shown above opens and lets you select a template string. In order to copy the value identified by that template string to the clipboard you
-can either press the `<Select>` button or press the return key while the chosen template string is selected. Instead of using the menu entry you can alternatively press F7.
+can either press the `<Retrieve value>` button or press the return key while the chosen template string is selected. Instead of using the menu entry you can alternatively press F7. If
+you press the `<Open as URL>` button the text retrieved as described above will be interpredted as a URL and opened in the default browser of your system.
 
 ### Add entry
 
@@ -271,9 +272,9 @@ as a QR code.
 ## The `cfg` command
 
 Rustpwman uses a TOML config file for setting the default security level for newly generated passwords, the default password generator,
-the default PBKDF, the set of template strings, CLI commands which can be used to set and retrieve the contents of the clipboard and to view images containing
-QR codes and optionally the parameters needed for a WebDAV connection. The most convenient way to edit the config file is to use the `rustpwman cfg` command 
-which will open a window similar to this one
+the default PBKDF, the set of template strings, CLI commands which can be used to set and retrieve the contents of the clipboard and to open files like QR codes
+and optionally the parameters needed for a WebDAV connection. The most convenient way to edit the config file is to use the `rustpwman cfg` command which will
+open a window similar to this one
 
 ![](/scrshot_cfg.png?raw=true "Screenshot of rustpwman cfg")
 
@@ -315,7 +316,8 @@ tool `paste_utf8.exe` which can be built in a Visual Studio developer prompt usi
 
 The value `copy_cmd` uses `xsel -ib` as a default. This should work under Linux. Use `pbcopy` under MacOS and `clip.exe` or `paste_utf8.exe -c` under Windows.
 
-As the value of `viewer_cmd` you can use `eog` (Gnome) or `xdg-open` on Linux, `open -a Preview` on MacOS and `explorer.exe` under Windows.
+As the value of `viewer_cmd` (or `File open command` in the TUI) you can use `xdg-open` on Linux, `open` on MacOS and `explorer.exe` under Windows. All three can be used to open
+a file in the application specified by the file type. This is for instance used to open PNG files containg QR-codes.
 
 When setting the template strings through the TUI you have to enter the values without double quotes and seperate the individual values by commas. If you put white space in
 front of or at the end of a value it will be trimmed. If you enter an empty string in the TUI's edit box then no template strings will be set and the value will be omitted
