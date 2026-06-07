@@ -61,11 +61,6 @@ const CHACHA20:bool = false;
 #[cfg(feature = "chacha20")]
 const CHACHA20:bool = true;
 
-#[cfg(not(feature = "qrcode"))]
-const QR_CODE: bool = false;
-#[cfg(feature = "qrcode")]
-const QR_CODE: bool = true;
-
 #[cfg(not(feature = "writebackup"))]
 const WRITE_BACKUP:bool = false;
 #[cfg(feature = "writebackup")]
@@ -132,7 +127,6 @@ macro_rules! get_string_value_from_ui_no_shadow {
     }
 }
 
-#[cfg(any(feature = "writebackup", feature = "qrcode"))]
 fn to_option(str: &String) -> Option<String> {
     if str.len() != 0 {
         return Some(String::from(str.as_str()));
@@ -195,13 +189,10 @@ pub fn save_new_config(s: &mut Cursive, old_values: Box<OptionalConfigEntries>, 
     let copy_command: String;
     get_string_value_from_ui_no_shadow!(s, copy_command, EDIT_COPY_COMMAND, "Unable to determine copy command");
 
-    #[cfg(feature = "qrcode")]
-    {
-        // Read helper command for viewing pictures
-        let viewer_command_txt: String;
-        get_string_value_from_ui_no_shadow!(s, viewer_command_txt, EDIT_VIEWER_COMMAND, "Unable to determine image viewer command");
-        viewer_command = to_option(&viewer_command_txt);
-    }
+    // Read helper command for viewing pictures
+    let viewer_command_txt: String;
+    get_string_value_from_ui_no_shadow!(s, viewer_command_txt, EDIT_VIEWER_COMMAND, "Unable to determine image viewer command");
+    viewer_command = to_option(&viewer_command_txt);
 
     #[cfg(feature = "writebackup")]
     {
@@ -278,11 +269,9 @@ fn create_command_selection_ui() -> Panel<PaddedView<LinearLayout>> {
     cmds_layout.add_child(create_edit_field_with_label("Paste command    : ", EDIT_PASTE_COMMAND, 60));
     cmds_layout.add_child(TextView::new("\n"));
     cmds_layout.add_child(create_edit_field_with_label("Copy command     : ", EDIT_COPY_COMMAND, 60));
+    cmds_layout.add_child(TextView::new("\n"));
+    cmds_layout.add_child(create_edit_field_with_label("File open command: ", EDIT_VIEWER_COMMAND, 60));
 
-    if QR_CODE {
-        cmds_layout.add_child(TextView::new("\n"));
-        cmds_layout.add_child(create_edit_field_with_label("File open command: ", EDIT_VIEWER_COMMAND, 60));
-    }
 
     return Panel::new(PaddedView::new(Margins::lrtb(1,1,1,1), cmds_layout)).title("Helper commands")
 }
@@ -300,8 +289,6 @@ fn create_miscelleneous_ui() -> Panel<PaddedView<LinearLayout>> {
     return Panel::new(PaddedView::new(Margins::lrtb(1,1,1,1),misc_layout)).title("Miscellaneous settings")
 }
 
-
-#[cfg(any(feature = "writebackup", feature = "qrcode"))]
 fn set_edit_state_by_option(siv: &mut Cursive, name: &str, data: &Option<String>) {
     if let Some(d) = data {
         siv.call_on_name(name, |view: &mut EditView| { view.set_content(d.clone()) });
@@ -441,13 +428,12 @@ pub fn config_main(app: &RustPwMan, config_file: std::path::PathBuf, sec_level: 
     show_sec_bits(&mut siv, sec_level, BITS_SEC_VALUE);
     set_clip_commands_state(&mut siv, clp_cmd, cpy_cmd);
     set_template_strings_state(&mut siv, &app.get_template_strings());
+    set_edit_state_by_option(&mut siv, EDIT_VIEWER_COMMAND, viewer_cmd);
 
     #[cfg(feature = "writebackup")]
     set_edit_state_by_option(&mut siv, EDIT_BACKUP_FILE, &bkp_file_name);
     #[cfg(feature = "webdav")]
     set_webdav_state(&mut siv, webdav_user, webdav_server, webdav_pw);
-    #[cfg(feature = "qrcode")]
-    set_edit_state_by_option(&mut siv, EDIT_VIEWER_COMMAND, viewer_cmd);
 
     crate::load_theme!(siv);
 
