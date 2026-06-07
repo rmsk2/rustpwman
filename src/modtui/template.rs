@@ -101,7 +101,7 @@ fn get_selected_content(s: &mut Cursive, state_for_copy_entry: Arc<Mutex<AppStat
     return Ok(content);
 }
 
-pub fn to_clipboard(s: &mut Cursive, state_for_copy_entry: Arc<Mutex<AppState>>, template_key: &String, show_confirmation: bool) {
+pub fn to_clipboard(s: &mut Cursive, state_for_copy_entry: Arc<Mutex<AppState>>, template_key: &String, close_parent: bool) {
     let content = match get_selected_content(s, state_for_copy_entry.clone()) {
         Ok(c) => c,
         Err(m) => { show_message(s, &m); return; }
@@ -122,15 +122,25 @@ pub fn to_clipboard(s: &mut Cursive, state_for_copy_entry: Arc<Mutex<AppState>>,
     match set_clipboard(copy_command, Box::new(templ_val)) {
         true => { show_message(s, "Unable to set clipboad"); return },
         false => {
-            s.pop_layer();
-            if show_confirmation {                
-                show_message(s, "Contents of the selected entry copied to clipboard");
+            if close_parent {
+                s.pop_layer();
             }
+
+            show_message(s, "Contents of the selected entry copied to clipboard");
         }
     }
 }
 
-pub fn open_as_file(s: &mut Cursive, state_for_copy_entry: Arc<Mutex<AppState>>, template_key: &String, _: bool) {
+pub fn to_clip_close_parent(s: &mut Cursive, state_for_copy_entry: Arc<Mutex<AppState>>, template_key: &String) {
+    to_clipboard(s, state_for_copy_entry, template_key, true);
+}
+
+pub fn to_clip_keep_parent(s: &mut Cursive, state_for_copy_entry: Arc<Mutex<AppState>>, template_key: &String) {
+    to_clipboard(s, state_for_copy_entry, template_key, false);
+}
+
+
+pub fn open_as_url(s: &mut Cursive, state_for_copy_entry: Arc<Mutex<AppState>>, template_key: &String) {
     let content = match get_selected_content(s, state_for_copy_entry.clone()) {
         Ok(c) => c,
         Err(m) => { show_message(s, &m); return; }
@@ -160,7 +170,7 @@ pub fn open_as_file(s: &mut Cursive, state_for_copy_entry: Arc<Mutex<AppState>>,
     }
 
     match execute_viewer(&templ_val, Some(viewer_command.as_str())) {
-        None => { s.pop_layer(); return; },
+        None => { return; },
         Some(msg) => {
             show_message(s, &msg);
             return;
@@ -169,7 +179,7 @@ pub fn open_as_file(s: &mut Cursive, state_for_copy_entry: Arc<Mutex<AppState>>,
 
 }
 
-pub fn do_select(s: &mut Cursive, state_for_select: Arc<Mutex<AppState>>, processor: fn(&mut Cursive, Arc<Mutex<AppState>>, &String, bool)) {
+pub fn do_select(s: &mut Cursive, state_for_select: Arc<Mutex<AppState>>, processor: fn(&mut Cursive, Arc<Mutex<AppState>>, &String)) {
     let id_opt = match s.call_on_name(SELECT_VIEW, |view: &mut SelectView| { view.selected_id() }) {
         Some(i) => i,
         None => {show_message(s, "No element selected"); return; }
@@ -188,7 +198,7 @@ pub fn do_select(s: &mut Cursive, state_for_select: Arc<Mutex<AppState>>, proces
             _ => {show_message(s, "No element selected"); return; }
         };
 
-        processor(s, state_for_select, &entry_name, true);
+        processor(s, state_for_select, &entry_name);
     } else {
         show_message(s, "No element selected");
     }    
@@ -198,6 +208,7 @@ pub fn retrieve(s: &mut Cursive, state_for_templ_get: Arc<Mutex<AppState>>) {
     let state_for_select = state_for_templ_get.clone();
     let state_for_open = state_for_templ_get.clone();
     let state_for_enter_callback = state_for_templ_get.clone();
+    let state_for_retr_only = state_for_templ_get.clone();
 
     let known_template_keys = state_for_templ_get.lock().unwrap().template_strings.clone();
     let num_templ_strings = known_template_keys.len();
@@ -213,14 +224,14 @@ pub fn retrieve(s: &mut Cursive, state_for_templ_get: Arc<Mutex<AppState>>) {
     .with_name(SELECT_VIEW);
 
     let mut event_wrapped_select_view = OnEventView::new(named_select_view);
-    event_wrapped_select_view.set_on_event(Key::Enter, move |s| { do_select(s, state_for_enter_callback.clone(), to_clipboard); });
+    event_wrapped_select_view.set_on_event(Key::Enter, move |s| { do_select(s, state_for_enter_callback.clone(), to_clip_close_parent); });
 
     let scroll_view = event_wrapped_select_view
     .scrollable()
     .fixed_height(num_templ_strings.min(10));
 
     let res = Dialog::new()
-    .title("Rustpwman templated value")
+    .title("Rustpwman templated values")
     .padding_lrtb(1, 1, 1, 1)
     .content(
         LinearLayout::vertical()
@@ -229,11 +240,14 @@ pub fn retrieve(s: &mut Cursive, state_for_templ_get: Arc<Mutex<AppState>>) {
             .title("Template strings")
         )
     )
-    .button("Retrieve value", move |s| {
-        do_select(s, state_for_select.clone(), to_clipboard);
+    .button("Retrieve and close", move |s| {
+        do_select(s, state_for_select.clone(), to_clip_close_parent);
+    })
+    .button("Retrieve only", move |s| {
+        do_select(s, state_for_retr_only.clone(), to_clip_keep_parent);
     })
     .button("Open as URL", move |s| {
-        do_select(s, state_for_open.clone(), open_as_file);
+        do_select(s, state_for_open.clone(), open_as_url);
     })
     .button("Cancel", move |s| { s.pop_layer(); })
     .with_name(DLG_TEMPL);

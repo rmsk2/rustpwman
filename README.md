@@ -162,16 +162,18 @@ copy and paste operation. When selecting this entry the queue contents (see belo
 ### Copy with template
 
 Sometimes it is useful to only retrieve part of an entry like for instance that part where the password, the user-id or the URL of a website is stored. `rustpwman` allows you
-to do that via so called template strings. If a template string *followed by a colon and a space character* appears at the start of a line then the rest of the line defines the value
-which can be retrieved seperately through this menu item. Lets asumme there is a line `Password: super-password` in an entrie's content and `Password` is defined as a template string.
-Then you could retrieve the password (where leading or trailing white space is trimmed) through this menu entry. What strings are considered template strings can be configured  via
-the `cfg` command or by editing `rustpwman`'s config file.
+to do that via so called template strings. If a template string *followed by a colon and a space character* appears at the start of a (trimmed) line then the rest of the line defines
+the value which can be retrieved seperately through this menu item. Lets asumme there is a line starting with `Password: super-password` in an entry's content and `Password` is
+defined as a template string. Then you could retrieve the password (where leading or trailing white space is trimmed) through this menu entry. What strings are considered template
+strings can be configured  via the `cfg` command or by editing `rustpwman`'s config file.
 
 ![](/template.png?raw=true "Selecting a template string")
 
-When you activate this menu entry the dialog shown above opens and lets you select a template string. In order to copy the value identified by that template string to the clipboard you
-can either press the `<Retrieve value>` button or press the return key while the chosen template string is selected. Instead of using the menu entry you can alternatively press F7. If
-you press the `<Open as URL>` button the text retrieved as described above will be interpredted as a URL and opened in the default browser of your system.
+When you activate this menu entry the dialog shown above opens and lets you select a template string. In order to copy the value identified by that template string to the clipboard and
+then close the dialog you can either press the `<Retrieve and close>` button or press the return key while the chosen template string is selected. Instead of using the menu entry you
+can alternatively press F7. If you press the `<Open as URL>` button the text retrieved as described above will be interpredted as a URL and opened in the default browser of your system.
+Additionally the dialog will stay open to allow you to select further elements. Pressing the `<Retrieve only>` button copies the select teamplate value to the clipboard and also leaves
+the dialog open for further interaction.
 
 ### Add entry
 
@@ -588,7 +590,7 @@ This section provides information about stuff which is in my view suboptimal and
 - Starting with version 2.10.1 `rustpwman` attempts to zeroize memory holding sensitive data before it is dropped in some strategic areas. This can not work 100% reliably though as some sensitive data is handled for instance by `cursive` to be displayed or is serialized/deserialized by `serde`. This may be a problem when `rustpwman` is used in an environment where an attacker can gain access to unsanitized memory previously used by `rustpwman` or can look at the contents of the swap file. On the other hand it is probably impossible to defend against an attacker who has that level of access and in the end the information stored in `rustpwman` is used in other applications which most probably do not sanitize their memory.
 - Starting with version 2.10.0 `rustpwman` also makes some effort to cryptographically obfuscate sensitive data in memory which should decrease the likelihood of the attacks mentioned above succeeding at least as long as the attacker does not actively attempt to circumvent the obfuscation mechanism.
 - On Windows when using the `pancurses` backend a spurious Escape sequence `ESC[?1002l` is printed to stdout when the TUI application stops. This does not happen on Linux or macOS. By piping the output of `rustpwman` to `winfilter.exe` you can remove this unwanted data from the output.
-- On Linux another spurious terminal command sequence is *sometimes* printed to the console right after `rustpwman` has been closed. This command sequence also makes the terminal application beep. I think this is a problem of `cursive` and I do not know how to resolve this issue.
+- On Linux another spurious terminal command sequence similar to `35;11;14M` is *sometimes* printed to the console right after `rustpwman` has been closed. This command sequence also makes the terminal application beep. I think this is a problem of `cursive` or `crossterm` and at the moment I do not know how to resolve this issue.
 - In non `--release` builds scrypt with the chosen parameters is *extremely* slow
 - At the moment I use release candidates of the crypto routines as their last official releases can not be built without warnings with a reasonably up-to-date rust toolchain.
 
