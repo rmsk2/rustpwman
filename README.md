@@ -319,7 +319,7 @@ tool `paste_utf8.exe` which can be built in a Visual Studio developer prompt usi
 The value `copy_cmd` uses `xsel -ib` as a default. This should work under Linux. Use `pbcopy` under MacOS and `clip.exe` or `paste_utf8.exe -c` under Windows.
 
 As the value of `viewer_cmd` (or `File open command` in the TUI) you can use `xdg-open` on Linux, `open` on MacOS and `explorer.exe` under Windows. All three can be used to open
-a file in the application specified by the file type. This is for instance used to open PNG files containg QR-codes.
+a file in the application specified by the file type. This is used to open PNG files containg QR-codes and for opening URLs in the default browser.
 
 When setting the template strings through the TUI you have to enter the values without double quotes and seperate the individual values by commas. If you put white space in
 front of or at the end of a value it will be trimmed. If you enter an empty string in the TUI's edit box then no template strings will be set and the value will be omitted
