@@ -15,6 +15,8 @@ limitations under the License. */
 use std::str;
 
 use cursive::traits::*;
+#[cfg(feature = "webdav")]
+use cursive::views::Button;
 use cursive::views::{Dialog, LinearLayout, TextView, TextArea, SliderView, RadioGroup, EditView, Panel, PaddedView};
 use cursive::Cursive;
 use cursive::view::Margins;
@@ -311,13 +313,15 @@ fn set_edit_state_by_option(siv: &mut Cursive, name: &str, data: &Option<String>
 #[cfg(feature = "webdav")]
 fn create_webdav_ui() -> Panel<PaddedView<LinearLayout>> {
     return Panel::new(
-        PaddedView::new(Margins::lrtb(1,1,1,1),
+        PaddedView::new(Margins::lrtb(1,1,1,0),
         LinearLayout::vertical()
         .child(create_edit_field_with_label("User-ID : ", EDIT_WEBDAV_USER, 65))
         .child(TextView::new("\n"))
         .child(create_edit_field_with_label("Password: ", EDIT_WEBDAV_PASSWORD, 65))
         .child(TextView::new("\n"))
         .child(create_edit_field_with_label("Server  : ", EDIT_WEBDAV_SERVER, 65))
+        .child(TextView::new("\n"))
+        .child(Button::new("Obfuscate password", |s| obfuscate_password(s)))
         )
     )
     .title("WebDAV parameters");
@@ -428,8 +432,8 @@ pub fn config_main(app: &RustPwMan, config_file: std::path::PathBuf, sec_level: 
 
     res.add_button("OK", move |s| save_new_config(s, Box::new(old_values.clone()), &config_file, &strategy_group, &pbkdf_group, &cipher_group));
     res.add_button("Cancel", |s| s.quit() );
-    #[cfg(feature = "webdav")]
-    res.add_button("Obfuscate", move |s| obfuscate_password(s));
+    //#[cfg(feature = "webdav")]
+    //res.add_button("Obfuscate", move |s| obfuscate_password(s));
 
     siv.add_layer(res);
     
