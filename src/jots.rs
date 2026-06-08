@@ -331,7 +331,7 @@ impl Jots {
 
         let data = ctx.from_file(file_name)?;
         let mut plain_data = match ctx.decrypt(password, &data) {
-            Err(e) => { return Err(Error::new(ErrorKind::Other, format!("{:?}", e))); },
+            Err(e) => { return Err(Error::new(ErrorKind::Other, format!("{}", e))); },
             Ok(d) => d
         };
 
@@ -353,7 +353,7 @@ impl Jots {
         }
 
         let mut plain_data = match ctx.decrypt(password, &data) {
-            Err(e) => { return Err(Error::new(ErrorKind::Other, format!("{:?}", e))); },
+            Err(e) => { return Err(Error::new(ErrorKind::Other, format!("{}", e))); },
             Ok(d) => d
         };
 
@@ -370,7 +370,7 @@ impl Jots {
 
         self.to_writer(&mut serialized)?;
         let enc_data = match ctx.encrypt(password, &serialized) {
-            Err(e) => { return Err(Error::new(ErrorKind::Other, format!("{:?}", e))); },
+            Err(e) => { return Err(Error::new(ErrorKind::Other, format!("{}", e))); },
             Ok(d) => d
         };
 
@@ -387,7 +387,7 @@ impl Jots {
 
         self.to_writer(&mut serialized)?;
         let enc_data = match ctx.encrypt(password, &serialized) {
-            Err(e) => { return Err(Error::new(ErrorKind::Other, format!("{:?}", e))); },
+            Err(e) => { return Err(Error::new(ErrorKind::Other, format!("{}", e))); },
             Ok(d) => d
         };
 

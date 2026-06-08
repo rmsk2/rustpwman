@@ -126,7 +126,7 @@ pub fn execute_viewer(file_name: &String, cmd_prefix: Option<&str>) -> Option<St
             None
         },
         Some(e) => {
-            Some(format!("Unable to start viewer: {:?}", e))
+            Some(format!("Unable to start viewer: {}", e))
         }
     };
 

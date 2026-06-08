@@ -86,7 +86,7 @@ pub fn test_fcrypt_enc_dec_empty_generic(generator: CryptorGen) {
 
     let plain_again = match ctx.decrypt("this is a test", &cipher_text) {
         Ok(c) => c,
-        Err(e) => { panic!("Decryption failed {:?}", e); }        
+        Err(e) => { panic!("Decryption failed {}", e); }
     };
 
     if plain_again != data_raw {
@@ -163,7 +163,7 @@ pub fn test_fcrypt_enc_dec_with_json_generic(generator: CryptorGen) {
         
         match ctx.to_dyn_writer(&mut cipher_json, &cipher_text) {
             Ok(_) => (),
-            Err(e) => { panic!("Serialization failed {:?}", e); }          
+            Err(e) => { panic!("Serialization failed {}", e); }
         }
     }
 
@@ -234,14 +234,14 @@ pub fn test_jots_serialize_deserialize() {
 
         match j.to_writer(&mut serialized) {
             Ok(_) => (),
-            Err(e) => { panic!("Serialization failed {:?}", e); }  
+            Err(e) => { panic!("Serialization failed {}", e); }
         };
     }
 
     let mut j2 = jots::Jots::new(d, i, Box::new(make_aes_gcm_cryptor));
     match j2.from_reader(serialized.as_slice()) {
         Ok(_) => (),
-        Err(e) => { panic!("Deserialization failed {:?}", e); }          
+        Err(e) => { panic!("Deserialization failed {}", e); }
     }
 
     if j2.len() != 3 {
@@ -441,7 +441,7 @@ fn test_save_load_config() {
     let c = tomlconfig::RustPwManSerialize::new(15, "egal1", "egal2", "egal42", "egal43", "user", "password", "server", None, None, None, None);
 
     match tomlconfig::save(&current_dir, c) {
-        Some(e) => panic!("{:?}", e),
+        Some(e) => panic!("{}", e),
         None => ()
     };
 
@@ -450,7 +450,7 @@ fn test_save_load_config() {
     let res = tomlconfig::load(&current_dir, &mut file_was_read);
     let res_val = match res {
         Ok(v) => v,
-        Err(e) => panic!("{:?}", e)
+        Err(e) => panic!("{}", e)
     };
 
     assert_eq!(file_was_read, true);

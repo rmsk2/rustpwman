@@ -72,7 +72,7 @@ pub fn load(file_path: &std::path::PathBuf, file_was_read: &mut bool) -> std::io
 
     let value: Config = match toml::from_str(&raw_string[..]) {
         Ok(v) => v,
-        Err(e) => return Err(Error::new(ErrorKind::Other, format!("{:?}", e)))
+        Err(e) => return Err(Error::new(ErrorKind::Other, format!("{}", e)))
     };
 
     return Ok(value.defaults);
@@ -85,7 +85,7 @@ pub fn save(file_path: &std::path::PathBuf, config: RustPwManSerialize) -> Optio
 
     let toml_str = match toml::to_string(&c) {
         Ok(s) => s,
-        Err(e) => return Some(Error::new(ErrorKind::Other, format!("{:?}", e)))
+        Err(e) => return Some(Error::new(ErrorKind::Other, format!("{}", e)))
     };
 
     let file = match File::create(file_path) {

@@ -48,7 +48,7 @@ fn ask_for_deletion(s: &mut Cursive, file_name: String) {
     .button("Delete Now", move |s| {
         s.pop_layer();
         if let Err(e) = fs::remove_file(file_name.as_str()) {
-            show_message(s, &format!("Unable to delete QR code file: {:?}", e)); 
+            show_message(s, &format!("Unable to delete QR code file: {}", e));
         }
     });
     
@@ -149,7 +149,7 @@ pub fn create(s: &mut Cursive, state_for_create_qr_entry: Arc<Mutex<AppState>>) 
                 }
             },
             Err(e) => {
-                show_message(s, &format!("Unable to save QR code: {:?}", e));
+                show_message(s, &format!("Unable to save QR code: {}", e));
                 return
             }
         };

@@ -28,7 +28,7 @@ pub fn storage(s: &mut Cursive, state_temp_save: Arc<Mutex<AppState>>) {
         let mut mut_state = state_temp_save.lock().unwrap();
 
         if let Err(e) = mut_state.persist_store() {
-            show_message(s, &format!("Unable to save: {:?}", e)); 
+            show_message(s, &format!("Unable to save: {}", e));
             return; 
         }        
     }

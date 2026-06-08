@@ -25,7 +25,7 @@ pub fn storage(s: &mut Cursive, password: &String, state: AppState) -> Option<Ap
     let does_exist = match state.persister.does_exist() {
         Ok(b) => b,
         Err(e) => {
-            show_message(s, &format!("Unable to check for existence of: {:?}", e));
+            show_message(s, &format!("Unable to check for existence of: {}", e));
             return None;
         }
     };
@@ -34,7 +34,7 @@ pub fn storage(s: &mut Cursive, password: &String, state: AppState) -> Option<Ap
         match state.store.persist(&mut state.persister, password) {
             Ok(_) => (),
             Err(e) => {
-                show_message(s, &format!("Unable to initialize password storage: {:?}", e));
+                show_message(s, &format!("Unable to initialize password storage: {}", e));
                 return None;
             }
         }
@@ -43,7 +43,7 @@ pub fn storage(s: &mut Cursive, password: &String, state: AppState) -> Option<Ap
     match state.store.retrieve(&mut state.persister, password) {
         Ok(_) => { },
         Err(e) => {
-            show_pw_error(s, &format!("Unable to read password storage: '{:?}'", e));
+            show_pw_error(s, &format!("Unable to read password storage: '{}'", e));
             return None;                
         }
     }

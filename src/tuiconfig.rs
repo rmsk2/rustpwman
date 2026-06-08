@@ -228,7 +228,7 @@ pub fn save_new_config(s: &mut Cursive, old_values: Box<OptionalConfigEntries>, 
 
     match tomlconfig::save(config_file, new_config) {
         Some(e) => {
-            show_yes_no_decision(s, &format!("Config could not be saved: {:?}. Leave program?", e));
+            show_yes_no_decision(s, &format!("Config could not be saved: {}. Leave program?", e));
         },
         None => {
             show_yes_no_decision(s, "Config successfully saved. Leave program?");

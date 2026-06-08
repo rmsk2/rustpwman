@@ -30,7 +30,7 @@ const NAME_PWDIALOG: &str = "pwdialog";
 
 fn pw_check(s: &mut Cursive, pw_text: &str, ok_cb_with_state: Arc<Box<dyn Fn(&mut Cursive, &String, bool) + Send + Sync>>) {
     if let Some(err) = fcrypt::check_password(pw_text) {
-        show_message(s, &format!("Password incorrect: {:?}", err));
+        show_message(s, &format!("Password incorrect: {}", err));
         return;
     }
 

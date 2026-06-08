@@ -84,7 +84,7 @@ fn verify_passwords_with_names(s: &mut Cursive, ok_cb: &Box<dyn Fn(&mut Cursive,
     }
 
     if let Some(err) = fcrypt::check_password(&pw1_text) {
-        show_pw_select_error(s, &format!("Password incorrect: {:?}", err), edit1, edit2, dlg);
+        show_pw_select_error(s, &format!("Password incorrect: {}", err), edit1, edit2, dlg);
         return;        
     }
 

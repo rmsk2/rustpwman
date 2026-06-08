@@ -30,7 +30,6 @@ const GEN_SLIDER_NUM_PW_NAME: &str = "genslidernumpw";
 const GEN_NUM_PW_VALUE: &str = "gennumpwval";
 const GEN_DIALOG: &str = "pwgendialog";
 const MAX_NUM_PASSWORDS: usize = 30;
-const NUM_PW_DEFAULT: usize = 0;
 
 
 fn show_num_pws(s: &mut Cursive, val: usize) {
@@ -41,13 +40,16 @@ fn show_num_pws(s: &mut Cursive, val: usize) {
 }
 
 
-pub fn generate_main(sec_level: usize, pw_gen_strategy: pwgen::GenerationStrategy) {
+pub fn generate_main(sec_level: usize, pw_gen_strategy: pwgen::GenerationStrategy, default_num_pws: usize) {
     let mut siv = cursive::default();
     let mut strategy_group: RadioGroup<pwgen::GenerationStrategy> = RadioGroup::new();
 
+    let clamped_num_pws = default_num_pws.min(MAX_NUM_PASSWORDS);
+    let initial_num_pws = clamped_num_pws - 1;
+
     let selected_sec_level = Arc::new(Mutex::new(sec_level));
     let selected_strategy = Arc::new(Mutex::new(pw_gen_strategy));
-    let selected_num_pws = Arc::new(Mutex::new(NUM_PW_DEFAULT));
+    let selected_num_pws = Arc::new(Mutex::new(initial_num_pws));
     let was_cancelled = Arc::new(Mutex::new(true));
 
     let level = selected_sec_level.clone();
@@ -104,7 +106,7 @@ pub fn generate_main(sec_level: usize, pw_gen_strategy: pwgen::GenerationStrateg
                 .fixed_width(4)
             )            
             .child(SliderView::horizontal(MAX_NUM_PASSWORDS)
-                .value(NUM_PW_DEFAULT)
+                .value(initial_num_pws)
                 .on_change(|s, slider_val| { show_num_pws(s, slider_val) })
                 .with_name(GEN_SLIDER_NUM_PW_NAME))
         )        
@@ -142,7 +144,7 @@ pub fn generate_main(sec_level: usize, pw_gen_strategy: pwgen::GenerationStrateg
     
     siv.add_layer(res);
     show_sec_bits(&mut siv, sec_level, GEN_BITS_SEC_VALUE);
-    show_num_pws(&mut siv, NUM_PW_DEFAULT);
+    show_num_pws(&mut siv, initial_num_pws);
     siv.call_on_name(GEN_DIALOG, |view: &mut Dialog| {view.set_focus(DialogFocus::Button(0))});
 
     crate::load_theme!(siv);

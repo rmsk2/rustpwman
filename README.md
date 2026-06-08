@@ -208,7 +208,6 @@ you want use data stored in `rustpwman` on a mobile phone. It is especially hand
 of a TOTP secret. If you want to extract the `otpauth://` URL from a PNG showing the QR-code displayed during TOTP-onboarding you can use this Python
 [script](https://github.com/rmsk2/pwman/blob/main/totp.py). Make sure that the PNG is clipped to show the QR code only.
 
-
 As `rustpwman` is a text mode only application it can not show images directly. We therefore have to make use of an OS-specific helper application which allows us to display an image
 stored in the file system of the machine on which `rustpwman` runs. This also means that the image containing the QR code has to be created before it can be displayed. For this purpose
 you have to specify the file name in which to store the QR code. If you do not care where the QR code is stored, you can simple use the file name proposed by `rustpwman`.
@@ -306,7 +305,7 @@ Where the entries have the following semantics:
 - `pwgen` is one of the strings `base64`, `hex`, `numeric` or `special`
 - `clip_cmd` is a string which specifies a command that can be used to write the current contents of the clipboard to stdout.
 - `copy_cmd` is a string which specifies a command that can be used to transfer the data sent to it via stdin to the clipboard.
-- `viewer_cmd` is a string which specifies a command that can be used to show an image, when the `qrcode` feature is active. This entry is optional.
+- `viewer_cmd` is a string which specifies a command that can be used to open PNG files and URLs in an application which can display them. See below what apps can be used on the three OSs supported by `rustpwman`. This entry is optional. If it is not set opening a browser from a URL and displaying QR codes will not work.
 - `temlpate_strings` is array of strings which are recognized by `rustpwman` as template strings. This entry is optional. If it is missing default values are used for the set of template strings.
 - `bkp_file_name` is a string which specifies the name of a file in which to store automatic backup when the `writebackup` feature is active. This entry is optional.
 - See [below](#webdav-support) for an explanation of  the `webdav_xx` entries.

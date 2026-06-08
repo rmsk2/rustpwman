@@ -199,13 +199,13 @@ pub fn window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Sen
                 Ok(opened) => {
                     opened
                 },
-                Err(e) => { show_message(s, &format!("Unable to write file: {:?}", e)) ; return  }
+                Err(e) => { show_message(s, &format!("Unable to write file: {}", e)) ; return  }
             };
     
             match f.write_all(&data.as_bytes()) {
                 Ok(()) => {},
                 Err(e) => { 
-                    show_message(s, &format!("Unable to write file: {:?}", e)) ; 
+                    show_message(s, &format!("Unable to write file: {}", e));
                     return  
                 }
             }

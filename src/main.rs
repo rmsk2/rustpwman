@@ -72,6 +72,7 @@ const ARG_CONFIG_FILE: &str = "cfgfile";
 const ARG_KDF: &str = "kdf";
 const ARG_CIPHER: &str = "cipher";
 const ARG_EXPORT: &str = "backup";
+const ARG_NUM_PASSWORDS: &str = "num-passwords";
 #[cfg(not(feature = "chacha20"))]
 const SINGLE_CIPHER_DEFAULT: CipherId = CipherId::Aes256Gcm;
 #[cfg(feature = "chacha20")]
@@ -467,7 +468,7 @@ impl RustPwMan {
 
         let pw = match RustPwMan::enter_password_verified() {
             Err(e) => {
-                eprintln!("Error reading password: {:?}", e);
+                eprintln!("Error reading password: {}", e);
                 return;
             },
             Ok(p) => p
@@ -484,7 +485,7 @@ impl RustPwMan {
         let file = match File::open(&file_in) {
             Ok(f) => f,
             Err(e) => {
-                eprintln!("Error opening file. {:?}", e);
+                eprintln!("Error opening file. {}", e);
                 return;
             }
         };
@@ -493,7 +494,7 @@ impl RustPwMan {
 
         match jots_file.from_reader(reader) {
             Err(e) => {
-                eprintln!("Error reading file. {:?}", e);
+                eprintln!("Error reading file. {}", e);
                 return;
             },
             Ok(_) => ()
@@ -502,7 +503,7 @@ impl RustPwMan {
         match jots_file.to_enc_file(&file_out, &pw[..]) {
             Ok(_) => (),
             Err(e) => {
-                eprintln!("Error creating file. {:?}", e);
+                eprintln!("Error creating file. {}", e);
                 return;
             },
         };
@@ -535,7 +536,7 @@ impl RustPwMan {
 
         match fcrypt::check_password(&pw) {
             Some(e) => {
-                eprintln!("Password illegal: {:?}", e);
+                eprintln!("Password illegal: {}", e);
                 return;
             },
             None => ()
@@ -545,7 +546,7 @@ impl RustPwMan {
 
         match jots_file.from_enc_file(&file_in, &pw[..]) {
             Err(e) => {
-                eprintln!("Error reading file. {:?}", e);
+                eprintln!("Error reading file. {}", e);
                 return;
             },
             Ok(_) => ()
@@ -553,7 +554,7 @@ impl RustPwMan {
 
         let file = match File::create(&file_out) {
             Err(e) => {
-                eprintln!("Error creating file. {:?}", e);
+                eprintln!("Error creating file. {}", e);
                 return;
             },
             Ok(f) => f
@@ -563,7 +564,7 @@ impl RustPwMan {
 
         match jots_file.to_writer(w) {
             Err(e) => {
-                eprintln!("Error writing file. {:?}", e);
+                eprintln!("Error writing file. {}", e);
                 return;
             },
             Ok(_) => ()
@@ -701,7 +702,12 @@ impl RustPwMan {
             return;
         }
 
-        tuigen::generate_main(self.default_sec_level, self.default_pw_gen);
+        let default_num_passwords = match generate_matches.get_one::<u16>(ARG_NUM_PASSWORDS) {
+            Some(v) => *v as usize,
+            None => 1
+        };
+
+        tuigen::generate_main(self.default_sec_level, self.default_pw_gen, default_num_passwords);
     }
 }
 
@@ -821,7 +827,13 @@ fn main() {
                     .short('c')
                     .long(ARG_CONFIG_FILE)
                     .num_args(1)
-                    .help("Name of config file. Default is .rustpwman")))
+                    .help("Name of config file. Default is .rustpwman"))
+                .arg(Arg::new(ARG_NUM_PASSWORDS)
+                    .short('n')
+                    .long(ARG_NUM_PASSWORDS)
+                    .num_args(1)
+                    .value_parser(clap::value_parser!(u16).range(1..))
+                    .help("Default number of passwords to generate")))
         .subcommand(
             Command::new(COMMAND_OBFUSCATE)
                 .about("Obfuscate WebDAV password")

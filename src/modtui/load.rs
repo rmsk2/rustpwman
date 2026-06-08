@@ -78,7 +78,7 @@ pub fn entry(s: &mut Cursive, state_for_add_entry: Arc<Mutex<AppState>>) {
         let value = match fs::read_to_string(&file_name[..]) {
             Ok(s) => s,
             Err(e) => {
-                show_message(s, &format!("Unable to read file: {:?}", e)); 
+                show_message(s, &format!("Unable to read file: {}", e));
                 return;
             }
         };
