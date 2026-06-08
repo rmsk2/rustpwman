@@ -30,9 +30,8 @@ reqwest = {version = "0.13", optional = true, features = ["blocking"]}
 
 digest = "0.11"
 hmac = "0.13"
-sha2 = "=0.11"
-sha1 = "=0.11"
-#md-5 = "=0.11"
+sha2 = "0.11"
+sha1 = "0.11"
 aes-gcm = "=0.11.0-rc.4"
 chacha20poly1305 = "=0.11.0-rc.3"
 cipher = "0.5"
