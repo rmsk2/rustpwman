@@ -590,7 +590,7 @@ fn test_n_digit_gen() {
     // base 32
     let digits = String::from("abcdefghijklmnopqrstuvwxyz234567");
     let mut generator = NumDigitGenerator::new(&digits.chars().collect());
-    let sec_level_in_digits = generator.sec_level_in_digits(num_bytes * 8);
+    let sec_level_in_digits = generator.sec_level_in_chars(num_bytes * 8);
 
     for _i in 0..100 {
         let pw = generator.gen_password(num_bytes).unwrap();

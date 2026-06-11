@@ -42,18 +42,28 @@ const CHECK_LOWER: &str = "check_lower";
 const CHECK_DIGITS: &str = "check_digits";
 const CHECK_SPECIAL: &str = "check_special";
 const DLG_PW_GEN: &str = "dlg_pw_gen";
+const SHOW_CHAR_COUNT: &str = "entropy_char_count";
 
 const UPPER_CASE: &str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const LOWER_CASE: &str = "abcdefghijklmnopqrstuvwxyz";
 const DEC_DIGITS: &str = "0123456789";
 const SPECIAL_CHARS: &str = "$!#%&";
 
+fn show_sec_bits_wrapper(s: &mut Cursive, val: usize, slider_name: &str, strategy_group: RadioGroup<GenerationStrategy>) {
+    show_sec_bits(s, val, slider_name);
+    calc_char_size(s, strategy_group);
+}
 
 pub fn show_sec_bits(s: &mut Cursive, val: usize, slider_name: &str) {
     s.call_on_name(slider_name, |view: &mut TextArea| {
         let out = format!("{}", (val + 1) * 8);
         view.set_content(out.clone());
     });
+}
+
+fn on_char_change_wrapper(s: &mut Cursive, data: &str, _c: usize, strategy_group: RadioGroup<GenerationStrategy>) {
+    on_char_change(s, data, _c);
+    calc_char_size(s, strategy_group);
 }
 
 fn on_char_change(s: &mut Cursive, data: &str, _c: usize) {
@@ -92,6 +102,8 @@ fn on_strategy_changed(s: &mut Cursive, strategy: &GenerationStrategy) {
     s.call_on_name(CUSTOM_HIDEABLE, |view: &mut HideableView<LinearLayout>| {
         view.set_visible(custom_visible);
     });
+
+    calc_char_size_int(s, strategy);
 }
 
 fn select_default_pw_generator_type(s: &mut Cursive, selector: &mut HashMap<GenerationStrategy, &mut RadioButton<GenerationStrategy>>, def_generator: GenerationStrategy) -> bool {
@@ -185,7 +197,48 @@ fn on_change_charset(s: &mut Cursive, new_value: bool, st: SelectionType) {
 }
 
 
-fn on_ok_clicked(s: &mut Cursive, state_for_gen_pw: Arc<Mutex<AppState>>, strategy_group: &RadioGroup<GenerationStrategy>) {
+fn calc_char_size_int(s: &mut Cursive, selected_strategy: &GenerationStrategy) {
+    let rand_bytes = match s.call_on_name(SLIDER_SEC_NAME, |view: &mut SliderView| { view.get_value() }) {
+        Some(v) => v,
+        None => { return; }
+    };
+
+    let current_chars: Arc<String>;
+    let mut generator = selected_strategy.to_creator()();
+    let sec_in_chars: usize;
+
+    if *selected_strategy == GenerationStrategy::Custom {
+        current_chars = match s.call_on_name(CUSTOM_CHARS, |view: &mut EditView| { view.get_content() }) {
+            Some(v) => v,
+            None => { return; }
+        };
+
+        let custom_chars = eliminate_repititions(&current_chars).chars().sorted().collect::<String>();
+
+        if custom_chars.len() < 2 {
+            sec_in_chars = 0;
+        } else {
+            generator.set_custom(&custom_chars);
+            sec_in_chars = generator.sec_level_in_chars((rand_bytes + 1) * 8);
+        }
+    } else {
+        sec_in_chars = generator.sec_level_in_chars((rand_bytes + 1) * 8);
+    }
+
+    s.call_on_name(SHOW_CHAR_COUNT, |view: &mut TextArea| {
+        let out = format!("{}", sec_in_chars);
+        view.set_content(out.clone());
+    });
+
+}
+
+fn calc_char_size(s: &mut Cursive, strategy_group: RadioGroup<GenerationStrategy>)  {
+
+    let selected_strategy = strategy_group.selection();
+    calc_char_size_int(s, &selected_strategy);
+}
+
+fn on_ok_clicked(s: &mut Cursive, state_for_gen_pw: Arc<Mutex<AppState>>, strategy_group: RadioGroup<GenerationStrategy>) {
     let rand_bytes = match s.call_on_name(SLIDER_SEC_NAME, |view: &mut SliderView| { view.get_value() }) {
         Some(v) => v,
         None => { show_message(s, "Unable to determine security level"); return }
@@ -226,10 +279,10 @@ fn on_ok_clicked(s: &mut Cursive, state_for_gen_pw: Arc<Mutex<AppState>>, strate
     };    
 
     insert_into_entry(s, new_pw);
-    s.pop_layer();        
+    s.pop_layer();
 }
 
-fn create_custom_select(last_selection: &String) -> Box<dyn View> {
+fn create_custom_select(last_selection: &String, strategy_group: RadioGroup<GenerationStrategy>) -> Box<dyn View> {
     let mut check_boxes = LinearLayout::horizontal();
 
     let mut check_upper = Checkbox::new().with_checked(false);
@@ -270,7 +323,7 @@ fn create_custom_select(last_selection: &String) -> Box<dyn View> {
         .child(LinearLayout::horizontal()
             .child(TextView::new("Custom characters: "))
             .child(EditView::new()
-                .on_edit(on_char_change)
+                .on_edit(move |s: &mut Cursive, data: &str, _c: usize| { on_char_change_wrapper(s, data, _c, strategy_group.clone())})
                 .content(last_selection.clone())
                 .with_name(CUSTOM_CHARS)
                 .fixed_width(70)))
@@ -332,7 +385,10 @@ pub fn generate_password(s: &mut Cursive, state_for_gen_pw: Arc<Mutex<AppState>>
     }
 
     strategy_group.set_on_change(on_strategy_changed);
-    let custom_select = create_custom_select(&state_for_gen_pw.lock().unwrap().last_custom_selection);
+    let strat_group_ok = strategy_group.clone();
+    let strat_group_custom_select = strategy_group.clone();
+
+    let custom_select = create_custom_select(&state_for_gen_pw.lock().unwrap().last_custom_selection, strat_group_custom_select.clone());
     let h = state_for_gen_pw.lock().unwrap().last_custom_selection.clone();
     let for_measurement = h.as_str();
 
@@ -354,8 +410,16 @@ pub fn generate_password(s: &mut Cursive, state_for_gen_pw: Arc<Mutex<AppState>>
             .child(TextView::new("Bits: "))
             .child(SliderView::horizontal(PW_MAX_SEC_LEVEL)
                 .value(sec_bits)
-                .on_change(move |s: &mut Cursive, val: usize| show_sec_bits(s, val, BITS_SEC_VALUE))
+                .on_change(move |s: &mut Cursive, val: usize| show_sec_bits_wrapper(s, val, BITS_SEC_VALUE, strategy_group.clone()))
                 .with_name(SLIDER_SEC_NAME))
+            .child(TextView::new(" Length: "))
+            .child(TextArea::new()
+                .content("")
+                .disabled()
+                .with_name(SHOW_CHAR_COUNT)
+                .fixed_width(4)
+            )
+            .child(TextView::new(" characters"))
         )
         .child(TextView::new("\n"))
         .child(linear_layout)
@@ -368,7 +432,7 @@ pub fn generate_password(s: &mut Cursive, state_for_gen_pw: Arc<Mutex<AppState>>
             .with_name(CUSTOM_HIDEABLE)
         )
     )
-    .button("OK", move |s| on_ok_clicked(s, state_for_gen_pw.clone(), &strategy_group))
+    .button("OK", move |s| on_ok_clicked(s, state_for_gen_pw.clone(), strat_group_ok.clone()))
     .button("Cancel", |s| { s.pop_layer(); })
     .with_name(DLG_PW_GEN);
     

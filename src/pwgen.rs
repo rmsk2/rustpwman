@@ -31,6 +31,7 @@ pub trait StrGetter {
 
 pub trait PasswordGenerator {
     fn gen_password(&mut self, num_bytes: usize) -> Option<String>;
+    fn sec_level_in_chars(&self, sec_level_in_bits: usize) -> usize;
     fn set_custom(&mut self, _s: &String) {}
 }
 
@@ -163,6 +164,7 @@ impl SpecialGenerator {
 
         return res;
     }
+
 }
 
 impl PasswordGenerator for SpecialGenerator {
@@ -181,6 +183,13 @@ impl PasswordGenerator for SpecialGenerator {
         res.push_str(&format!("{:03}", self.rng.random_range(0..1000)));
 
         return Some(res);
+    }
+
+    fn sec_level_in_chars(&self, sec_level_in_bits: usize) -> usize {
+        let security_level: f64 = sec_level_in_bits as f64;
+        let number_of_groups = (security_level - self.entropy_in_last_group) / self.entropy_per_group;
+        // If number_of_groups.celil() is negeative the cast to usize results in the value 0!
+        return ((number_of_groups.ceil() as usize) * 2) + 4;
     }
 }
 
@@ -226,17 +235,13 @@ impl NumDigitGenerator {
 
         return NumDigitGenerator::from_string(&all_chars);
     }
-
-    pub fn sec_level_in_digits(&self, sec_level_in_bits: usize) -> usize {
-        ((sec_level_in_bits as f64) / (self.digits.len() as f64).log2()).ceil() as usize
-    }
 }
 
 impl PasswordGenerator for NumDigitGenerator {
     fn gen_password(&mut self, num_bytes: usize) -> Option<String> {
         let mut res = String::from("");
 
-        for _ in 0..self.sec_level_in_digits(num_bytes * 8) {
+        for _ in 0..self.sec_level_in_chars(num_bytes * 8) {
             let rand_digit = self.rng.random_range(0..self.digits.len());
             res.push(self.digits[rand_digit])
         }
@@ -250,5 +255,9 @@ impl PasswordGenerator for NumDigitGenerator {
         }
 
         self.digits = s.chars().collect();
+    }
+
+    fn sec_level_in_chars(&self, sec_level_in_bits: usize) -> usize {
+        ((sec_level_in_bits as f64) / (self.digits.len() as f64).log2()).ceil() as usize
     }
 }

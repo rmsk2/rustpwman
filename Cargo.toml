@@ -1,6 +1,6 @@
 [package]
 name = "rustpwman"
-version = "2.14.3"
+version = "2.14.4"
 authors = ["Martin <rmsk2@gmx.de>"]
 edition = "2024"
 
