@@ -22,13 +22,14 @@ use crate::pwgen;
 use crate::pwgen::StrGetter;
 use crate::modtui;
 use crate::modtui::show_message;
-use crate::modtui::pwgenerate::show_sec_bits;
+use crate::strat_helper::StratHelper;
 
 const GEN_BITS_SEC_VALUE: &str = "genseclevel";
 const GEN_SLIDER_SEC_NAME: &str = "genslider";
 const GEN_SLIDER_NUM_PW_NAME: &str = "genslidernumpw";
 const GEN_NUM_PW_VALUE: &str = "gennumpwval";
 const GEN_DIALOG: &str = "pwgendialog";
+const GEN_SHOW_CHAR_COUNT: &str = "gen_entropy_char_count";
 const MAX_NUM_PASSWORDS: usize = 30;
 
 
@@ -38,7 +39,6 @@ fn show_num_pws(s: &mut Cursive, val: usize) {
         view.set_content(out.clone());
     });
 }
-
 
 pub fn generate_main(sec_level: usize, pw_gen_strategy: pwgen::GenerationStrategy, default_num_pws: usize) {
     let mut siv = cursive::default();
@@ -71,6 +71,12 @@ pub fn generate_main(sec_level: usize, pw_gen_strategy: pwgen::GenerationStrateg
         linear_layout_pw_gen.add_child(TextView::new(" "));
     }         
 
+    let strat_helper = StratHelper::new(GEN_SLIDER_SEC_NAME, GEN_SHOW_CHAR_COUNT, GEN_BITS_SEC_VALUE);
+
+    strategy_group = strategy_group.on_change(move |s: &mut Cursive, selected_strategy: &pwgen::GenerationStrategy| {strat_helper.strat_on_change(s, selected_strategy)});
+    let strat_group_for_slider = strategy_group.clone();
+    let strat_group_for_slider2 = strategy_group.clone();
+
     let res = Dialog::new()
     .title("Rustpwman generate passwords")
     .padding_lrtb(2, 2, 1, 1)
@@ -90,8 +96,16 @@ pub fn generate_main(sec_level: usize, pw_gen_strategy: pwgen::GenerationStrateg
             .child(TextView::new("Bits: "))
             .child(SliderView::horizontal(modtui::PW_MAX_SEC_LEVEL)
                 .value(sec_level)
-                .on_change(|s, slider_val| { show_sec_bits(s, slider_val, GEN_BITS_SEC_VALUE) })
-                .with_name(GEN_SLIDER_SEC_NAME))
+                .on_change(move |s, slider_val| { strat_helper.show_sec_bits(s, slider_val, strat_group_for_slider.clone()) })
+                .with_name(GEN_SLIDER_SEC_NAME)
+            )
+            .child(TextView::new(" Length: "))
+            .child(TextArea::new()
+                .content("")
+                .disabled()
+                .with_name(GEN_SHOW_CHAR_COUNT)
+                .fixed_width(3))
+            .child(TextView::new(" characters"))
         )
         .child(TextView::new("\n"))
         .child(linear_layout_pw_gen)
@@ -143,7 +157,7 @@ pub fn generate_main(sec_level: usize, pw_gen_strategy: pwgen::GenerationStrateg
     .with_name(GEN_DIALOG);
     
     siv.add_layer(res);
-    show_sec_bits(&mut siv, sec_level, GEN_BITS_SEC_VALUE);
+    strat_helper.show_sec_bits(&mut siv, sec_level, strat_group_for_slider2);
     show_num_pws(&mut siv, initial_num_pws);
     siv.call_on_name(GEN_DIALOG, |view: &mut Dialog| {view.set_focus(DialogFocus::Button(0))});
 

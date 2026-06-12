@@ -28,7 +28,7 @@ use crate::pwgen::StrGetter;
 use crate::fcrypt;
 use crate::modtui;
 use crate::modtui::show_message;
-use crate::modtui::pwgenerate::show_sec_bits;
+use crate::strat_helper::StratHelper;
 use crate::RustPwMan;
 #[cfg(feature = "webdav")]
 use crate::OBFUSCATION_ENV_VAR;
@@ -42,6 +42,7 @@ use crate::obfuscate::is_obfuscation_possible;
 
 const BITS_SEC_VALUE: &str = "cfgseclevel";
 const SLIDER_SEC_NAME: &str = "cfgslider";
+const PW_LEN_NAME: &str = "cfgpwlen";
 const EDIT_PASTE_COMMAND: &str = "pastecmd";
 const EDIT_COPY_COMMAND: &str = "copycmd";
 const EDIT_VIEWER_COMMAND: &str = "viewercmd";
@@ -321,7 +322,7 @@ fn set_webdav_state(siv: &mut Cursive, webdav_user: &String, webdav_server: &Str
     siv.call_on_name(EDIT_WEBDAV_SERVER, |view: &mut EditView| { view.set_content(webdav_server) });
 }
 
-fn create_pw_strategy_select_ui(sec_level: usize, linear_layout_pw_gen: LinearLayout) -> Panel<PaddedView<LinearLayout>> {
+fn create_pw_strategy_select_ui(sec_level: usize, linear_layout_pw_gen: LinearLayout, strat_group: RadioGroup<pwgen::GenerationStrategy>, strat_helper: StratHelper) -> Panel<PaddedView<LinearLayout>> {
     return Panel::new(
         PaddedView::new(Margins::lrtb(1,1,1,1),
         LinearLayout::vertical()
@@ -338,8 +339,15 @@ fn create_pw_strategy_select_ui(sec_level: usize, linear_layout_pw_gen: LinearLa
         .child(TextView::new("Bits: "))
         .child(SliderView::horizontal(modtui::PW_MAX_SEC_LEVEL)
             .value(sec_level)
-            .on_change(|s, slider_val| { show_sec_bits(s, slider_val, BITS_SEC_VALUE) })
+            .on_change(move |s, slider_val| { strat_helper.show_sec_bits(s, slider_val, strat_group.clone()) })
             .with_name(SLIDER_SEC_NAME))
+        .child(TextView::new(" Length: "))
+        .child(TextArea::new()
+            .content("")
+            .disabled()
+            .with_name(PW_LEN_NAME)
+            .fixed_width(3))
+        .child(TextView::new(" characters"))
         )
         .child(TextView::new("\n"))
         .child(linear_layout_pw_gen)
@@ -379,14 +387,20 @@ pub fn config_main(app: &RustPwMan, config_file: std::path::PathBuf, sec_level: 
     let mut siv = cursive::default();
 
     // Create radio groups for password generation strategy and crypto algorithms
-    let (linear_layout_pw_gen, strategy_group) = create_algo_selection_ui(pw_gen_strategy, "Contained characters: ");
+    let (linear_layout_pw_gen, mut strategy_group) = create_algo_selection_ui(pw_gen_strategy, "Contained characters: ");
     let (linear_layout_pbkdf, pbkdf_group) = create_algo_selection_ui(pbkdf_id, "Key derivation function: ");
     let (linear_layout_cipher, cipher_group) = create_algo_selection_ui(cipher_id, "Encryption algorithm   : ");
+
+    let strat_helper = StratHelper::new(SLIDER_SEC_NAME, PW_LEN_NAME, BITS_SEC_VALUE);
+
+    strategy_group = strategy_group.on_change(move |s: &mut Cursive, selected_strategy: &pwgen::GenerationStrategy| {strat_helper.strat_on_change(s, selected_strategy)});
+    let strat_for_slider = strategy_group.clone();
+    let strat_for_ui = strategy_group.clone();
 
     // Create panels for pw generation strategy, crypto algorithms, helper commands, backup file selection and WebDAV parameters
     let mut config_panels = LinearLayout::vertical();
 
-    config_panels.add_child(create_pw_strategy_select_ui(sec_level, linear_layout_pw_gen));
+    config_panels.add_child(create_pw_strategy_select_ui(sec_level, linear_layout_pw_gen, strat_for_ui, strat_helper));
     config_panels.add_child(create_algo_select_ui(linear_layout_pbkdf, linear_layout_cipher));
     config_panels.add_child(create_command_selection_ui());
     config_panels.add_child(create_miscelleneous_ui());
@@ -425,7 +439,7 @@ pub fn config_main(app: &RustPwMan, config_file: std::path::PathBuf, sec_level: 
     siv.add_layer(res);
     
     // Set state of UI elements to values which reflect the current config
-    show_sec_bits(&mut siv, sec_level, BITS_SEC_VALUE);
+    strat_helper.show_sec_bits(&mut siv, sec_level, strat_for_slider);
     set_clip_commands_state(&mut siv, clp_cmd, cpy_cmd);
     set_template_strings_state(&mut siv, &app.get_template_strings());
     set_edit_state_by_option(&mut siv, EDIT_VIEWER_COMMAND, viewer_cmd);

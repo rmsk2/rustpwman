@@ -26,6 +26,7 @@ mod undo;
 mod persist;
 mod obfuscate;
 mod pwstore;
+mod strat_helper;
 
 #[cfg(feature = "webdav")]
 mod webdav;

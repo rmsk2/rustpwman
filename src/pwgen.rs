@@ -17,6 +17,7 @@ limitations under the License. */
 use rand::RngExt;
 
 const GEN_BASE64: &str = "base64";
+const GEN_BASE32: &str = "base32";
 const GEN_HEX: &str = "hex";
 const GEN_SPECIAL: &str = "special";
 const GEN_NUMERIC: &str = "numeric";
@@ -40,6 +41,7 @@ type StrategyCreator = dyn Fn() -> Box<dyn PasswordGenerator>;
 #[derive(Debug, Hash, PartialEq, Eq, Copy, Clone)]
 pub enum GenerationStrategy {
     Base64,
+    Base32,
     Hex,
     Special,
     Numeric,
@@ -50,6 +52,7 @@ impl GenerationStrategy {
     pub fn from_str(name: &str) -> Option<Self> {
         return match name {
             GEN_BASE64 => Some(GenerationStrategy::Base64),
+            GEN_BASE32 => Some(GenerationStrategy::Base32),
             GEN_HEX => Some(GenerationStrategy::Hex),
             GEN_SPECIAL => Some(GenerationStrategy::Special),
             GEN_NUMERIC => Some(GenerationStrategy::Numeric),
@@ -61,6 +64,7 @@ impl GenerationStrategy {
     pub fn to_creator(self) -> &'static StrategyCreator {
         return match self {
             GenerationStrategy::Base64 => &|| { return Box::new(NumDigitGenerator::base64()) },
+            GenerationStrategy::Base32 => &|| { return Box::new(NumDigitGenerator::base32()) },
             GenerationStrategy::Hex => &|| { return Box::new(NumDigitGenerator::hex()) },
             GenerationStrategy::Special => &|| { return Box::new(SpecialGenerator::new(false)) },
             GenerationStrategy::Numeric => &|| { return Box::new(NumDigitGenerator::numeric()) },
@@ -73,7 +77,7 @@ impl GenerationStrategy {
     }
 
     pub fn get_known_ids() -> Vec<GenerationStrategy> {
-        return vec![GenerationStrategy::Base64, GenerationStrategy::Hex, GenerationStrategy::Special, GenerationStrategy::Numeric];
+        return vec![GenerationStrategy::Base64, GenerationStrategy::Base32, GenerationStrategy::Hex, GenerationStrategy::Special, GenerationStrategy::Numeric];
     }
 }
 
@@ -81,6 +85,7 @@ impl StrGetter for GenerationStrategy {
     fn to_str(self) -> &'static str {
         match self {
             GenerationStrategy::Base64 => GEN_BASE64,
+            GenerationStrategy::Base32 => GEN_BASE32,
             GenerationStrategy::Hex => GEN_HEX,
             GenerationStrategy::Special => GEN_SPECIAL,
             GenerationStrategy::Numeric => GEN_NUMERIC,
@@ -224,6 +229,10 @@ impl NumDigitGenerator {
 
     pub fn hex() -> NumDigitGenerator {
         return NumDigitGenerator::from_string(&String::from("0123456789ABCDEF"));
+    }
+
+    pub fn base32() -> NumDigitGenerator {
+        return NumDigitGenerator::from_string(&String::from("23456789ABCDEFGHIKLMNPQRSTUVWXYZ"));
     }
 
     pub fn base64() -> NumDigitGenerator {
