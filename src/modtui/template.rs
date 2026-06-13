@@ -124,9 +124,9 @@ pub fn to_clipboard(s: &mut Cursive, state_for_copy_entry: Arc<Mutex<AppState>>,
         false => {
             if close_parent {
                 s.pop_layer();
+            } else {
+                show_message(s, "Contents of the selected entry copied to clipboard");
             }
-
-            show_message(s, "Contents of the selected entry copied to clipboard");
         }
     }
 }
