@@ -432,8 +432,6 @@ pub fn config_main(app: &RustPwMan, config_file: std::path::PathBuf, sec_level: 
 
     res.add_button("OK", move |s| save_new_config(s, Box::new(old_values.clone()), &config_file, &strategy_group, &pbkdf_group, &cipher_group));
     res.add_button("Cancel", |s| s.quit() );
-    //#[cfg(feature = "webdav")]
-    //res.add_button("Obfuscate", move |s| obfuscate_password(s));
 
     siv.add_layer(res);
     
