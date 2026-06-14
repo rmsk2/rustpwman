@@ -189,10 +189,9 @@ pub fn save_new_config(s: &mut Cursive, old_values: Box<OptionalConfigEntries>, 
     // Read helper command for writing to clipboard
     let copy_command: String;
     get_string_value_from_ui_no_shadow!(s, copy_command, EDIT_COPY_COMMAND, "Unable to determine copy command");
-
-    // Read helper command for viewing pictures
+    // Read helper command for file open
     let viewer_command_txt: String;
-    get_string_value_from_ui_no_shadow!(s, viewer_command_txt, EDIT_VIEWER_COMMAND, "Unable to determine image viewer command");
+    get_string_value_from_ui_no_shadow!(s, viewer_command_txt, EDIT_VIEWER_COMMAND, "Unable to determine file open command");
     viewer_command = to_option(&viewer_command_txt);
 
     #[cfg(feature = "writebackup")]
