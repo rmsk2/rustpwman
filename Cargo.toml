@@ -39,7 +39,7 @@ aes = "0.9"
 aead = "0.6"
 scrypt = {version = "0.12", optional = true}
 argon2 = "=0.6.0-rc.8"
-zeroize = { version = "1.8", features = ["derive"] }
+zeroize = { version = "1.9", features = ["derive"] }
 
 [target.'cfg(target_os = "linux")'.dependencies.cursive]
 version = "0.21"
