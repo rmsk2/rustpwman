@@ -172,9 +172,9 @@ strings can be configured  via the `cfg` command or by editing `rustpwman`'s con
 
 When you activate this menu entry the dialog shown above opens and lets you select a template string. In order to copy the value identified by that template string to the clipboard and
 then close the dialog you can either press the `<Retrieve and close>` button or press the return key while the chosen template string is selected. Instead of using the menu entry you
-can alternatively press F7. If you press the `<Open as URL>` button the text retrieved as described above will be interpredted as a URL and opened in the default browser of your system.
-Additionally the dialog will stay open to allow you to select further elements. Pressing the `<Retrieve only>` button copies the select teamplate value to the clipboard and also leaves
-the dialog open for further interaction.
+can alternatively press F7. If you press the `<Open as URL>` button (or press F9) the text retrieved as described above will be interpredted as a URL and opened in the default browser
+of your system. Additionally the dialog will stay open to allow you to select further elements. Pressing the `<Retrieve only>` button (or pressing F8) copies the select teamplate value
+to the clipboard and also leaves the dialog open for further interaction.
 
 ### Add entry
 

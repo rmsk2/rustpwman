@@ -208,6 +208,8 @@ pub fn retrieve(s: &mut Cursive, state_for_templ_get: Arc<Mutex<AppState>>) {
     let state_for_select = state_for_templ_get.clone();
     let state_for_open = state_for_templ_get.clone();
     let state_for_enter_callback = state_for_templ_get.clone();
+    let state_for_f8_callback = state_for_templ_get.clone();
+    let state_for_f9_callback = state_for_templ_get.clone();
     let state_for_retr_only = state_for_templ_get.clone();
 
     let known_template_keys = state_for_templ_get.lock().unwrap().template_strings.clone();
@@ -225,6 +227,8 @@ pub fn retrieve(s: &mut Cursive, state_for_templ_get: Arc<Mutex<AppState>>) {
 
     let mut event_wrapped_select_view = OnEventView::new(named_select_view);
     event_wrapped_select_view.set_on_event(Key::Enter, move |s| { do_select(s, state_for_enter_callback.clone(), to_clip_close_parent); });
+    event_wrapped_select_view.set_on_event(Key::F8, move |s| { do_select(s, state_for_f8_callback.clone(), to_clip_keep_parent); });
+    event_wrapped_select_view.set_on_event(Key::F9, move |s| { do_select(s, state_for_f9_callback.clone(), open_as_url); });
 
     let scroll_view = event_wrapped_select_view
     .scrollable()
