@@ -96,13 +96,9 @@ fn run_command(cmd: &str) -> Option<std::io::Error> {
     }
 
     match Command::new(collection[0]).args(collection[1..].into_iter()).stdout(Stdio::null()).stderr(Stdio::null()).spawn() {
-        Ok(_) =>  {
-            return None
-        },
-        Err(e) => {
-            return Some(e)
-        }
-    };
+        Ok(_) => None,
+        Err(e) => Some(e)
+    }
 }
 
 pub fn execute_viewer(file_name: &String, cmd_prefix: Option<&str>) -> Option<String> {
@@ -122,12 +118,8 @@ pub fn execute_viewer(file_name: &String, cmd_prefix: Option<&str>) -> Option<St
     h.push_str(file_name);
 
     res = match run_command(h.as_str()) {
-        None => {
-            None
-        },
-        Some(e) => {
-            Some(format!("Unable to start viewer: {}", e))
-        }
+        None => None,
+        Some(e) => Some(format!("Unable to start viewer: {}", e))
     };
 
     return res;
