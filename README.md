@@ -123,7 +123,12 @@ the file is saved. I.e. if the header is `Entries *` then there are unsaved chan
 ### Edit entry
 
 This menu entry allows to manually edit the value or contents of the currently selected password entry. After the edit dialog opens you can additionally either generate a random
-password and insert it at the current cursor position or insert the current contents of the clipboard at that position.
+password and insert it at the current cursor position or insert the current contents of the clipboard at that position. Additionally you can cut or copy part of the entry's
+text into the clipboard. Use `F8` to set a so called mark which defines the start position of a selection. Then move the cursor to the end position of the selection. After
+that click on `Copy ...` or `Cut` to copy or cut the selected text into the clipboard. The selected text includes the character at the leftmost position of the selection but
+excludes the character at the rightmost. You can manually clear the mark by pressing `F9`. The mark is also cleared after a sccessfull copy or cut operation or if the entry's
+text is changed. Whether a mark is currently set can be deduced from the checkbox next to the text `Mark set`. You can click on `Help ...` to get an explanantory text about copy
+and cut while running `rustpwman`.
 
 ![](/edit.png?raw=true "Screenshot of edit entry dialog")
 

@@ -302,7 +302,7 @@ pub fn entry(s: &mut Cursive, state_for_edit_entry: Arc<Mutex<AppState>>, entry_
         refocus_dlg_element(s, DLG_EDIT, TEXT_AREA_NAME);
     })
     .button("Help ...", move |s| { 
-        show_message(s, "Use F8 to set a mark at the current cursor position.\n\nThen use Copy ... or Cut ... to cut or copy\nall text between the mark and the current cursor position.\n\nThe character at the start position is part of the selection.\nThe character at the end position is not.\n\nPress F9 to reset the mark.");
+        show_message(s, "Use F8 to set a mark at the current cursor position.\n\nThen use <Copy ...> or <Cut> to cut or copy all text\nbetween the mark and the current cursor position.\n\nThe character at the start position is part of the selection.\nThe character at the end position is not.\n\nPress F9 to reset the mark.");
         refocus_dlg_element(s, DLG_EDIT, TEXT_AREA_NAME);
     })    
     .button("Cancel", move |s| { 
