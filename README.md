@@ -599,5 +599,5 @@ This section provides information about stuff which is in my view suboptimal and
 - On Windows when using the `pancurses` backend a spurious Escape sequence `ESC[?1002l` is printed to stdout when the TUI application stops. This does not happen on Linux or macOS. By piping the output of `rustpwman` to `winfilter.exe` you can remove this unwanted data from the output.
 - On Linux another spurious terminal command sequence similar to `35;11;14M` is *sometimes* printed to the console right after `rustpwman` has been closed. This command sequence also makes the terminal application beep. I think this is a problem of `cursive` or `crossterm` and at the moment I do not know how to resolve this issue.
 - In non `--release` builds scrypt with the chosen parameters is *extremely* slow
-- At the moment I use release candidates of the crypto routines as their last official releases can not be built without warnings with a reasonably up-to-date rust toolchain.
+- I still have to use the most recent release candidate (RC 8) of the `argon2` crate. All other crates provided by the RustCrypto project are now on a new stable version.
 
