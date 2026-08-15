@@ -270,7 +270,7 @@ contents to stdout. `rustpwman` can then read the output of that process and wri
 Secondly copying to the clipboard is possible as soon as `rustpwman` has stopped. When selecting `Quit and print` from the main menu `rustpwman` is stopped and the contents of the
 currently selected entry is printed to the terminal window. The necessary information can now be copied from the terminal into the clipboard and pasted where needed.
 
-The third implemented option is the possibility to copy an entry as a whole to the clipboard by spawning a process that runs a program which is able to transfer the data it
+The third implemented option is the possibility to copy an entry as a whole or in part to the clipboard by spawning a process that runs a program which is able to transfer the data it
 receives via stdin to the clipboard. As Rust uses the UTF-8 character encoding this works best when the tool used for this purpose also expects its data in UTF-8.
 
 As additional workarounds there are a possibility to load data from a file into an existing entry using the `Load entry` menu entry and to export the contents of an entry
@@ -397,7 +397,8 @@ Depending on the platform for which `rustpwman` is being built the feature is na
 ## WebDAV support
 
 If you build `rustpwman` with the optional `webdav` feature enabled you can access password data files on WebDAV shares without explicitly mounting the share first. This `rustpwman`
-feature has been successfully tested against a well known cloud storage provider using TLS. The credentials are read from the `.rustpwman` config file using the following entries:
+feature has been successfully tested against a well known cloud storage provider and a Synology NAS using TLS. The credentials are read from the `.rustpwman` config file using the
+following entries:
 
 ```
 ....
