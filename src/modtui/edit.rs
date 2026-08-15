@@ -107,7 +107,7 @@ fn reset_and_visualize_mark(s: &mut Cursive, mark: Arc<Mutex<Option<usize>>>) {
     s.call_on_name(MARK_INDICATOR, |view: &mut Checkbox| { view.set_checked(false) });
 }
 
-fn handle_copy_paste(s: &mut Cursive, state_for_copy:  Arc<Mutex<AppState>>, marked_position_for_copy: Arc<Mutex<Option<usize>>>, do_cut: bool) {
+fn handle_copy_cut(s: &mut Cursive, state_for_copy:  Arc<Mutex<AppState>>, marked_position_for_copy: Arc<Mutex<Option<usize>>>, do_cut: bool) {
     let mark = marked_position_for_copy.clone();
     let val: Option<usize>;
 
@@ -268,10 +268,10 @@ pub fn entry(s: &mut Cursive, state_for_edit_entry: Arc<Mutex<AppState>>, entry_
         s.pop_layer();
     })
     .button("Copy ...", move |s: &mut Cursive| {
-        handle_copy_paste(s, state_for_copy.clone(), marked_position_for_copy.clone(), false);
+        handle_copy_cut(s, state_for_copy.clone(), marked_position_for_copy.clone(), false);
     })
     .button("Cut", move |s: &mut Cursive| {
-        handle_copy_paste(s, state_for_cut.clone(), marked_position_for_cut.clone(), true);
+        handle_copy_cut(s, state_for_cut.clone(), marked_position_for_cut.clone(), true);
     })        
     .button("Paste", move |s: &mut Cursive| {
         let pasted_txt: String;
