@@ -119,49 +119,49 @@ fn handle_copy_paste(s: &mut Cursive, state_for_copy:  Arc<Mutex<AppState>>, mar
     if val.is_none() {
         show_message(s, "No mark set");
         refocus_dlg_element(s, DLG_EDIT, TEXT_AREA_NAME);
-    } else {
-        let mark_pos = val.unwrap();
+        return
+    }
 
-        let mut entry_text = match s.call_on_name(TEXT_AREA_NAME, |view: &mut TextArea| { String::from(view.get_content()) }) {
-            Some(text_val) => {
-                text_val
-            },
-            None => { show_message(s, "Unable to read entry text"); return }
-        };
+    let mark_pos = val.unwrap();
 
-        let cursor_pos_opt = s.call_on_name(TEXT_AREA_NAME, |view: &mut TextArea| { view.cursor() });
-        if cursor_pos_opt.is_none() {
-            show_message(s, "Unable to read cursor position"); return
-        }
+    let mut entry_text = match s.call_on_name(TEXT_AREA_NAME, |view: &mut TextArea| { String::from(view.get_content()) }) {
+        Some(text_val) => {
+            text_val
+        },
+        None => { show_message(s, "Unable to read entry text"); return }
+    };
 
-        let cursor_pos = cursor_pos_opt.unwrap();
-        let start_pos = mark_pos.min(cursor_pos);
-        let end_pos = mark_pos.max(cursor_pos);
+    let cursor_pos_opt = s.call_on_name(TEXT_AREA_NAME, |view: &mut TextArea| { view.cursor() });
+    if cursor_pos_opt.is_none() {
+        show_message(s, "Unable to read cursor position"); return
+    }
 
-        if start_pos == end_pos {
-            show_message(s, "Selection is empty"); 
-            refocus_dlg_element(s, DLG_EDIT, TEXT_AREA_NAME);
+    let cursor_pos = cursor_pos_opt.unwrap();
+    let start_pos = mark_pos.min(cursor_pos);
+    let end_pos = mark_pos.max(cursor_pos);
+
+    if start_pos == end_pos {
+        show_message(s, "Selection is empty");
+        refocus_dlg_element(s, DLG_EDIT, TEXT_AREA_NAME);
+        return;
+    }
+
+    if let Some(selected) = entry_text.get(start_pos..end_pos) {
+        if clip::set_clipboard(String::from(state_for_copy.lock().unwrap().copy_command.clone()), Box::new(String::from(selected))) {
+            show_message(s, "Unable to set clipboad");
             return;
-        }
+        } else {
+            reset_and_visualize_mark(s, mark);
 
-        if let Some(selected) = entry_text.get(start_pos..end_pos) {
-            match clip::set_clipboard(String::from(state_for_copy.lock().unwrap().copy_command.clone()), Box::new(String::from(selected))) {
-                true => {
-                    show_message(s, "Unable to set clipboad"); return;
-                },
-                false => {
-                    if !do_cut {
-                        reset_and_visualize_mark(s, mark);
-                        show_message(s, "Marked contents copied to clipboard");
-                    } else {
-                        let _ = entry_text.drain(start_pos..end_pos).collect::<String>();
-                        s.call_on_name(TEXT_AREA_NAME, |view: &mut TextArea| { view.set_content(entry_text) });
-                        reset_and_visualize_mark(s, mark);
-                        s.call_on_name(TEXT_AREA_NAME, |view: &mut TextArea| { view.set_cursor(start_pos) });
-                    }                 
-                    refocus_dlg_element(s, DLG_EDIT, TEXT_AREA_NAME);
-                }
+            if !do_cut {
+                show_message(s, "Marked contents copied to clipboard");
+            } else {
+                let _ = entry_text.drain(start_pos..end_pos).collect::<String>();
+                s.call_on_name(TEXT_AREA_NAME, |view: &mut TextArea| { view.set_content(entry_text) });
+                s.call_on_name(TEXT_AREA_NAME, |view: &mut TextArea| { view.set_cursor(start_pos) });
             }
+
+            refocus_dlg_element(s, DLG_EDIT, TEXT_AREA_NAME);
         }
     }
 }
