@@ -169,7 +169,7 @@ copy and paste operation. When selecting this entry the queue contents (see belo
 
 Sometimes it is useful to only retrieve part of an entry like for instance that part where the password, the user-id or the URL of a website is stored. `rustpwman` allows you
 to do that via so called template strings. If a template string *followed by a colon and a space character* appears at the start of a (trimmed) line then the rest of the line defines
-the value which can be retrieved seperately through this menu item. Lets asumme there is a line starting with `Password: super-password` in an entry's content and `Password` is
+the value which can be retrieved seperately through this menu item. Let's asumme there is a line starting with `Password: super-password` in an entry's content and `Password` is
 defined as a template string. Then you could retrieve the password (where leading or trailing white space is trimmed) through this menu entry. What strings are considered template
 strings can be configured  via the `cfg` command or by editing `rustpwman`'s config file.
 
@@ -210,7 +210,7 @@ This allows to load the contents of a (text-)file into an entry. The current con
 ### To QR-Code
 
 This entry is visible when the feature `qrcode` was used to build `rustpwman`. Via this entry you can create a QR code which encodes the contents of the entry. This can be useful if
-you want use data stored in `rustpwman` on a mobile phone. It is especially handy, if the data stored in `rustpwman` is a `otpauth://`-URL which holds the value and the usage parameters
+you want to use data stored in `rustpwman` on a mobile phone. It is especially handy, if the data stored in `rustpwman` is a `otpauth://`-URL which holds the value and the usage parameters
 of a TOTP secret. If you want to extract the `otpauth://` URL from a PNG showing the QR-code displayed during TOTP-onboarding you can use this Python
 [script](https://github.com/rmsk2/pwman/blob/main/totp.py). Make sure that the PNG is clipped to show the QR code only.
 
