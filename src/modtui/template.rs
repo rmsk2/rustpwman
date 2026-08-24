@@ -119,16 +119,17 @@ pub fn to_clipboard(s: &mut Cursive, state_for_copy_entry: Arc<Mutex<AppState>>,
         Ok(v) => v
     };
 
-    match set_clipboard(copy_command, Box::new(templ_val)) {
-        true => { show_message(s, "Unable to set clipboad"); return },
-        false => {
-            if close_parent {
-                s.pop_layer();
-            } else {
-                show_message(s, "Contents of the selected entry copied to clipboard");
-            }
-        }
+    if set_clipboard(copy_command, Box::new(templ_val)) {
+        show_message(s, "Unable to set clipboad");
+        return;
     }
+
+    if close_parent {
+        s.pop_layer();
+        return;
+    }
+
+    show_message(s, "Contents of the selected entry copied to clipboard");
 }
 
 pub fn to_clip_close_parent(s: &mut Cursive, state_for_copy_entry: Arc<Mutex<AppState>>, template_key: &String) {
