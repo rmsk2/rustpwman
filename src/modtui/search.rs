@@ -54,7 +54,7 @@ pub fn perform_search(s: &mut Cursive, state_for_add_entry: Arc<Mutex<AppState>>
     }
 
     if search_res.is_empty() {
-        show_message(s, "No matching entry found"); 
+        //show_message(s, "No matching entry found");
         return 
     }
 
