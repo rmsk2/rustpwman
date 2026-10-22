@@ -35,6 +35,7 @@ mod queue;
 mod qrcode;
 mod search;
 mod totp;
+mod lockscreen;
 pub mod template;
 pub mod tuimain;
 pub mod tuitheme;
@@ -47,6 +48,7 @@ const SELECT_VIEW: &str = "entrylist";
 const PANEL_AREA_MAIN: &str = "entrytitle";
 const TEXT_AREA_TITLE: &str = "texttitle";
 const TEXT_AREA_MAIN: &str = "entrytext";
+const UNLOCK_ITEM_NAME: &str = "rustpwman unlock code";
 const PW_WIDTH: usize = 35;
 
 pub const DEFAULT_PASTE_CMD: &str = "xsel -ob";
@@ -82,6 +84,44 @@ use crate::{CfgSource, jots};
 use crate::pwstore;
 
 
+struct Fbz {
+    counter: usize,
+    max: usize
+}
+
+impl Fbz {
+    fn new(max_val: usize) -> Self {
+        return Fbz {
+            counter: 0,
+            max: max_val
+        }
+    }
+
+    fn test_pw(&mut self, ref_val: &str, test_val: &str) -> bool {
+        if self.counter >= self.max {
+            return false;
+        }
+
+        if ref_val != test_val {
+            self.counter += 1;
+            return false;
+        }
+
+        self.counter = 0;
+
+        return true;
+    }
+
+    fn reset(&mut self) {
+        self.counter = 0;
+    }
+
+    fn is_active(&self) -> bool {
+        return self.counter < self.max;
+    }
+}
+
+
 
 #[allow(dead_code)]
 pub struct AppState {
@@ -102,6 +142,9 @@ pub struct AppState {
     kdf_id: KdfId,
     current_totp_producer: Option<Sender<()>>,
     template_strings: Vec<String>,
+    locked: bool,
+    fbz: Fbz,
+    unlock_item: String,
 }
 
 impl AppState {
@@ -125,8 +168,41 @@ impl AppState {
             cfg_name: cfg_name.clone(),
             kdf_id: kdf_id,
             current_totp_producer: None,
-            template_strings: templ.iter().cloned().collect()
+            template_strings: templ.iter().cloned().collect(),
+            locked: false,
+            fbz: Fbz::new(3),
+            unlock_item: String::from(UNLOCK_ITEM_NAME),
         }
+    }
+
+    pub fn verify_unlock_password(&mut self, mut user_val: String) -> bool {
+
+        if let Some(mut ref_val) = self.store.get(&self.unlock_item) {
+
+            if self.fbz.test_pw(&ref_val.trim(), &user_val) {            
+                user_val.zeroize();
+                ref_val.zeroize();
+                return true;
+            } else {
+                ref_val.zeroize();
+            }
+        }
+
+        let res = self.verify_password(user_val.clone());
+        if res {
+            self.fbz.reset();
+        }
+        user_val.zeroize();
+
+        return res;
+    }
+
+    pub fn is_unlock_code_active(&self) -> bool {
+        if self.store.entry_exists(&self.unlock_item) {
+            return self.fbz.is_active();
+        } else {
+            return false;
+        }        
     }
 
     pub fn get_default_bits(&self) -> usize {
@@ -175,6 +251,7 @@ impl AppState {
         return self.store.persist(&mut self.persister, pw.as_str());
     }
 }
+
 
 fn do_quit(s: &mut Cursive, sender: Arc<Sender<String>>, message: String) {
     match sender.send(message) {
@@ -447,6 +524,16 @@ fn wrapper2(ctx: AppCtx, f: fn(&mut Cursive, state: Arc<Mutex<AppState>>, sndr: 
     };
 }
 
+fn wrapper2_if_not_locked(ctx: AppCtx, f: fn(&mut Cursive, state: Arc<Mutex<AppState>>, sndr: Arc<Sender<String>>)) -> impl Fn(&mut Cursive) {
+    return move |s| {
+        let is_locked = ctx.state.lock().unwrap().locked;
+
+        if !is_locked {
+            f(s, ctx.state.clone(), ctx.sndr.clone());
+        }
+    };
+}
+
 fn wrapper3<T : Clone>(ctx: AppCtx, f: fn(&mut Cursive, state: Arc<Mutex<AppState>>, v: T), val: T) -> impl Fn(&mut Cursive) {
     return move |s| {
         f(s, ctx.state.clone(), val.clone());
@@ -509,6 +596,13 @@ fn build_entry_select_panel(ctx: &AppCtx) -> NamedView<Panel<NamedView<ScrollVie
     return entry_select_panel;
 }
 
+fn select_menubar_if_not_locked(s: &mut Cursive, current_state: Arc<Mutex<AppState>>) {
+    let is_locked = current_state.lock().unwrap().locked;
+
+    if !is_locked {
+        s.select_menubar();
+    }
+}
 
 fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Sender<String>>) {
     let ctx = AppCtx::new(shared_state.clone(), sndr.clone());
@@ -527,9 +621,10 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
     file_tree.add_leaf("About ...", info::about);
     file_tree.add_leaf("Info ...", wrapper(ctx.clone(), info::show));
     file_tree.add_leaf("Undo changes ...", wrapper(ctx.clone(), tuiundo::undo));
-    file_tree.add_delimiter();
+    file_tree.add_leaf("Lock screen           F12", wrapper(ctx.clone(), lockscreen::activate));
+    file_tree.add_delimiter();    
     file_tree.add_leaf("Quit and print        F4", wrapper2(ctx.clone(), quit_and_print));
-    file_tree.add_leaf("Quit                  F3", wrapper2(ctx.clone(), quit_without_print));
+    file_tree.add_leaf("Quit                  F3", wrapper2(ctx.clone(), quit_without_print));    
 
     let mut entry_tree = Tree::new();
     entry_tree.add_leaf("Copy to clipboard ...  F2", wrapper4(ctx.clone(), copy::entry, true, DEFAULT_FORMATTER));
@@ -538,6 +633,7 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
     entry_tree.add_delimiter();
     entry_tree.add_leaf("Add Entry ...", wrapper(ctx.clone(), add::entry));
     entry_tree.add_leaf("Add with template ...", wrapper(ctx.clone(), add::entry_with_template));
+    entry_tree.add_leaf("Add unlock Entry ...", wrapper(ctx.clone(), add::unlock_entry));
     entry_tree.add_delimiter();
     entry_tree.add_leaf("Edit Entry ...", wrapper3(ctx.clone(), edit::entry, None));
     entry_tree.add_leaf("Delete Entry ...", wrapper(ctx.clone(), delete::entry));
@@ -565,9 +661,10 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
 
     s.set_autohide_menu(false);
 
-    s.add_global_callback(Key::Esc, |s| s.select_menubar());
-    s.add_global_callback(Key::F3, wrapper2(ctx.clone(), quit_without_print));
-    s.add_global_callback(Key::F4, wrapper2(ctx.clone(), quit_and_print));
+    s.add_global_callback(Key::Esc, wrapper(ctx.clone(), select_menubar_if_not_locked));
+    s.add_global_callback(Key::F3, wrapper2_if_not_locked(ctx.clone(), quit_without_print));
+    s.add_global_callback(Key::F4, wrapper2_if_not_locked(ctx.clone(), quit_and_print));
+    s.add_global_callback(Key::F12, wrapper(ctx.clone(), lockscreen::activate));
 
 
     let tui = LinearLayout::horizontal()

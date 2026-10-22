@@ -17,6 +17,8 @@ use std::sync::{Arc, Mutex};
 use cursive::Cursive;
 use cursive::views::{Dialog, LinearLayout, TextView, EditView};
 use cursive::traits::*;
+use crate::pwgen;
+use crate::pwgen::PasswordGenerator;
 
 use super::AppState;
 use super::show_message;
@@ -43,6 +45,35 @@ pub fn entry_with_template(s: &mut Cursive, state_for_add_entry: Arc<Mutex<AppSt
     }
 
     entry_with_default(s, state_for_add_entry, new_text);
+}
+
+pub fn unlock_entry(s: &mut Cursive, state_for_add_entry: Arc<Mutex<AppState>>) {
+    let unlock_entry_name = String::from(state_for_add_entry.lock().unwrap().unlock_item.as_str());
+    let mut numeric_gen = pwgen::NumDigitGenerator::numeric();
+    let new_text = numeric_gen.gen_password(3).unwrap();
+
+    add_entry_with_name(s, state_for_add_entry, Arc::new(unlock_entry_name), new_text, false);
+}
+
+fn add_entry_with_name(s: &mut Cursive, state_for_add_entry: Arc<Mutex<AppState>>, entry_name: Arc<String>, new_text: String, pop_layer: bool) {
+    if state_for_add_entry.lock().unwrap().store.entry_exists(&entry_name) {
+        show_message(s, "An entry with that name already exists"); 
+        return;
+    }
+
+    if !state_for_add_entry.lock().unwrap().store.add(&entry_name, &new_text) {
+        show_message(s, "Adding new entry failed"); 
+        return;
+    }
+
+    visualize_if_modified(s, state_for_add_entry.clone());
+    redraw_tui(s, state_for_add_entry.clone());
+    if pop_layer {
+        s.pop_layer();
+    }
+
+    display_entry(s, state_for_add_entry.clone(), &String::from(entry_name.as_str()), true);
+    edit_entry(s, state_for_add_entry.clone(), Some(entry_name));
 }
 
 pub fn entry_with_default(s: &mut Cursive, state_for_add_entry: Arc<Mutex<AppState>>, new_text: String) {
@@ -72,22 +103,7 @@ pub fn entry_with_default(s: &mut Cursive, state_for_add_entry: Arc<Mutex<AppSta
             None => { show_message(s, "Unable to read new entry name"); return }
         }; 
 
-        if state_for_add_entry.lock().unwrap().store.entry_exists(&entry_name) {
-            show_message(s, "An entry with that name already exists"); 
-            return;
-        }
-
-        if !state_for_add_entry.lock().unwrap().store.add(&entry_name, &new_text) {
-            show_message(s, "Adding new entry failed"); 
-            return;
-        }
-
-        visualize_if_modified(s, state_for_add_entry.clone());
-        redraw_tui(s, state_for_add_entry.clone());
-        s.pop_layer();
-
-        display_entry(s, state_for_add_entry.clone(), &String::from(entry_name.as_str()), true);
-        edit_entry(s, state_for_add_entry.clone(), Some(entry_name));
+        add_entry_with_name(s, state_for_add_entry.clone(), entry_name, new_text.clone(), true);
     })
     .button("Cancel", |s| { s.pop_layer(); });                
     
