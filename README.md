@@ -101,6 +101,17 @@ When an entry is modified, added or deleted `rustpwman` retains information whic
 allows to manually undo changes in the reverse order in which they were applied or to undo all changes which have been recorded since the last time the data
 file was saved.
 
+### Lock screen
+
+You can lock the screen of `rustpwman` by either pressing F12 or selecting this menu entry. Use this to hide the contents of `rustpwman`'s UI while keeping it running.
+The screen can be unlocked by the unlock code or the master password. The intent is to make the unlock code much shorter and easier to remember than the master password.
+On the other hand if you use the wrong unlock code three times in a row you have to use the master password. The master password can always be used to unlock `rustpwman`'s
+screen. After a successfull unlock the unlock code's worng password counter is reset. The unlock code can be set through the menu entry `Add unlock Entry ...`. This simply
+creates a new appropriately named entry in the password file. Its contents is then used as the unlock code. If no unlock entry is present only the master password can be used
+for unlocking.
+
+![](/lockscreen.png?raw=true "rusptpwman with it's screen locked")
+
 ### Quit and print
 
 Selecting this entry ends the program and prints the value of the currently selected entry as well as the values of all queued entries to the CLI window after the TUI has
@@ -190,6 +201,10 @@ Select this menu item to create a new password entry and edit its contents.
 In addition to what `Add entry` does the `Add with template` menu item also populates the new entry with a small text consisting of all defined template strings, where each
 template string appears at the beginning of its own line. Each template string can be used later in the `Copy with template` entry to retrieve only certain relevant parts of en
 entry's text.
+
+### Add unlock entry
+
+Use this menu item to create a new entry which can be used to unlock `rustpwman`'s UI. See [here](#lock-screen) for more information about this feature.
 
 ### Delete entry
 
