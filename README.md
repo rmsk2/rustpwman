@@ -106,9 +106,9 @@ file was saved.
 You can lock the screen of `rustpwman` by either pressing F12 or selecting this menu entry. Use this to hide the contents of `rustpwman`'s UI while keeping it running.
 The screen can be unlocked by the unlock code or the master password. The intent is to make the unlock code much shorter and easier to remember than the master password.
 On the other hand if you use the wrong unlock code three times in a row you have to use the master password. The master password can always be used to unlock `rustpwman`'s
-screen. After a successfull unlock the unlock code's worng password counter is reset. The unlock code can be set through the menu entry `Add unlock Entry ...`. This simply
-creates a new appropriately named entry in the password file. Its contents is then used as the unlock code. If no unlock entry is present only the master password can be used
-for unlocking.
+screen. After a successfull unlock the unlock code's "wrong password counter" is reset. The unlock code can be set through the menu entry `Add unlock Entry ...`. This simply
+creates a new appropriately named entry in the password file. Its (trimmed) contents is then used as the unlock code. You can modify or even delete this entry in any way you
+see fit. If no unlock entry is present only the master password can be used for unlocking.
 
 ![](/lockscreen.png?raw=true "rusptpwman with it's screen locked")
 
