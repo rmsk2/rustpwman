@@ -113,15 +113,16 @@ fn deactivate(s: &mut Cursive, current_state: Arc<Mutex<AppState>>, pw: Option<S
             s.call_on_name(LOCK_MESSAGE, |view: &mut TextView| {view.set_content(TEXT_UNLOCK_INACTIVE)});
         }
 
-        show_message(s, "Password not acceptable"); return
+        show_message(s, "Password not acceptable");
+        return;
     }
 
     let screen = s.screen_mut();
     if let Some(pos) = screen.find_layer_from_name(LOCK_LAYER) {
         screen.remove_layer(pos);
+        iterate_all_menu_entries(s, true);
+        current_state.lock().unwrap().locked = false;
+    } else {
+        show_message(s, "Unable to find layer of lock screen. This should not have happened"); return
     }
-
-    iterate_all_menu_entries(s, true);
-
-    current_state.lock().unwrap().locked = false;
 }
