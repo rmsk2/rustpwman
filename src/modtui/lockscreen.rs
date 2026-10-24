@@ -123,6 +123,7 @@ fn deactivate(s: &mut Cursive, current_state: Arc<Mutex<AppState>>, pw: Option<S
         iterate_all_menu_entries(s, true);
         current_state.lock().unwrap().locked = false;
     } else {
-        show_message(s, "Unable to find layer of lock screen. This should not have happened"); return
+        show_message(s, "Unable to find layer of lock screen. This should not have happened");
+        return;
     }
 }
