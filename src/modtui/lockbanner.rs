@@ -19,6 +19,7 @@ fn glyph(c: char) -> Option<[&'static str; GLYPH_H]> {
     }
 }
 
+// The coordinate system seen by the Canvas has the size returned by with_required_size().
 pub fn banner_view(text: &str) -> impl View {
     // Select all characters for which we have a pixel pattern
     let glyphs: Vec<[&'static str; GLYPH_H]> = text.chars().filter_map(glyph).collect();
@@ -42,7 +43,7 @@ pub fn banner_view(text: &str) -> impl View {
                     for (col, px) in row.chars().enumerate() {
                         // draw "pixels"
                         if px == '#' {
-                            // "pixels" on screen a twice as wide as "pixels" in the defining pattern
+                            // "pixels" on screen are twice as wide as "pixels" in the defining pattern
                             printer.print((gx + col * PX_W, y), "██");
                         }
                     }

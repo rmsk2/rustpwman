@@ -14,6 +14,10 @@ In this case the password cache, support for WebDAV, additional crypto algorithm
 an entry in a QR code are not available. If you want to select features one by one you will find a list of feature names [below](#feature-overview). On Linux you will
 have to install `libssl-dev` if you want to use the WebDAV feature and `ncurses` if you prefer to use the `ncurses` backend.
 
+If you use the password cache it is recommended that you build `rustpwman` yourself instead of using someone else's prebuilt binaries. This ensures that the value used to
+obfuscate the cache address is unique to your build which makes simply guessing the cache address impossible. After the build do a `cargo clean --release` to delete the
+value used for obfuscation.
+
 # How to run the software
 
 The basic concept of `rustpwman` is to manage a set of entries which have a value or content. The entries are presented in a flat list. Via so called template string parts
@@ -23,8 +27,7 @@ of an entry's content can be referenced and retrieved separately. No further str
 rustpwman gui -i <file_name>
 ```
 
-You can alternatively use `cargo run --release -- gui -i <file_name>` to build and run `rustpwman` from the project directory. Running the program will result, after a successful
-password entry, in a window similar to this one.
+Running the program will result, after a successful password entry, in a window similar to this one.
 
 ![](/screenshot.png?raw=true "Screenshot of rustpwman")
 
