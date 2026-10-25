@@ -21,6 +21,7 @@ use std::sync::{Arc, Mutex};
 use super::AppState;
 use super::show_message;
 use super::refocus_dlg_element;
+use crate::modtui::lockbanner;
 
 fn iterate_all_menu_entries(s: &mut Cursive, new_value: bool){
     let menu_bar = s.menubar();
@@ -39,8 +40,8 @@ fn iterate_all_menu_entries(s: &mut Cursive, new_value: bool){
 const LOCK_LAYER: &str = "lock_layer";
 const LOCK_PW_EDIT: &str = "lock_pw_edit";
 const LOCK_MESSAGE: &str = "lock_message";
-const TEXT_UNLOCK_ACTIVE: &str = "Rustpwman is locked. Enter unlock code or master password.";
-const TEXT_UNLOCK_INACTIVE: &str = "Rustpwman is locked. Enter master password.";
+const TEXT_UNLOCK_ACTIVE: &str = "Enter unlock code or master password.";
+const TEXT_UNLOCK_INACTIVE: &str = "Enter master password.";
 
 pub fn activate(s: &mut Cursive, current_state: Arc<Mutex<AppState>>) {
     let state_for_button_press = current_state.clone();
@@ -68,12 +69,16 @@ pub fn activate(s: &mut Cursive, current_state: Arc<Mutex<AppState>>) {
                     .on_submit(move |s, pw| { deactivate(s, state_for_submit.clone(), Some(String::from(pw))); })
                     .with_name(LOCK_PW_EDIT))
         )
-        .title("Locked")
+        .title("rustpwman")
         .button("Unlock", move |s| {deactivate(s, state_for_button_press.clone(), None);})
         .with_name(LOCK_LAYER);
 
     let centered = LinearLayout::vertical()
         .child(DummyView.full_height())
+        .child(lockbanner::banner_view("LOCKED"))
+        .child(DummyView)                       // one blank line
+        .child(DummyView)                       // one blank line
+        .child(DummyView)                       // one blank line
         .child(LinearLayout::horizontal()
             .child(DummyView.full_width())
             .child(lock_view)

@@ -36,6 +36,7 @@ mod qrcode;
 mod search;
 mod totp;
 mod lockscreen;
+mod lockbanner;
 pub mod template;
 pub mod tuimain;
 pub mod tuitheme;
