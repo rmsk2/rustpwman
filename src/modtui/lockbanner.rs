@@ -21,9 +21,9 @@ fn glyph(c: char) -> Option<[&'static str; GLYPH_H]> {
 
 // The coordinate system seen by the Canvas has the size returned by with_required_size().
 pub fn banner_view(text: &str) -> impl View {
-    // Select all characters for which we have a pixel pattern
+    // Map characters to their pixel patterns. Leave out characters for which there are no patterns
     let glyphs: Vec<[&'static str; GLYPH_H]> = text.chars().filter_map(glyph).collect();
-    // Calculate number of known characterts and width in "pixels"
+    // Calculate number of pribtable characters and their combined width in "pixels"
     let n = glyphs.len();
     let width = if n == 0 { 0 } else { (n * GLYPH_W + (n - 1) * GAP) * PX_W };
 
