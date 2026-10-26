@@ -28,8 +28,9 @@ use crate::pwgen::GenerationStrategy;
 
 use super::AppState;
 use super::show_message;
-use super::edit::insert_into_entry;
 use super::refocus_dlg_element;
+use super::edit::insert_with_mark;
+
 use super::PW_MAX_SEC_LEVEL;
 
 const SLIDER_SEC_NAME: &str = "securityslider";
@@ -238,7 +239,7 @@ fn calc_char_size(s: &mut Cursive, strategy_group: RadioGroup<GenerationStrategy
     calc_char_size_int(s, &selected_strategy);
 }
 
-fn on_ok_clicked(s: &mut Cursive, state_for_gen_pw: Arc<Mutex<AppState>>, strategy_group: RadioGroup<GenerationStrategy>) {
+fn on_ok_clicked(s: &mut Cursive, state_for_gen_pw: Arc<Mutex<AppState>>, strategy_group: RadioGroup<GenerationStrategy>, mark: Arc<Mutex<Option<usize>>>) {
     let rand_bytes = match s.call_on_name(SLIDER_SEC_NAME, |view: &mut SliderView| { view.get_value() }) {
         Some(v) => v,
         None => { show_message(s, "Unable to determine security level"); return }
@@ -278,7 +279,7 @@ fn on_ok_clicked(s: &mut Cursive, state_for_gen_pw: Arc<Mutex<AppState>>, strate
         }
     };    
 
-    insert_into_entry(s, new_pw);
+    insert_with_mark(s, new_pw, mark);
     s.pop_layer();
 }
 
@@ -349,7 +350,7 @@ pub fn clear_custom_selection(s: &mut Cursive) {
     refocus_dlg_element(s, DLG_PW_GEN, CUSTOM_CHARS);
 }
 
-pub fn generate_password(s: &mut Cursive, state_for_gen_pw: Arc<Mutex<AppState>>) {
+pub fn generate_password(s: &mut Cursive, state_for_gen_pw: Arc<Mutex<AppState>>, mark: Arc<Mutex<Option<usize>>>) {
     let sec_bits = state_for_gen_pw.lock().unwrap().get_default_bits();
     let default_strategy = state_for_gen_pw.lock().unwrap().default_generator;
 
@@ -432,7 +433,7 @@ pub fn generate_password(s: &mut Cursive, state_for_gen_pw: Arc<Mutex<AppState>>
             .with_name(CUSTOM_HIDEABLE)
         )
     )
-    .button("OK", move |s| on_ok_clicked(s, state_for_gen_pw.clone(), strat_group_ok.clone()))
+    .button("OK", move |s| on_ok_clicked(s, state_for_gen_pw.clone(), strat_group_ok.clone(), mark.clone()))
     .button("Cancel", |s| { s.pop_layer(); })
     .with_name(DLG_PW_GEN);
     

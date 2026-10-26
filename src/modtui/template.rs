@@ -120,7 +120,7 @@ pub fn to_clipboard(s: &mut Cursive, state_for_copy_entry: Arc<Mutex<AppState>>,
     };
 
     if set_clipboard(copy_command, Box::new(templ_val)) {
-        show_message(s, "Unable to set clipboad");
+        show_message(s, "Unable to set clipboard");
         return;
     }
 

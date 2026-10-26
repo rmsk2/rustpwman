@@ -41,7 +41,7 @@ pub fn contents(s: &mut Cursive, state_for_copy_entry: Arc<Mutex<AppState>>, sho
 
     match set_clipboard(String::from(state_for_copy_entry.lock().unwrap().copy_command.clone()), Box::new(content)) {
         true => {
-            show_message(s, "Unable to set clipboad");
+            show_message(s, "Unable to set clipboard");
         },
         false => {
             if show_confirmation {
@@ -71,7 +71,7 @@ pub fn entry(s: &mut Cursive, state_for_copy_entry: Arc<Mutex<AppState>>, show_c
 
     match set_clipboard(String::from(state_for_copy_entry.lock().unwrap().copy_command.clone()), Box::new(content)) {
         true => {
-            show_message(s, "Unable to set clipboad");
+            show_message(s, "Unable to set clipboard");
         },
         false => {
             if show_confirmation {

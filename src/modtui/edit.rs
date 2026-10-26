@@ -22,6 +22,7 @@ use cursive::traits::*;
 use cursive::theme::{self, Effects};
 use cursive::theme::{Effect, PaletteColor};
 use cursive::theme::ColorStyle;
+use zeroize::Zeroize;
 
 
 use super::AppState;
@@ -37,7 +38,7 @@ const TEXT_AREA_NAME: &str = "textareaedit";
 const DLG_EDIT: &str = "edit_dialog";
 const MARK_INDICATOR: &str = "mark_indicator";
 
-pub fn insert_into_entry(s: &mut Cursive, new_pw: String) {
+fn insert_into_entry(s: &mut Cursive, mut new_pw: String) {
     let mut entry_text = match s.call_on_name(TEXT_AREA_NAME, |view: &mut TextArea| { String::from(view.get_content()) }) {
         Some(text_val) => {
             text_val
@@ -53,11 +54,17 @@ pub fn insert_into_entry(s: &mut Cursive, new_pw: String) {
     };
 
     entry_text.insert_str(cursor_pos, new_pw.as_str());
+    let offset = new_pw.len();
+    new_pw.zeroize();
 
     s.call_on_name(TEXT_AREA_NAME, |view: &mut TextArea| { view.set_content(entry_text) });
-    s.call_on_name(TEXT_AREA_NAME, |view: &mut TextArea| { view.set_cursor(cursor_pos) });
+    s.call_on_name(TEXT_AREA_NAME, |view: &mut TextArea| { view.set_cursor(cursor_pos + offset) });
 }
 
+pub fn insert_with_mark(s: &mut Cursive, new_pw: String, mark: Arc<Mutex<Option<usize>>>) {
+    insert_into_entry(s, new_pw);
+    reset_and_visualize_mark(s, mark);
+}
 
 fn event_listener(view: &mut TextArea, event: &Event, mark: Arc<Mutex<Option<usize>>>) -> Option<EventResult> {
     let current_mark_set = !mark.lock().unwrap().is_none();
@@ -79,7 +86,7 @@ fn event_listener(view: &mut TextArea, event: &Event, mark: Arc<Mutex<Option<usi
             new_mark_set = false;
         },
         _ => {
-            let content_before = String::from(view.get_content());
+            let mut content_before = String::from(view.get_content());
             // let TextArea process the event
             result = view.on_event(event.clone());
 
@@ -87,6 +94,8 @@ fn event_listener(view: &mut TextArea, event: &Event, mark: Arc<Mutex<Option<usi
                 *mark.lock().unwrap() = None;
                 new_mark_set = false;
             }
+
+            content_before.zeroize();
         }
     }
 
@@ -148,7 +157,8 @@ fn handle_copy_cut(s: &mut Cursive, state_for_copy:  Arc<Mutex<AppState>>, marke
 
     if let Some(selected) = entry_text.get(start_pos..end_pos) {
         if clip::set_clipboard(String::from(state_for_copy.lock().unwrap().copy_command.clone()), Box::new(String::from(selected))) {
-            show_message(s, "Unable to set clipboad");
+            show_message(s, "Unable to set clipboard");
+            refocus_dlg_element(s, DLG_EDIT, TEXT_AREA_NAME);
             return;
         } else {
             reset_and_visualize_mark(s, mark);
@@ -163,6 +173,10 @@ fn handle_copy_cut(s: &mut Cursive, state_for_copy:  Arc<Mutex<AppState>>, marke
 
             refocus_dlg_element(s, DLG_EDIT, TEXT_AREA_NAME);
         }
+    } else {
+        show_message(s, "Unable to get selected text");
+        refocus_dlg_element(s, DLG_EDIT, TEXT_AREA_NAME);
+        return;        
     }
 }
 
@@ -205,6 +219,9 @@ pub fn entry(s: &mut Cursive, state_for_edit_entry: Arc<Mutex<AppState>>, entry_
     let marked_position_for_cb = marked_position.clone();
     let marked_position_for_copy = marked_position.clone();
     let marked_position_for_cut = marked_position.clone();
+    let marked_position_for_clear = marked_position.clone();
+    let marked_position_for_gen_pw = marked_position.clone();
+    let marked_position_for_paste = marked_position.clone();
 
     let text_area = TextArea::new()
                     .content(content)
@@ -290,15 +307,16 @@ pub fn entry(s: &mut Cursive, state_for_edit_entry: Arc<Mutex<AppState>>, entry_
             };
         }
 
-        insert_into_entry(s, pasted_txt);
+        insert_with_mark(s, pasted_txt, marked_position_for_paste.clone());
         refocus_dlg_element(s, DLG_EDIT, TEXT_AREA_NAME);
     })
     .button("Insert Password ...", move |s: &mut Cursive| {
-        pwgenerate::generate_password(s, state_for_gen_pw.clone());
+        pwgenerate::generate_password(s, state_for_gen_pw.clone(), marked_position_for_gen_pw.clone());
         refocus_dlg_element(s, DLG_EDIT, TEXT_AREA_NAME);
     })    
     .button("Clear", move |s| {
         s.call_on_name(TEXT_AREA_NAME, |view: &mut TextArea| { view.set_content(String::from("")) });
+        reset_and_visualize_mark(s, marked_position_for_clear.clone());
         refocus_dlg_element(s, DLG_EDIT, TEXT_AREA_NAME);
     })
     .button("Help ...", move |s| { 
