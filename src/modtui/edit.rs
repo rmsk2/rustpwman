@@ -292,20 +292,17 @@ pub fn entry(s: &mut Cursive, state_for_edit_entry: Arc<Mutex<AppState>>, entry_
     })        
     .button("Paste", move |s: &mut Cursive| {
         let pasted_txt: String;
-        let paste_cmd: &String;
+        let paste_cmd: String;
 
-        {
-            let app_state = &state_for_paste.lock().unwrap();
-            paste_cmd = &app_state.paste_command;
+        paste_cmd = state_for_paste.lock().unwrap().paste_command.clone();
 
-            pasted_txt = match clip::get_clipboard(&paste_cmd.as_str()) {
-                Some(t) => t,
-                None => {
-                    show_message(s, "Unable to get clipboard contents");
-                    return;                
-                }
-            };
-        }
+        pasted_txt = match clip::get_clipboard(paste_cmd.as_str()) {
+            Some(t) => t,
+            None => {
+                show_message(s, "Unable to get clipboard contents");
+                return;
+            }
+        };
 
         insert_with_mark(s, pasted_txt, marked_position_for_paste.clone());
         refocus_dlg_element(s, DLG_EDIT, TEXT_AREA_NAME);
