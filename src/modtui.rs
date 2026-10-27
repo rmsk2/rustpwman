@@ -241,7 +241,7 @@ impl AppState {
         new_pw.zeroize();
     }
 
-    pub fn persist_store(&mut self) -> std::io::Result<()> {
+    pub fn persist_store(&mut self) -> std::io::Result<jots::BackupResult> {
         let pw = match self.get_password() {
             Some(p) => p,
             None => {
@@ -314,12 +314,18 @@ fn ask_for_save(s: &mut Cursive, sender: Arc<Sender<String>>, message: String, a
             .title("Rustpwman")
             .button("Yes", move |s: &mut Cursive| {
                 s.pop_layer();
-                save::storage(s, app_state.clone());
+                let bkp_result = Arc::new(Mutex::new(crate::jots::BackupResult::Ok));
+                save::storage(s, app_state.clone(), bkp_result.clone(), false);
 
                 let is_dirty = app_state.lock().unwrap().store.is_dirty();
 
+                let mut msg_to_print = message.clone();
+                if bkp_result.lock().unwrap().clone() != crate::jots::BackupResult::Ok {
+                    msg_to_print = msg_to_print + "\nWarning: While saving the file was successful creating a local backup of it failed!"
+                } 
+
                 if !is_dirty {
-                    do_quit(s, sender.clone(), message.clone());
+                    do_quit(s, sender.clone(), msg_to_print.clone());
                 }
             })
             .button("No", |s| {
@@ -611,7 +617,7 @@ fn main_window(s: &mut Cursive, shared_state: Arc<Mutex<AppState>>, sndr: Arc<Se
 
     let mut file_tree : Tree;
     file_tree = Tree::new();
-    file_tree.add_leaf("Save File", wrapper(ctx.clone(), save::storage));
+    file_tree.add_leaf("Save File", wrapper(ctx.clone(), save::storage_cb));
     file_tree.add_delimiter();
     file_tree.add_leaf("Change password ...", wrapper(ctx.clone(), pw::change));
     #[cfg(feature = "pwmanclient")]

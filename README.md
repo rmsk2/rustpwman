@@ -478,8 +478,7 @@ of the data file after its password has been successfully verified. As a default
 default can be overriden by setting the environment variable `PWMANBKP` or the config entry `bkp_file_name` to the desired name of the backup file. This feature is active by default.
 
 You should be aware of the fact that if you have several password files and do not use the previously mentioned mechanisms to configure `rustpwman` to use individual backup files
-for each of your password files then `rustpman` only creates a backup of the last password file which has been successfully opened. At the moment this also means that no local backup
-is created if a password file is modified and saved.
+for each of your password files then `rustpman` only creates a backup of the last password file which has been successfully opened.
 
 ## Encoding stored data as a QR code
 

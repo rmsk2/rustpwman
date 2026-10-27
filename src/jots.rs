@@ -121,6 +121,12 @@ impl<'a> Iterator for JotsIter<'a> {
     }
 }
 
+#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
+pub enum BackupResult {
+    Ok,
+    Error
+}
+
 pub struct Jots {
     contents: HashMap<String, Vec<u8>>,
     obf: MapObfuscator,
@@ -342,14 +348,16 @@ impl Jots {
         return Ok(());
     }
 
-    pub fn retrieve(&mut self, p: &mut SendSyncPersister, password: &str) -> std::io::Result<()> {
+    pub fn retrieve(&mut self, p: &mut SendSyncPersister, password: &str) -> std::io::Result<BackupResult> {
         let mut ctx = (self.cr_gen)(self.kdf, self.kdf_id);
+        let mut bkp_result = BackupResult::Ok;
 
         let (data, raw_data) = ctx.retrieve(p)?;
 
         if let Some(cb) = &self.backup_cb {
-            // ignore result
-            _ = cb(&raw_data);
+            if let Err(_) = cb(&raw_data) {
+                bkp_result = BackupResult::Error;
+            }
         }
 
         let mut plain_data = match ctx.decrypt(password, &data) {
@@ -361,7 +369,7 @@ impl Jots {
         self.mark_as_clean();
         plain_data.zeroize();
 
-        return Ok(());
+        return Ok(bkp_result);
     }
 
     pub fn to_enc_file(&mut self, file_name: &str, password: &str) -> std::io::Result<()> {
@@ -381,9 +389,10 @@ impl Jots {
         return Ok(());
     }
 
-    pub fn persist(&mut self, p: &mut SendSyncPersister, password: &str) -> std::io::Result<()> {
+    pub fn persist(&mut self, p: &mut SendSyncPersister, password: &str) -> std::io::Result<BackupResult> {
         let mut ctx = (self.cr_gen)(self.kdf, self.kdf_id);
         let mut serialized: Vec<u8> = Vec::new();
+        let mut bkp_result = BackupResult::Ok;
 
         self.to_writer(&mut serialized)?;
         let enc_data = match ctx.encrypt(password, &serialized) {
@@ -391,11 +400,17 @@ impl Jots {
             Ok(d) => d
         };
 
-        ctx.persist(&enc_data, p)?;
+        let save_data = ctx.persist(&enc_data, p)?;
         self.mark_as_clean();
         serialized.zeroize();
 
-        return Ok(());
+        if let Some(cb) = &self.backup_cb {
+            if let Err(_) = cb(&save_data) {
+                bkp_result = BackupResult::Error;
+            }
+        }
+
+        return Ok(bkp_result);
     }
 
     pub fn search(&self, search_term: &String) -> Vec<String> {

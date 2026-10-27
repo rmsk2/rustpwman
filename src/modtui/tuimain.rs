@@ -25,6 +25,7 @@ use cursive::views::Dialog;
 use crate::fcrypt::KeyDeriver;
 use crate::fcrypt;
 use crate::jots::{self, CryptorGen};
+use crate::modtui::show_message;
 use crate::pwgen::GenerationStrategy;
 use super::AppState;
 use super::open;
@@ -96,7 +97,7 @@ pub fn main(app: &RustPwMan, data_file_name: String, default_sec_bits: usize, de
         let state = AppState::new(jots_store, &f_name, default_sec_bits, default_pw_gen, &paste_cmd, &copy_cmd, p_cb, pw_cached, &qr_viewer, infos.cfg_source, &infos.cfg_name, infos.kdf_id, &template_strings);
 
         // No else branch is neccessary as open_file performs error handling
-        if let Some(state_after_open) = open::storage(s, password, state) {
+        if let (Some(state_after_open), val) = open::storage(s, password, state) {
             let shared_state: Arc<Mutex<AppState>> = Arc::new(Mutex::new(state_after_open));
 
             s.pop_layer(); // Close password, file init or confirmation dialog
@@ -104,6 +105,10 @@ pub fn main(app: &RustPwMan, data_file_name: String, default_sec_bits: usize, de
                 main_window(s, shared_state.clone(), sender_main.clone());
             } else {
                 export::window(s, shared_state.clone(), sender_main.clone());
+            }
+
+            if val != crate::jots::BackupResult::Ok {
+                show_message(s, "Warning: While loading the file was successful creating a local backup of it failed!");
             }
         }
     });

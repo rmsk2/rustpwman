@@ -108,11 +108,15 @@ pub trait Cryptor {
         return self.to_dyn_writer(&mut w, data);
     }
 
-    fn persist(&self, data: &Vec<u8>, p: &mut SendSyncPersister) -> std::io::Result<()> {
+    fn persist(&self, data: &Vec<u8>, p: &mut SendSyncPersister) -> std::io::Result<Vec<u8>> {
         let mut res_data: Vec<u8> = vec![];
         self.to_dyn_writer(&mut res_data, data)?;
 
-        return p.persist(&res_data);
+        if let Err(e) = p.persist(&res_data) {
+            return Err(e);
+        }
+
+        return Ok(res_data);
     }
 
     fn from_file(&mut self, file_name: &str) -> std::io::Result<Vec<u8>> {

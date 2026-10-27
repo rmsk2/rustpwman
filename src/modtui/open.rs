@@ -19,14 +19,15 @@ use super::AppState;
 use super::show_message;
 use super::pwentry::show_pw_error;
 
-pub fn storage(s: &mut Cursive, password: &String, state: AppState) -> Option<AppState> {
+pub fn storage(s: &mut Cursive, password: &String, state: AppState) -> (Option<AppState>, crate::jots::BackupResult) {
     let mut state = state;
+    let bkp_result: crate::jots::BackupResult;
 
     let does_exist = match state.persister.does_exist() {
         Ok(b) => b,
         Err(e) => {
             show_message(s, &format!("Unable to check for existence of: {}", e));
-            return None;
+            return (None, crate::jots::BackupResult::Ok);
         }
     };
     
@@ -35,20 +36,20 @@ pub fn storage(s: &mut Cursive, password: &String, state: AppState) -> Option<Ap
             Ok(_) => (),
             Err(e) => {
                 show_message(s, &format!("Unable to initialize password storage: {}", e));
-                return None;
+                return (None, crate::jots::BackupResult::Ok)
             }
         }
     }
 
     match state.store.retrieve(&mut state.persister, password) {
-        Ok(_) => { },
+        Ok(val) => {bkp_result = val },
         Err(e) => {
             show_pw_error(s, &format!("Unable to read password storage: '{}'", e));
-            return None;                
+            return (None, crate::jots::BackupResult::Ok)
         }
     }
 
     state.set_password(password.clone());
 
-    return Some(state);
+    return (Some(state), bkp_result);
 }
