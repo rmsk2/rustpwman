@@ -477,6 +477,10 @@ This may not be the case at times when there is no internet connection or if the
 of the data file after its password has been successfully verified. As a default the backup file is stored in the current directory using the name `rustpwman_last.enc`. This
 default can be overriden by setting the environment variable `PWMANBKP` or the config entry `bkp_file_name` to the desired name of the backup file. This feature is active by default.
 
+You should be aware of the fact that if you have several password files and do not use the previously mentioned mechanisms to configure `rustpwman` to use individual backup files
+for each of your password files then `rustpman` only creates a backup of the last password file which has been successfully opened. At the moment this also means that no local backup
+is created if a password file is modified and saved.
+
 ## Encoding stored data as a QR code
 
 The feature `qrcode` allows you to encode data stored in `rustpwman` as a QR code which is especially useful for recreating TOTP secrets on your mobile phone or any other
