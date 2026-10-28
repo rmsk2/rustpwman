@@ -27,6 +27,22 @@ pub fn storage_cb(s: &mut Cursive, state_temp_save: Arc<Mutex<AppState>>) {
 }
 
 pub fn storage(s: &mut Cursive, state_temp_save: Arc<Mutex<AppState>>, bkp_result: Arc<Mutex<crate::jots::BackupResult>>, show_bkp_warning: bool) {
+    let calc_err_msg = |e: std::io::Error| -> String {
+        return format!("Unable to save: {}", e);
+    };
+
+    storage_with_message(s, state_temp_save, bkp_result, show_bkp_warning, calc_err_msg);
+}
+
+pub fn after_pw_change(s: &mut Cursive, state_temp_save: Arc<Mutex<AppState>>, bkp_result: Arc<Mutex<crate::jots::BackupResult>>, show_bkp_warning: bool) {
+    let calc_err_msg = |e: std::io::Error| -> String {
+        return format!("Unable to save: {}. This also means the file on disk does still use the old password! You can attempt to use the 'Save File' menu entry to retry", e);
+    };
+
+    storage_with_message(s, state_temp_save, bkp_result, show_bkp_warning, calc_err_msg);
+}
+
+fn storage_with_message(s: &mut Cursive, state_temp_save: Arc<Mutex<AppState>>, bkp_result: Arc<Mutex<crate::jots::BackupResult>>, show_bkp_warning: bool, create_err_msg: impl Fn(std::io::Error) -> String) {
     let bkp_res: crate::jots::BackupResult;
     *bkp_result.lock().unwrap() = crate::jots::BackupResult::Ok;
 
@@ -40,7 +56,7 @@ pub fn storage(s: &mut Cursive, state_temp_save: Arc<Mutex<AppState>>, bkp_resul
                 bkp_res = val
             }
             Err(e) => {
-                show_message(s, &format!("Unable to save: {}", e));
+                show_message(s, create_err_msg(e).as_str());
                 return;
             }
         }

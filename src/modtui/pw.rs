@@ -107,7 +107,7 @@ pub fn change(s: &mut Cursive, state_for_pw_change: Arc<Mutex<AppState>>) {
             s.pop_layer();
 
             let bkp_result = Arc::new(Mutex::new(crate::jots::BackupResult::Ok));
-            save::storage(s, state_for_pw_change.clone(), bkp_result.clone(), true);
+            save::after_pw_change(s, state_for_pw_change.clone(), bkp_result.clone(), true);
 
             #[cfg(feature = "pwmanclient")]
             cache::uncache_password(s, state_for_pw_change.clone());
