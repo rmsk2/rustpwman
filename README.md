@@ -470,7 +470,7 @@ the encryption key used by `rustpwman` in the first place. There are even some (
 In addition to argon2id `rustpwman` can be built with support for the scrypt PBKDF. The corresponding feature is called `withscrypt`. You can select to use scrypt either via
 the `rustpwman.cfg` file or via the command line parameter `--kdf`
 
-## Automatic local backup of last successfully opened password file
+## Automatic local backup of last successfully opened or saved password file
 
 I mostly use `rustpwman` to access a password file which resides on a WebDAV share stored at a cloud provider. This is all fine and dandy as long as one can access cloud resources.
 This may not be the case at times when there is no internet connection or if the cloud provider is offline. If the feature `writebackup` is active `rustpwman` stores a local copy
