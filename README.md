@@ -328,7 +328,7 @@ Where the entries have the following semantics:
 - `seclevel` has to be an integer between 0 and 31. The security level in bits is calculated as (`seclevel` + 1) * 8.
 - `pbkdf` is a string that can assume the values `scrypt`, `argon2`, `sha256`
 - `cipher` is a string which can assume the values `aes192`, `aes256` or `chacha20` and selects the encryption algorithm used by `rustpwman`. This entry is optional. If it is missing you can select a cipher via a command line parameter or an environment variable. If these are also not present `aes256` is chosen as a default.
-- `pwgen` is one of the strings `base64`, `hex`, `numeric` or `special`
+- `pwgen` is one of the strings `base64`, `base32`, `hex`, `numeric` or `special`
 - `clip_cmd` is a string which specifies a command that can be used to write the current contents of the clipboard to stdout.
 - `copy_cmd` is a string which specifies a command that can be used to transfer the data sent to it via stdin to the clipboard.
 - `viewer_cmd` is a string which specifies a command that can be used to open PNG files and URLs in an application which can display them. See below what apps can be used on the three OSs supported by `rustpwman`. This entry is optional. If it is not set opening a browser from a URL and displaying QR codes will not work.
