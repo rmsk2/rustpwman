@@ -21,6 +21,7 @@ use super::AppState;
 use super::show_message;
 use super::get_selected_entry_name;
 use crate::clip::execute_viewer;
+use crate::fcrypt::totpcalc;
 
 use qrcode::QrCode;
 use image::Luma;
@@ -56,23 +57,8 @@ fn ask_for_deletion(s: &mut Cursive, file_name: String) {
 }
 
 
-
-pub fn create(s: &mut Cursive, state_for_create_qr_entry: Arc<Mutex<AppState>>) {
+pub fn create_with_text(s: &mut Cursive, state_for_create_qr_entry: Arc<Mutex<AppState>>, h: String) {
     let state_for_open_viewer = state_for_create_qr_entry.clone();
-
-    let entry_name = match get_selected_entry_name(s) {
-        Some(name) => name,
-        None => {
-            show_message(s, "Unable to determine selected entry"); 
-            return; 
-        }
-    };
-
-    let h = match state_for_create_qr_entry.lock().unwrap().store.get(&entry_name) {
-        Some(c) => c,
-        None => { show_message(s, "Unable to read value of entry"); return }
-    };
-
     let trimmed = h.trim();
     
     let code = match QrCode::new(trimmed) {
@@ -156,4 +142,48 @@ pub fn create(s: &mut Cursive, state_for_create_qr_entry: Arc<Mutex<AppState>>) 
     });
 
     s.add_layer(res);
+}
+
+pub fn create(s: &mut Cursive, state_for_create_qr_entry: Arc<Mutex<AppState>>) {
+    let state_for_totp = state_for_create_qr_entry.clone();
+    let state_for_whole = state_for_create_qr_entry.clone();
+
+    let entry_name = match get_selected_entry_name(s) {
+        Some(name) => name,
+        None => {
+            show_message(s, "Unable to determine selected entry");
+            return;
+        }
+    };
+
+    let h = match state_for_create_qr_entry.lock().unwrap().store.get(&entry_name) {
+        Some(c) => c,
+        None => { show_message(s, "Unable to read value of entry"); return }
+    };
+
+    let totp_raw = totpcalc::TotpParams::get_raw_totp_url(h.clone());
+    if totp_raw.is_none() {
+        create_with_text(s, state_for_create_qr_entry, h.clone());
+    } else {
+        let totp_url = totp_raw.unwrap();
+
+        if h.trim() == totp_url {
+            create_with_text(s, state_for_totp.clone(), totp_url.clone());
+        } else {
+            let dlg = Dialog::text("The entry contains a TOTP URL. Do you want to encode only the TOTP URL or the whole entry?")
+                .title("Rustpwman")
+                .button("TOTP Only", move |s: &mut Cursive| {
+                    s.pop_layer();
+                    create_with_text(s, state_for_totp.clone(), totp_url.clone());
+                })
+                .button("Whole entry", move |s| {
+                    s.pop_layer();
+                    create_with_text(s, state_for_whole.clone(), h.clone());
+                })
+                .button("Cancel", move |s: &mut Cursive| {
+                    s.pop_layer();
+                });
+            s.add_layer(dlg);
+        }
+    }
 }

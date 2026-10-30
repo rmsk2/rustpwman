@@ -62,17 +62,23 @@ impl TotpParams {
         return format!("{:0>width$}", totp_int % mod_val, width = self.digits);
     }    
 
-    pub fn from_totp_params(entry_content: String) -> Option<TotpParams> {
+    pub fn get_raw_totp_url(entry_content: String) -> Option<String> {
         let v: Vec<_> = entry_content.match_indices("otpauth://totp/").collect();
 
         if v.len() != 1 {
             return None;
         }
-        
+
         let url_start = v[0].0;
         let tail = &entry_content[url_start..];
         let url_end = tail.find(|c: char| c.is_whitespace()).unwrap_or(tail.len());
         let url = &tail[..url_end];
+
+        return Some(String::from(url));
+    }
+
+    pub fn from_totp_params(entry_content: String) -> Option<TotpParams> {
+        let url = TotpParams::get_raw_totp_url(entry_content.clone())?;
 
         let query = url.split('?').nth(1)?;
 
