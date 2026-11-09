@@ -232,7 +232,6 @@ you want to use data stored in `rustpwman` on a mobile phone. It is especially h
 of a TOTP secret. `rustpwman` recognizes TOTP-URLs in entries and if one is found let's you choose between encoding the whole entry or only the TOTP parameters.
 
 If you want to extract the `otpauth://` URL from a PNG showing the QR-code displayed during TOTP-onboarding you can use this Python [script](https://github.com/rmsk2/pwman/blob/main/totp.py).
-Make sure that the PNG is clipped to show the QR code only.
 
 As `rustpwman` is a text mode only application it can not show images directly. We therefore have to make use of an OS-specific helper application which allows us to display an image
 stored in the file system of the machine on which `rustpwman` runs. This also means that the image containing the QR code has to be created before it can be displayed. For this purpose
